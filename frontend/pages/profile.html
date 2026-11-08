@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Profile & Session History - UniTogether</title>
+  <meta name="description" content="Manage your UniTogether student profile, view past hosted watch parties, and download saved collaborative study notes.">
+  
+  <link rel="icon" type="image/png" href="../assets/images/Web site mainLogo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- Top Global Header -->
+  <header class="uni-navbar d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <a href="../index.html" class="brand-wrapper" title="UniTogether Home">
+        <div class="brand-logo-badge">
+          <img src="../assets/images/Web site mainLogo.png" alt="UniTogether Logo">
+        </div>
+        <div class="brand-title">
+          <span class="uni-txt">Uni</span><span class="together-txt">Together</span>
+        </div>
+      </a>
+
+      <nav class="d-none d-md-flex align-items-center gap-1 ms-3">
+        <a href="rooms.html" class="nav-link-custom">
+          <i class="bi bi-compass"></i> Explore Hub
+        </a>
+        <a href="room.html" class="nav-link-custom">
+          <i class="bi bi-broadcast"></i> Live Watch Room
+        </a>
+        <a href="profile.html" class="nav-link-custom active">
+          <i class="bi bi-person-circle"></i> Student Profile
+        </a>
+      </nav>
+    </div>
+
+    <!-- Right Header Actions -->
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn-theme-toggle" id="themeToggleBtn" title="Toggle Light/Dark Mode" aria-label="Toggle Theme">
+        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+      </button>
+
+      <a href="room.html" class="btn-instant-room">
+        <i class="bi bi-play-circle-fill"></i> Jump into Room
+      </a>
+
+      <a href="../index.html" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold ms-2" title="Log Out">
+        <i class="bi bi-box-arrow-right"></i> Log out
+      </a>
+    </div>
+  </header>
+
+  <!-- Profile Content -->
+  <main class="container-xl py-4">
+    <!-- Profile Hero Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color) !important;">
+      <div style="height: 120px; background: var(--primary-gradient);"></div>
+      <div class="card-body p-4 pt-0 position-relative">
+        <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3" style="margin-top: -50px;">
+          <!-- Avatar + Name -->
+          <div class="d-flex align-items-end gap-3">
+            <div class="position-relative">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="Avatar" class="rounded-circle border border-4 border-white shadow" style="width: 100px; height: 100px; object-fit: cover;">
+              <button class="btn btn-sm btn-danger rounded-circle position-absolute bottom-0 end-0 p-1" style="width: 28px; height: 28px;" title="Upload new photo">
+                <i class="bi bi-camera-fill" style="font-size: 0.75rem;"></i>
+              </button>
+            </div>
+            <div>
+              <h2 class="fw-bold mb-0 text-main" id="profileNameDisplay">Yasaru Bandara</h2>
+              <p class="text-muted small mb-1">
+                <i class="bi bi-envelope me-1"></i> yasaru@university.ac.lk • <i class="bi bi-mortarboard me-1"></i> Faculty of Computing & IT
+              </p>
+              <div class="d-flex gap-2 flex-wrap">
+                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill fw-bold">🎓 Verified Student</span>
+                <span class="badge bg-warning bg-opacity-25 text-warning-emphasis rounded-pill fw-bold">👑 Room Host</span>
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill fw-bold">🟢 Online Now</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="d-flex gap-3 text-center">
+            <div class="px-3 py-2 bg-body-tertiary rounded-3 border">
+              <div class="fs-5 fw-bold text-danger">14</div>
+              <div class="text-muted" style="font-size: 0.72rem;">ROOMS HOSTED</div>
+            </div>
+            <div class="px-3 py-2 bg-body-tertiary rounded-3 border">
+              <div class="fs-5 fw-bold text-danger">48</div>
+              <div class="text-muted" style="font-size: 0.72rem;">HOURS STREAMED</div>
+            </div>
+            <div class="px-3 py-2 bg-body-tertiary rounded-3 border">
+              <div class="fs-5 fw-bold text-danger">6</div>
+              <div class="text-muted" style="font-size: 0.72rem;">SAVED NOTES</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Tabs -->
+    <ul class="nav nav-pills mb-4 gap-2" id="profileTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active rounded-pill px-4 fw-bold" id="tabHostedRoomsBtn" data-bs-toggle="pill" data-bs-target="#tabHostedRooms" type="button" role="tab">
+          <i class="bi bi-clock-history me-1"></i> Hosted Watch Parties
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-pill px-4 fw-bold" id="tabSavedNotesBtn" data-bs-toggle="pill" data-bs-target="#tabSavedNotes" type="button" role="tab">
+          <i class="bi bi-journal-text me-1"></i> Saved Study Notes (6)
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-pill px-4 fw-bold" id="tabAccountSettingsBtn" data-bs-toggle="pill" data-bs-target="#tabAccountSettings" type="button" role="tab">
+          <i class="bi bi-gear-fill me-1"></i> Preferences & Security
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="profileTabsContent">
+      
+      <!-- Tab 1: Hosted Watch Parties History -->
+      <div class="tab-pane fade show active" id="tabHostedRooms" role="tabpanel">
+        <div class="row g-3">
+          
+          <!-- History Item 1 -->
+          <div class="col-md-6">
+            <div class="card border rounded-4 shadow-sm p-3 h-100" style="background: var(--bg-card);">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-danger rounded-pill">Active Live Stream</span>
+                <span class="small text-muted">Today at 12:30 PM</span>
+              </div>
+              <h5 class="fw-bold mb-1 text-main">CS204: Algorithms & Data Structures Final Prep</h5>
+              <p class="small text-muted mb-3">Room Code: <strong>UNI-8842</strong> • 24 Students Joined • 1h 45m Duration</p>
+              <div class="d-flex gap-2 mt-auto">
+                <a href="room.html?room=UNI-8842" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold">
+                  Re-enter Room
+                </a>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="alert('Exporting session transcript...');">
+                  <i class="bi bi-download me-1"></i> Export Log
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- History Item 2 -->
+          <div class="col-md-6">
+            <div class="card border rounded-4 shadow-sm p-3 h-100" style="background: var(--bg-card);">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-secondary rounded-pill">Completed</span>
+                <span class="small text-muted">Oct 28, 2026</span>
+              </div>
+              <h5 class="fw-bold mb-1 text-main">Web Application Programming: Sockets & Real-Time Sync</h5>
+              <p class="small text-muted mb-3">Room Code: <strong>UNI-4921</strong> • 19 Students Joined • 2h 10m Duration</p>
+              <div class="d-flex gap-2 mt-auto">
+                <button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="alert('Creating new session with same configuration...');">
+                  Re-host Session
+                </button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="alert('Exporting session notes...');">
+                  <i class="bi bi-file-earmark-text me-1"></i> View Notes
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- History Item 3 -->
+          <div class="col-md-6">
+            <div class="card border rounded-4 shadow-sm p-3 h-100" style="background: var(--bg-card);">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-secondary rounded-pill">Completed</span>
+                <span class="small text-muted">Oct 21, 2026</span>
+              </div>
+              <h5 class="fw-bold mb-1 text-main">Database Management Systems - Normalization & B-Trees</h5>
+              <p class="small text-muted mb-3">Room Code: <strong>UNI-3310</strong> • 32 Students Joined • 3h 05m Duration</p>
+              <div class="d-flex gap-2 mt-auto">
+                <button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="alert('Creating new session with same configuration...');">
+                  Re-host Session
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Tab 2: Saved Collaborative Notes (ER Diagram Note Entity) -->
+      <div class="tab-pane fade" id="tabSavedNotes" role="tabpanel">
+        <div class="row g-3">
+          
+          <div class="col-md-6 col-lg-4">
+            <div class="card border rounded-4 shadow-sm p-3 h-100" style="background: var(--bg-card);">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <i class="bi bi-file-earmark-text-fill text-danger fs-3"></i>
+                <span class="small text-muted">Saved Today</span>
+              </div>
+              <h6 class="fw-bold text-main">CS204 Dynamic Programming Review Notes</h6>
+              <p class="small text-muted mb-3">
+                Covered optimal substructure, tabulation vs memoization, 0/1 knapsack, and longest common subsequence.
+              </p>
+              <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                <span class="small text-muted">450 words</span>
+                <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="alert('Downloading Markdown notes...');">
+                  <i class="bi bi-download me-1"></i> Download .MD
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-lg-4">
+            <div class="card border rounded-4 shadow-sm p-3 h-100" style="background: var(--bg-card);">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <i class="bi bi-file-earmark-text-fill text-primary fs-3"></i>
+                <span class="small text-muted">Oct 28, 2026</span>
+              </div>
+              <h6 class="fw-bold text-main">Socket.io & WebRTC Architecture Cheatsheet</h6>
+              <p class="small text-muted mb-3">
+                Summary of sub-second video synchronization, STUN/TURN servers, and client event payloads.
+              </p>
+              <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                <span class="small text-muted">680 words</span>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="alert('Downloading Markdown notes...');">
+                  <i class="bi bi-download me-1"></i> Download .MD
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-lg-4">
+            <div class="card border rounded-4 shadow-sm p-3 h-100" style="background: var(--bg-card);">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <i class="bi bi-file-earmark-text-fill text-warning fs-3"></i>
+                <span class="small text-muted">Oct 15, 2026</span>
+              </div>
+              <h6 class="fw-bold text-main">Computer Networks - OSI Model & TCP/IP</h6>
+              <p class="small text-muted mb-3">
+                Exam cram sheet covering 3-way handshakes, subnetting formulas, routing algorithms, and flow control.
+              </p>
+              <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                <span class="small text-muted">820 words</span>
+                <button class="btn btn-sm btn-outline-warning rounded-pill px-3 text-dark" onclick="alert('Downloading Markdown notes...');">
+                  <i class="bi bi-download me-1"></i> Download .MD
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Tab 3: Account & Preferences -->
+      <div class="tab-pane fade" id="tabAccountSettings" role="tabpanel">
+        <div class="card border rounded-4 shadow-sm p-4 max-w-700" style="background: var(--bg-card); max-width: 720px;">
+          <h5 class="fw-bold mb-3 text-main">Student Profile Settings</h5>
+          
+          <form id="profileUpdateForm">
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label-custom">Display Name</label>
+                <input type="text" class="input-custom ps-3" id="prefDisplayName" value="Yasaru Bandara">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label-custom">Student ID / Registration No.</label>
+                <input type="text" class="input-custom ps-3" id="prefStudentId" value="IT22094482" readonly>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label-custom">University / Campus</label>
+              <input type="text" class="input-custom ps-3" value="Sri Lanka Institute of Information Technology (SLIIT)" readonly>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label-custom">Default Stream Quality</label>
+              <select class="form-select border">
+                <option value="1080" selected>1080p Full HD (Recommended)</option>
+                <option value="720">720p HD (Low Bandwidth Mode)</option>
+                <option value="480">480p SD</option>
+              </select>
+            </div>
+
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="prefEmailNotifs" checked>
+              <label class="form-check-label fw-bold text-main" for="prefEmailNotifs">
+                Receive email reminders when classmates host study watch parties
+              </label>
+            </div>
+
+            <div class="pt-3 border-top d-flex justify-content-end gap-2">
+              <button type="submit" class="btn btn-danger px-4 fw-bold rounded-pill">
+                Save Preferences
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div class="app-toast-container" id="appToastContainer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/app.js"></script>
+</body>
+</html>

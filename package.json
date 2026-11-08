@@ -1,0 +1,20 @@
+{
+  "name": "unitogether",
+  "version": "1.0.0",
+  "description": "UniTogether - Collaborative University Watch Party & Study Cinema Platform",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "node backend/server.js",
+    "start": "node backend/server.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "socket.io": "^4.8.4"
+  }
+}
+

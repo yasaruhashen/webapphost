@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In / Register — UniTogether</title>
+  <link rel="icon" type="image/png" href="../assets/images/Web site mainLogo.png">
+
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Font Awesome 6 -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="../css/style.css">
+
+  <style>
+    /* Faithful Red Navbar matching index.html */
+    .uni-navbar {
+      height: 54px;
+      min-height: 54px;
+      background-color: #dc2626;
+      border-bottom: 1px solid #b91c1c;
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      padding: 0 28px;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      box-sizing: border-box !important;
+      width: 100%;
+    }
+
+    .brand-title {
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-decoration: none;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    .brand-title .uni-part { color: #ffffff; }
+    .brand-title .together-part { color: #facc15; }
+
+    .nav-center-links {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 24px !important;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-center-links a {
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none !important;
+      color: #ffffff !important;
+      transition: opacity 0.15s, color 0.15s;
+    }
+
+    .nav-center-links a.active {
+      color: #facc15 !important;
+    }
+
+    .nav-center-links a:hover {
+      opacity: 0.9;
+      color: #facc15 !important;
+    }
+
+    .btn-sign-in {
+      background-color: #facc15;
+      color: #450a0a;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 6px 18px;
+      border-radius: 9999px;
+      border: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.15s, transform 0.1s;
+      display: inline-block;
+    }
+
+    .btn-sign-in:hover {
+      background-color: #eab308;
+      color: #450a0a;
+    }
+
+    .btn-user-badge {
+      background-color: #facc15;
+      color: #450a0a;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.15s;
+    }
+
+    .btn-user-badge:hover {
+      background-color: #eab308;
+    }
+
+    /* Strict Zero Scroll Lock */
+    html, body.auth-page-body {
+      height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .auth-page-wrapper {
+      height: calc(100vh - 54px) !important;
+      max-height: calc(100vh - 54px) !important;
+      min-height: 0 !important;
+      padding: 0.5rem 1.5rem !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+    }
+
+    .auth-container-card {
+      max-height: calc(100vh - 74px) !important;
+      margin: auto !important;
+      overflow: hidden !important;
+    }
+
+    .auth-form-area {
+      padding: 1.25rem 2rem !important;
+    }
+
+    .auth-hero-banner {
+      padding: 1.5rem 1.75rem !important;
+    }
+  </style>
+</head>
+<body class="auth-page-body">
+
+  <!-- ========================================================
+       TOP GLOBAL HEADER
+       ======================================================== -->
+  <header class="uni-navbar px-3 px-md-4 d-flex align-items-center justify-content-between">
+    <a href="../index.html" class="brand-title d-flex align-items-center">
+      <span class="uni-part">Uni</span><span class="together-part">Together</span>
+    </a>
+
+    <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
+      <a href="../index.html">Home</a>
+      <a href="rooms.html">Manage Rooms</a>
+      <a href="../index.html#features">Features</a>
+      <a href="../index.html#how-it-works">How It Works</a>
+    </nav>
+
+    <!-- Right Header Action: Dynamic Auth Container -->
+    <div class="nav-auth-container" id="navAuthContainer">
+      <a href="login.html" class="btn-sign-in">SIGN IN</a>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       MAIN AUTHENTICATION SHOWCASE (NO FOOTER, ZERO-SCROLL FIT)
+       ======================================================== -->
+  <main class="auth-page-wrapper">
+    
+    <div class="auth-container-card">
+      
+      <!-- Left Hero Showcase Column -->
+      <div class="auth-hero-banner">
+        <div class="hero-logo-box">
+          <img src="../assets/images/Web site mainLogo.png" alt="UniTogether Icon">
+        </div>
+
+        <div class="hero-hub-badge">
+          WATCH PARTY HUB
+        </div>
+
+        <div class="hero-hub-title">
+          UniTogether
+        </div>
+
+        <h2 class="hero-main-headline">
+          Watch Anything, Together in Real-Time.
+        </h2>
+
+        <p class="hero-sub-text">
+          Synchronized HD streaming, live video reactions, and crystal-clear voice chat with your favorite university friends.
+        </p>
+      </div>
+
+      <!-- Right Interactive Form Column -->
+      <div class="auth-form-area">
+        <div>
+          <!-- Dynamic Header -->
+          <h2 class="auth-header-title" id="authTitle">
+            Welcome back to <span class="brand-accent">UniTogether</span>
+          </h2>
+          <p class="auth-header-subtitle" id="authSubtitle">
+            Log in to continue your watch party or create a new synchronized room.
+          </p>
+
+          <!-- Tab Pills: [Log in] [Sign up] -->
+          <div class="auth-nav-tabs" role="tablist">
+            <button class="auth-tab-btn active" id="tabLoginBtn" type="button" role="tab" aria-selected="true">
+              Log in
+            </button>
+            <button class="auth-tab-btn" id="tabSignupBtn" type="button" role="tab" aria-selected="false">
+              Sign up
+            </button>
+          </div>
+
+          <!-- SSO Providers Row -->
+          <div class="sso-buttons-row">
+            <!-- Google -->
+            <button type="button" class="btn-sso" id="btnGoogleSso" data-bs-toggle="modal" data-bs-target="#googleAuthModal">
+              <svg viewBox="0 0 24 24" class="sso-icon" width="16" height="16">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Google</span>
+            </button>
+
+            <!-- Facebook -->
+            <button type="button" class="btn-sso" id="btnFacebookSso" data-bs-toggle="modal" data-bs-target="#facebookAuthModal">
+              <i class="bi bi-facebook" style="color: #1877F2; font-size: 1.05rem;"></i>
+              <span>Facebook</span>
+            </button>
+          </div>
+
+          <!-- Divider -->
+          <div class="auth-divider">
+            <span class="auth-divider-txt">Or continue with student email</span>
+          </div>
+
+          <!-- 1. Log In Form -->
+          <form id="loginForm" class="auth-form" novalidate>
+            <div class="form-group-custom">
+              <label for="loginEmail" class="form-label-custom">University Email</label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon-prefix">
+                  <i class="bi bi-envelope"></i>
+                </span>
+                <input 
+                  type="email" 
+                  class="input-custom" 
+                  id="loginEmail" 
+                  placeholder="student@university.ac.lk"
+                  value="yasaru@university.ac.lk" 
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-group-custom">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label for="loginPassword" class="form-label-custom mb-0">Password</label>
+                <a href="#forgot" class="forgot-link" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">Forgot?</a>
+              </div>
+              <div class="input-icon-wrapper">
+                <span class="input-icon-prefix">
+                  <i class="bi bi-lock"></i>
+                </span>
+                <input 
+                  type="password" 
+                  class="input-custom" 
+                  id="loginPassword" 
+                  placeholder="••••••••••••"
+                  value="student123" 
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="form-check custom-checkbox">
+                <input class="form-check-input" type="checkbox" id="rememberMe" checked>
+                <label class="form-check-label text-muted small" for="rememberMe">
+                  Stay signed in
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-auth-submit" id="loginSubmitBtn">
+              Log In to UniTogether <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+
+            <!-- Quick Demo Helper Pill -->
+            <div class="demo-account-hint mt-3">
+              <span class="badge bg-light text-muted border py-1 px-2">
+                <i class="bi bi-info-circle me-1"></i> Demo: yasaru@university.ac.lk / student123
+              </span>
+            </div>
+          </form>
+
+          <!-- 2. Sign Up Form -->
+          <form id="signupForm" class="auth-form" style="display: none;" novalidate>
+            <div class="form-group-custom">
+              <label for="signupFullName" class="form-label-custom">Full Name</label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon-prefix">
+                  <i class="bi bi-person"></i>
+                </span>
+                <input 
+                  type="text" 
+                  class="input-custom" 
+                  id="signupFullName" 
+                  placeholder="e.g. Yasaru Bandara"
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-group-custom">
+              <label for="signupEmail" class="form-label-custom">Academic Email (.edu / .ac.lk)</label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon-prefix">
+                  <i class="bi bi-envelope-at"></i>
+                </span>
+                <input 
+                  type="email" 
+                  class="input-custom" 
+                  id="signupEmail" 
+                  placeholder="student@faculty.edu"
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-group-custom">
+              <label for="signupFaculty" class="form-label-custom">University Faculty / Department</label>
+              <select class="form-select border rounded-3 text-muted" id="signupFaculty" style="font-size: 0.9rem; padding: 0.65rem 0.85rem;">
+                <option value="Computing & IT" selected>Faculty of Computing & Technology</option>
+                <option value="Engineering">Faculty of Engineering</option>
+                <option value="Applied Sciences">Faculty of Applied Sciences</option>
+                <option value="Management & Business">Faculty of Management Studies</option>
+                <option value="Medicine">Faculty of Medical Sciences</option>
+                <option value="Humanities & Arts">Faculty of Humanities & Social Sciences</option>
+              </select>
+            </div>
+
+            <div class="form-group-custom">
+              <label for="signupPassword" class="form-label-custom">Create Password</label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon-prefix">
+                  <i class="bi bi-shield-lock"></i>
+                </span>
+                <input 
+                  type="password" 
+                  class="input-custom" 
+                  id="signupPassword" 
+                  placeholder="At least 8 characters"
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-check custom-checkbox mb-3">
+              <input class="form-check-input" type="checkbox" id="termsCheck" required checked>
+              <label class="form-check-label text-muted small" for="termsCheck">
+                I am a current student/staff member and agree to the 
+                <a href="#terms" class="text-danger text-decoration-none">Community Guidelines</a>.
+              </label>
+            </div>
+
+            <button type="submit" class="btn-auth-submit" id="signupSubmitBtn">
+              Create Student Account <i class="bi bi-stars ms-1"></i>
+            </button>
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Modal: Instant Student Guest Mode -->
+  <div class="modal fade" id="guestAccessModal" tabindex="-1" aria-labelledby="guestAccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title modal-title-custom" id="guestAccessModalLabel">
+            <i class="bi bi-lightning-charge-fill text-warning me-2"></i> Instant Student Guest Mode
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-muted small mb-3">
+            Join or start a temporary session without creating a password. Your session will remain valid for 24 hours.
+          </p>
+
+          <form id="guestAccessForm">
+            <div class="form-group-custom">
+              <label for="guestNickname" class="form-label-custom">Your Display Nickname</label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon-prefix"><i class="bi bi-person-badge"></i></span>
+                <input type="text" class="input-custom" id="guestNickname" placeholder="e.g. Guest_Alex" required value="Guest_Student">
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-3">
+              <button type="button" class="btn btn-sm btn-outline-danger w-50 fw-bold active" id="guestModeCreateBtn">
+                <i class="bi bi-plus-circle me-1"></i> Host a Room
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary w-50 fw-bold" id="guestModeJoinBtn">
+                <i class="bi bi-door-open me-1"></i> Join by Code
+              </button>
+            </div>
+
+            <div class="form-group-custom" id="guestJoinCodeGroup" style="display: none;">
+              <label for="guestJoinCode" class="form-label-custom">Room Code / URL</label>
+              <input type="text" class="input-custom ps-3" id="guestJoinCode" placeholder="UNI-8842">
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100 fw-bold py-2 mt-2">
+              Launch Guest Workspace <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Google Sign-In -->
+  <div class="modal fade" id="googleAuthModal" tabindex="-1" aria-labelledby="googleAuthModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+      <div class="modal-content border-0 shadow-lg rounded-4 p-3">
+        <div class="modal-header border-0 pb-1">
+          <div class="d-flex align-items-center gap-2">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <h6 class="modal-title fw-bold mb-0">Sign in with Google</h6>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body pt-2 pb-1">
+          <p class="text-muted small mb-3">Choose an account to continue to <strong>UniTogether</strong></p>
+
+          <!-- Account 1: Yasaru University -->
+          <div class="google-acc-card d-flex align-items-center gap-3 p-2 mb-2 rounded-3 border" style="cursor: pointer; transition: all 0.15s;" onclick="executeOAuthLogin('google', 'Yasaru Bandara', 'yasaru@university.ac.lk', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80')">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">
+            <div class="flex-grow-1 text-truncate">
+              <div class="fw-bold text-dark text-truncate" style="font-size: 13px;">Yasaru Bandara</div>
+              <div class="text-muted text-truncate" style="font-size: 11px;">yasaru@university.ac.lk</div>
+            </div>
+            <span class="badge bg-danger-subtle text-danger" style="font-size: 10px;">Student</span>
+          </div>
+
+          <!-- Account 2: Yasaru Personal -->
+          <div class="google-acc-card d-flex align-items-center gap-3 p-2 mb-2 rounded-3 border" style="cursor: pointer; transition: all 0.15s;" onclick="executeOAuthLogin('google', 'Yasaru Bandara', 'yasaru.student@gmail.com', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80')">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">
+            <div class="flex-grow-1 text-truncate">
+              <div class="fw-bold text-dark text-truncate" style="font-size: 13px;">Yasaru Bandara</div>
+              <div class="text-muted text-truncate" style="font-size: 11px;">yasaru.student@gmail.com</div>
+            </div>
+            <span class="badge bg-light text-muted" style="font-size: 10px;">Personal</span>
+          </div>
+
+          <!-- Custom Google Account Form -->
+          <details class="mt-2 text-muted small">
+            <summary class="fw-bold text-primary mb-2" style="cursor: pointer;">Use another Google account</summary>
+            <div class="p-2 border rounded-3 bg-light">
+              <input type="text" id="customGoogleName" class="form-control form-control-sm mb-2" placeholder="Full Name">
+              <input type="email" id="customGoogleEmail" class="form-control form-control-sm mb-2" placeholder="Google / Gmail Email">
+              <button type="button" class="btn btn-sm btn-dark w-100 fw-bold" onclick="executeCustomOAuthLogin('google')">
+                Continue with this Google Account
+              </button>
+            </div>
+          </details>
+
+          <p class="text-muted mt-3 mb-0" style="font-size: 10px; line-height: 1.4;">
+            To continue, Google will share your name, email address, and profile picture with UniTogether.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Facebook Login -->
+  <div class="modal fade" id="facebookAuthModal" tabindex="-1" aria-labelledby="facebookAuthModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="px-3 py-2 text-white d-flex align-items-center justify-content-between" style="background-color: #1877F2;">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-facebook fs-5"></i>
+            <span class="fw-bold small">Log in with Facebook</span>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4 text-center">
+          <div class="mb-3">
+            <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=100&q=80" style="width: 58px; height: 58px; border-radius: 50%; border: 3px solid #1877F2;" class="shadow-sm">
+            <h6 class="fw-bold mt-2 mb-0 text-dark">Yasaru Bandara</h6>
+            <small class="text-muted">yasaru.fb@facebook.com</small>
+          </div>
+
+          <p class="text-muted small mb-3">
+            UniTogether will receive your name, profile picture, and email address.
+          </p>
+
+          <button type="button" class="btn text-white w-100 fw-bold py-2 mb-2" style="background-color: #1877F2; border-radius: 8px;" onclick="executeOAuthLogin('facebook', 'Yasaru Bandara', 'yasaru.fb@facebook.com', 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&q=80')">
+            <i class="bi bi-facebook me-1"></i> Continue as Yasaru
+          </button>
+
+          <!-- Custom Facebook Account Form -->
+          <details class="text-muted small mt-2">
+            <summary class="text-muted" style="cursor: pointer; font-size: 11.5px;">Log in as different Facebook user</summary>
+            <div class="p-2 border rounded-3 bg-light mt-2 text-start">
+              <input type="text" id="customFbName" class="form-control form-control-sm mb-2" placeholder="Facebook Name">
+              <input type="email" id="customFbEmail" class="form-control form-control-sm mb-2" placeholder="Facebook Email or Mobile">
+              <button type="button" class="btn btn-sm btn-primary w-100 fw-bold" onclick="executeCustomOAuthLogin('facebook')">
+                Continue with Facebook
+              </button>
+            </div>
+          </details>
+
+          <button type="button" class="btn btn-link text-muted small text-decoration-none mt-2" data-bs-dismiss="modal">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="app-toast-container" id="appToastContainer"></div>
+
+  <!-- Bootstrap 5.3 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- API Client -->
+  <script src="../js/api.js"></script>
+  <!-- Application Logic -->
+  <script src="../js/app.js"></script>
+</body>
+</html>
