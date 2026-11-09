@@ -1,2989 +1,1123 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UniTogether - Watch Party Room</title>
+  <title>Live Synchronized Watch Room - UniTogether</title>
   <link rel="icon" type="image/png" href="../assets/images/Web site mainLogo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Bootstrap 5.3 CSS -->
+  <!-- Bootstrap 5.3.3 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
+  <!-- Bootstrap Icons 1.11.3 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  
-  <!-- YouTube IFrame Player API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
-  <!-- Socket.io Client -->
-  <script src="/socket.io/socket.io.js"></script>
-  <!-- API Client -->
-  <script src="../js/api.js?v=2.5"></script>
-  <!-- Application Logic & Global Utilities -->
-  <script src="../js/app.js?v=2.5"></script>
-  
-  <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      height: 100vh;
-      width: 100vw;
-      overflow: hidden; /* Zero page scroll */
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #f8fafc;
-      color: #111827;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ========================================================
-       TOP GLOBAL HEADER BAR (RED)
-       ======================================================== */
-    .uni-navbar {
-      height: 48px;
-      min-height: 48px;
-      background-color: #dc2626;
-      border-bottom: 1px solid #b91c1c;
-      z-index: 1030;
-      display: flex !important;
-      flex-direction: row !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      padding: 0 20px !important;
-      box-sizing: border-box !important;
-      width: 100%;
-    }
-
-    .brand-title {
-      font-size: 21px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      line-height: 1;
-      text-decoration: none;
-      display: flex !important;
-      align-items: center !important;
-    }
-
-    .brand-title .uni-part { color: #ffffff; }
-    .brand-title .together-part { color: #facc15; }
-
-    .nav-center-links {
-      display: flex !important;
-      flex-direction: row !important;
-      align-items: center !important;
-      gap: 24px !important;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-
-    .nav-center-links a {
-      font-size: 13.5px;
-      font-weight: 600;
-      text-decoration: none;
-      color: #ffffff;
-      transition: opacity 0.15s;
-    }
-
-    .nav-center-links a.active {
-      color: #facc15;
-    }
-
-    .nav-center-links a:hover {
-      opacity: 0.85;
-    }
-
-    .nav-auth-container {
-      display: flex !important;
-      align-items: center !important;
-      position: relative;
-    }
-
-    .user-dropdown-wrapper {
-      position: relative;
-      display: inline-block;
-    }
-
-    .user-custom-dropdown {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      min-width: 220px;
-      background-color: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      overflow: hidden;
-      z-index: 99999;
-    }
-
-    .user-custom-dropdown .dropdown-item {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      padding: 8px 16px;
-      clear: both;
-      font-weight: 500;
-      font-size: 13px;
-      color: #1f2937;
-      text-decoration: none;
-      background-color: transparent;
-      border: 0;
-      cursor: pointer;
-      transition: background-color 0.15s, color 0.15s;
-    }
-
-    .user-custom-dropdown .dropdown-item:hover {
-      background-color: #f3f4f6;
-      color: #111827;
-    }
-
-    .user-custom-dropdown .dropdown-item:active {
-      background-color: #e5e7eb;
-    }
-
-    .btn-sign-in {
-      background-color: #facc15;
-      color: #450a0a !important;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      padding: 6px 18px;
-      border-radius: 9999px;
-      border: none;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.15s, transform 0.1s;
-    }
-
-    .btn-sign-in:hover {
-      background-color: #eab308;
-      color: #450a0a !important;
-      transform: translateY(-1px);
-    }
-
-    .btn-user-badge {
-      background-color: #facc15;
-      color: #450a0a !important;
-      font-size: 11.5px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      padding: 6px 16px;
-      border-radius: 9999px;
-      border: none;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      text-decoration: none;
-      transition: background-color 0.15s, transform 0.1s;
-    }
-
-    .btn-user-badge:hover, .btn-user-badge:focus {
-      background-color: #eab308;
-      color: #450a0a !important;
-      transform: translateY(-1px);
-    }
-
-    /* ========================================================
-       MAIN APP WORKSPACE (GRID 72% / 28%)
-       ======================================================== */
-    .app-workspace {
-      height: calc(100vh - 48px);
-      max-height: calc(100vh - 48px);
-      background-color: #ffffff;
-      overflow: hidden;
-      width: 100vw;
-    }
-
-    .app-workspace > .row {
-      display: flex !important;
-      flex-direction: row !important;
-      flex-wrap: nowrap !important;
-      height: 100% !important;
-      width: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-
-    /* Left Stage Column (72% on desktop) */
-    .stage-col {
-      flex: 0 0 72% !important;
-      width: 72% !important;
-      max-width: 72% !important;
-      height: 100% !important;
-      border-right: 1px solid #e5e7eb;
-      overflow-y: auto;
-      overflow-x: hidden;
-      background-color: #ffffff;
-      display: flex !important;
-      flex-direction: column !important;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 14px;
-      box-sizing: border-box !important;
-    }
-
-    .stage-col::-webkit-scrollbar,
-    .messages-stream-container::-webkit-scrollbar {
-      width: 5px;
-    }
-    .stage-col::-webkit-scrollbar-thumb,
-    .messages-stream-container::-webkit-scrollbar-thumb {
-      background-color: #e2e8f0;
-      border-radius: 4px;
-    }
-
-    /* --------------------------------------------------------
-       VIDEO PLAYER (FULL HORIZONTAL WIDESCREEN 16:9 RATIO)
-       Maximum width expansion without vertical squeeze
-       -------------------------------------------------------- */
-    .video-player-frame {
-      width: 100%;
-      border-radius: 14px;
-      background-color: #000000;
-      box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.1), 0 4px 16px rgba(0,0,0,0.18);
-      position: relative;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-
-    .video-ratio-box {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      max-height: calc(100vh - 190px);
-      position: relative;
-      background-color: #000000;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #html5Video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background-color: #000000;
-      z-index: 1;
-    }
-
-    /* Top Video Overlay - Hidden as requested to keep player completely clean */
-    .video-top-overlay {
-      display: none !important;
-    }
-
-    .badge-yt {
-      background-color: #dc2626;
-      color: #ffffff;
-      font-size: 9.5px;
-      font-weight: 800;
-      padding: 2.5px 7px;
-      border-radius: 3px;
-      letter-spacing: 0.04em;
-    }
-
-    .video-overlay-title {
-      color: #ffffff;
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* Center Play Indicator Button */
-    .center-play-button {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background-color: #dc2626;
-      border: 3px solid rgba(250, 204, 21, 0.45);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 15;
-      transition: transform 0.15s, background-color 0.15s;
-    }
-
-    .center-play-button:hover {
-      transform: translate(-50%, -50%) scale(1.08);
-      background-color: #b91c1c;
-    }
-
-    .center-play-button i {
-      color: #ffffff;
-      font-size: 25px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Fallback play triangle when icon font is offline / blocked */
-    .center-play-button i.bi-play-fill::before {
-      content: "";
-      display: inline-block;
-      width: 0;
-      height: 0;
-      border-top: 11px solid transparent;
-      border-bottom: 11px solid transparent;
-      border-left: 19px solid #ffffff;
-      margin-left: 4px;
-    }
-
-    /* Bottom Player Controls Bar */
-    .video-bottom-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 8px 14px 10px 14px;
-      background: linear-gradient(0deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.65) 75%, transparent 100%);
-      z-index: 20;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .timeline-scrubber {
-      width: 100%;
-      height: 5.5px;
-      background-color: rgba(255, 255, 255, 0.28);
-      border-radius: 9999px;
-      position: relative;
-      cursor: pointer;
-    }
-
-    .timeline-progress-yellow {
-      height: 100%;
-      width: 0%;
-      background-color: #dc2626;
-      border-radius: 9999px;
-      position: relative;
-    }
-
-    .timeline-playhead-knob {
-      width: 13px;
-      height: 13px;
-      background-color: #ffffff;
-      border-radius: 50%;
-      position: absolute;
-      right: -6.5px;
-      top: -3.8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-    }
-
-    .ctrl-icon-btn {
-      background: transparent;
-      border: none;
-      color: #ffffff;
-      font-size: 15px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2px 4px;
-      transition: opacity 0.15s;
-    }
-
-    .ctrl-icon-btn:hover { opacity: 0.75; }
-
-    .volume-slider-track {
-      width: 52px;
-      height: 3.5px;
-      background-color: rgba(255,255,255,0.4);
-      border-radius: 9999px;
-    }
-
-    .volume-slider-fill {
-      width: 70%;
-      height: 100%;
-      background-color: #ffffff;
-      border-radius: 9999px;
-    }
-
-    .timestamp-txt {
-      color: #d1d5db;
-      font-size: 11px;
-      font-family: 'Liberation Mono', monospace, sans-serif;
-      letter-spacing: 0.02em;
-    }
-
-    .resolution-pill {
-      border: 1px solid rgba(250, 204, 21, 0.45);
-      color: #fde047;
-      background: transparent;
-      font-size: 9.5px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 3px;
-      letter-spacing: 0.02em;
-    }
-
-    /* --------------------------------------------------------
-       CHOOSE MEDIA SOURCE CARD
-       -------------------------------------------------------- */
-    .card-bordered {
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 8px 12px;
-      background-color: #ffffff;
-      flex-shrink: 0;
-    }
-
-    .card-title-gray {
-      font-size: 11px;
-      font-weight: 700;
-      color: #4b5563;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .link-red-action {
-      font-size: 11px;
-      font-weight: 700;
-      color: #dc2626;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .link-red-action:hover { text-decoration: underline; }
-
-    .btn-source-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 14px;
-      border-radius: 6px;
-      font-size: 11.5px;
-      font-weight: 700;
-      cursor: pointer;
-      background-color: #ffffff;
-      border: 1px solid #e5e7eb;
-      color: #1f2937;
-      transition: all 0.15s;
-    }
-
-    .btn-source-pill.active {
-      border: 1.5px solid #ef4444;
-      background-color: #fef2f2;
-      color: #b91c1c;
-      padding: 4.5px 14px;
-    }
-
-    .btn-source-pill.active i { color: #ef4444; }
-
-    /* --------------------------------------------------------
-       PLAYLIST QUEUE CARD
-       -------------------------------------------------------- */
-    .playlist-card-title {
-      font-size: 12.5px;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    .playlist-icon-badge {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
-      background-color: #fef2f2;
-      color: #dc2626;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-    }
-
-    .btn-queue-yellow {
-      background-color: #fef3c7;
-      border: 1px solid #fde68a;
-      color: #92400e;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2.5px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .playlist-now-playing-box {
-      border: 1.5px solid #ef4444;
-      background-color: rgba(254, 242, 242, 0.45);
-      border-radius: 7px;
-      padding: 6px 9px;
-    }
-
-    .video-thumb-preview {
-      width: 54px;
-      height: 38px;
-      border-radius: 4px;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-
-    .badge-now-playing {
-      background-color: #fbbf24;
-      color: #7f1d1d;
-      font-size: 8.5px;
-      font-weight: 800;
-      padding: 1px 5px;
-      border-radius: 3px;
-      letter-spacing: 0.04em;
-    }
-
-    .queue-item-name {
-      font-size: 11.5px;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    .queue-item-meta {
-      font-size: 9.5px;
-      color: #6b7280;
-    }
-
-    /* --------------------------------------------------------
-       BOTTOM BAR (AV Controls + Paste Input)
-       -------------------------------------------------------- */
-    .stage-bottom-search-bar {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 2px 0;
-      flex-shrink: 0;
-    }
-
-    .btn-av-icon {
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      color: #dc2626;
-      font-size: 15px;
-      cursor: pointer;
-      width: 36px;
-      height: 36px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-      flex-shrink: 0;
-    }
-
-    .btn-av-icon:hover {
-      background: #fee2e2;
-      border-color: #fca5a5;
-      transform: scale(1.05);
-    }
-
-    .btn-av-icon.active-av {
-      background: #dc2626 !important;
-      border-color: #b91c1c !important;
-      color: #ffffff !important;
-      box-shadow: 0 0 10px rgba(220, 38, 38, 0.45);
-    }
-
-    .btn-av-icon.muted-av {
-      background: #f8fafc;
-      border-color: #e2e8f0;
-      color: #94a3b8;
-    }
-
-    .btn-av-icon.speaking {
-      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.7) !important;
-      border-color: #22c55e !important;
-    }
-
-    /* Floating Webcam PiP Tile */
-    .webcam-pip-card {
-      position: absolute;
-      bottom: 58px;
-      right: 16px;
-      width: 175px;
-      height: 110px;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 2px solid #ef4444;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
-      z-index: 999;
-      background: #09090b;
-      display: flex;
-      flex-direction: column;
-      user-select: none;
-      cursor: grab;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .webcam-pip-card video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1);
-      background: #000;
-    }
-
-    .webcam-pip-top-bar {
-      position: absolute;
-      top: 6px;
-      left: 6px;
-      right: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .webcam-live-badge {
-      font-size: 8px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #dc2626;
-      color: #ffffff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
-    }
-
-    .webcam-close-btn {
-      pointer-events: auto;
-      background: rgba(0, 0, 0, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #ffffff;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      font-size: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .webcam-close-btn:hover {
-      background: #dc2626;
-      border-color: #dc2626;
-    }
-
-    .webcam-pip-bottom-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
-      padding: 6px 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: #ffffff;
-      font-size: 11px;
-      font-weight: 600;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .paste-input-container {
-      flex: 1;
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    .paste-input-container i {
-      position: absolute;
-      left: 10px;
-      color: #dc2626;
-      font-size: 13.5px;
-    }
-
-    .input-paste-pill {
-      width: 100%;
-      border: 1px solid rgba(220, 38, 38, 0.25);
-      background-color: #ffffff;
-      border-radius: 6px;
-      padding: 5px 10px 5px 30px;
-      font-size: 11.5px;
-      color: #111827;
-      outline: none;
-    }
-
-    .input-paste-pill:focus { border-color: #dc2626; }
-
-    /* --------------------------------------------------------
-       RIGHT SIDEBAR (CHAT & COMMUNICATION - 28% ON DESKTOP)
-       -------------------------------------------------------- */
-    .sidebar-col {
-      flex: 0 0 28% !important;
-      width: 28% !important;
-      max-width: 28% !important;
-      height: 100% !important;
-      display: flex !important;
-      flex-direction: column !important;
-      background-color: #ffffff;
-      overflow: hidden;
-      border-left: 1px solid #e5e7eb;
-      box-sizing: border-box !important;
-    }
-
-    .sidebar-top-tabs {
-      padding: 8px 12px;
-      border-bottom: 1px solid #e5e7eb;
-      background-color: rgba(255, 251, 235, 0.25);
-      flex-shrink: 0;
-    }
-
-    .segmented-tab-control {
-      background-color: #f3f4f6;
-      border: 1px solid rgba(229, 231, 235, 0.8);
-      border-radius: 7px;
-      padding: 3px;
-      display: flex;
-      gap: 3px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 4px 2px;
-      border-radius: 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      color: #4b5563;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-
-    .tab-btn.active {
-      background-color: #ffffff;
-      color: #b91c1c;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    .badge-tab-count {
-      background-color: #dc2626;
-      color: #ffffff;
-      font-size: 9px;
-      font-weight: 800;
-      padding: 0 4.5px;
-      border-radius: 9999px;
-      line-height: 15px;
-      height: 15px;
-    }
-
-    .sidebar-invite-row {
-      padding: 6px 12px;
-      display: flex;
-      justify-content: flex-end;
-      flex-shrink: 0;
-    }
-
-    .btn-invite-amber {
-      background-color: #fbbf24;
-      color: #030712;
-      border: none;
-      border-radius: 6px;
-      padding: 4px 12px;
-      font-size: 11px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-    }
-
-    .btn-invite-amber:hover { background-color: #f59e0b; }
-
-    .messages-stream-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .queue-stream-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      background-color: #fafbfc;
-    }
-
-    .queue-item-card {
-      transition: all 0.15s ease;
-    }
-
-    .queue-item-card:hover {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
-      transform: translateY(-1px);
-    }
-
-    .chat-user-avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      object-fit: cover;
-      flex-shrink: 0;
-      box-shadow: 0 0 0 1px #fbbf24;
-    }
-
-    .chat-sender-name {
-      font-size: 11.5px;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    .chat-sender-time {
-      font-size: 9.5px;
-      color: #9ca3af;
-    }
-
-    .chat-bubble-gray {
-      background-color: #f9fafb;
-      border: 1px solid rgba(229, 231, 235, 0.8);
-      border-radius: 12px;
-      padding: 7px 10px;
-      font-size: 11.5px;
-      color: #1f2937;
-      line-height: 1.4;
-    }
-
-    .chat-bubble-yellow-tint {
-      background-color: rgba(255, 251, 235, 0.4);
-      border: 1px solid rgba(253, 230, 138, 0.7);
-      border-radius: 12px;
-      padding: 7px 10px;
-      font-size: 11.5px;
-      color: #111827;
-      line-height: 1.4;
-    }
-
-    .people-stream-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px 12px;
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .sidebar-footer-container {
-      border-top: 1px solid #e5e7eb;
-      padding: 8px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      background-color: #ffffff;
-      flex-shrink: 0;
-    }
-
-    .emoji-badge-btn {
-      background-color: #fffbeb;
-      border: 1px solid #fde68a;
-      border-radius: 9999px;
-      padding: 1px 7px;
-      font-size: 11.5px;
-      cursor: pointer;
-      line-height: 15px;
-    }
-
-    .emoji-badge-btn:hover { transform: scale(1.15); }
-
-    .chat-send-input-row {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      background-color: #f9fafb;
-      padding: 3px 5px;
-    }
-
-    .btn-smile-icon {
-      background: transparent;
-      border: none;
-      color: #6b7280;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      padding: 3px;
-    }
-
-    .chat-text-entry {
-      flex: 1;
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 11.5px;
-      color: #111827;
-    }
-
-    .btn-send-red {
-      background-color: #dc2626;
-      border: none;
-      border-radius: 5px;
-      width: 25px;
-      height: 25px;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 11.5px;
-    }
-
-    .btn-send-red:hover { background-color: #b91c1c; }
-  </style>
+  <!-- Font Awesome 6.5.1 -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <!-- Plyr 3.7.8 CSS -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
+  <!-- UniTogether Design System Stylesheet -->
+  <link rel="stylesheet" href="../css/style.css?v=3.0">
 </head>
-<body>
+<body class="d-flex flex-column vh-100 overflow-hidden bg-body">
 
-  <!-- ========================================================
-       TOP NAVIGATION BAR
-       ======================================================== -->
-  <header class="uni-navbar px-3 px-md-4 d-flex align-items-center justify-content-between">
+  <!-- Top Global Navbar -->
+  <header class="uni-navbar d-flex align-items-center justify-content-between px-3 px-md-4 flex-shrink-0">
     <div class="d-flex align-items-center gap-2">
-      <a href="../index.html" class="brand-title d-flex align-items-center">
-        <span class="uni-part">Uni</span><span class="together-part">Together</span>
+      <a href="../index.html" class="brand-wrapper" title="UniTogether Home">
+        <div class="brand-logo-badge">
+          <img src="../assets/images/Web site mainLogo.png" alt="UniTogether Logo">
+        </div>
+        <div class="brand-title">
+          <span class="uni-txt">Uni</span><span class="together-txt">Together</span>
+        </div>
       </a>
-      <span class="badge bg-warning text-dark fw-bold px-2 py-1 ms-2 d-none d-sm-inline-flex align-items-center gap-1" id="headerRoomBadge" style="font-size: 11px; border-radius: 6px;">
-        <i class="bi bi-door-open-fill"></i><span id="headerRoomCode">UNI-8842</span>
+      <span class="badge bg-black bg-opacity-25 text-warning fw-bold px-2 py-1 rounded-pill ms-1 ms-sm-2 d-none d-sm-inline-block" id="headerRoomBadge" style="font-size:0.75rem;">
+        <i class="bi bi-broadcast me-1 text-danger"></i><span class="d-none d-md-inline"> ROOM: </span><span id="headerRoomCode">UNI-8842</span>
       </span>
     </div>
 
-    <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
-      <a href="../index.html">Home</a>
-      <a href="rooms.html">Manage Rooms</a>
-      <a href="profile.html">Profile</a>
-      <a href="contact.html">Contact Us</a>
-      <a href="../index.html#features">Features</a>
+    <!-- Center Nav Links -->
+    <nav class="d-none d-md-flex align-items-center gap-1">
+      <a href="../index.html" class="nav-link-custom">Home</a>
+      <a href="rooms.html" class="nav-link-custom">Manage Rooms</a>
+      <a href="room.html" class="nav-link-custom active">Watch Room</a>
+      <a href="profile.html" class="nav-link-custom">Profile</a>
+      <a href="contact.html" class="nav-link-custom">Contact Us</a>
     </nav>
 
-    <!-- Dynamic Auth Container -->
-    <div class="nav-auth-container" id="navAuthContainer">
-      <button class="btn-user-badge">YASARU</button>
+    <!-- Right Controls -->
+    <div class="d-flex align-items-center gap-1 gap-sm-2">
+      <button class="btn-theme-toggle" id="themeToggleBtn" title="Toggle Light/Dark Mode" aria-label="Toggle Theme">
+        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+      </button>
+      <button class="btn btn-sm btn-outline-light rounded-pill px-2 px-sm-3 py-1 fw-bold shadow-sm" id="navSettingsBtn" data-bs-toggle="modal" data-bs-target="#roomSettingsModal" title="Room Governance & Settings">
+        <i class="bi bi-gear-fill"></i><span class="d-none d-sm-inline ms-1">Settings</span>
+      </button>
+      <button class="btn btn-sm btn-warning text-dark fw-bold rounded-pill px-2 px-sm-3 shadow-sm btn-user text-truncate" id="userBadgeBtn" data-bs-toggle="modal" data-bs-target="#changeNicknameModal" title="Click to change display name" style="max-width: 130px;">
+        STUDENT <i class="bi bi-pencil-fill ms-1" style="font-size:0.65rem;"></i>
+      </button>
     </div>
   </header>
 
-  <!-- ========================================================
-       MAIN APP WORKSPACE (GRID 72% / 28%)
-       ======================================================== -->
-  <div class="container-fluid p-0 app-workspace">
-    <div class="row g-0 h-100">
+  <!-- Room Main Workspace Area -->
+  <main class="room-body d-flex flex-grow-1 overflow-hidden">
 
-      <!-- ----------------------------------------------------
-           LEFT STAGE (VIDEO & MEDIA / 72% Widescreen Cinema)
-           ---------------------------------------------------- -->
-      <main class="col-12 col-lg-9 stage-col">
+    <!-- Left Stage Column -->
+    <div class="stage-col d-flex flex-column flex-grow-1 overflow-hidden bg-body">
 
-        <!-- 1. Video Player Container (Widescreen Cinema 16:9) -->
-        <div class="video-player-frame" id="videoCanvas">
-          <div class="video-ratio-box">
-            <!-- Native HTML5 Video & Screenshare Element -->
-            <video id="html5Video" preload="metadata" playsinline style="display: none;">
-            </video>
+      <!-- Synchronized Video Container (Constrained 52vh Max Clamp on Desktop) -->
+      <div class="video-container position-relative w-100 bg-black flex-shrink-0" id="videoContainer" style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.35);">
 
-            <!-- YouTube Player Container -->
-            <div id="youtubePlayerWrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; display: none; background: #000;">
-              <iframe id="mainYoutubePlayer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; display: block;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <!-- Video Player Target -->
+        <video id="mainVideo" preload="metadata" playsinline class="w-100 h-100"></video>
+
+        <!-- Live Screenshare WebRTC Stream Target -->
+        <video id="screenshareVideo" autoplay playsinline muted style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; z-index:15; background:#0b0f19;"></video>
+
+        <!-- Live Screenshare Broadcast Bar (Only during active screensharing) -->
+        <div class="screenshare-live-bar d-none" id="screenshareLiveBar">
+          <div class="d-flex align-items-center justify-content-between w-100 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2 overflow-hidden">
+              <span class="live-pill flex-shrink-0"><i class="bi bi-broadcast me-1"></i>LIVE BROADCAST</span>
+              <span class="screenshare-host-name text-truncate text-white fw-bold small" id="screenshareHostName">Host's Screen</span>
             </div>
-
-            <!-- Hidden File Input for Video Uploads -->
-            <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" style="display: none;">
-
-            <!-- Top Overlay: Hidden as requested so player text doesn't cover video -->
-            <div class="video-top-overlay" style="display: none !important;">
-              <span class="badge-yt" id="currentSourceBadge">YOUTUBE</span>
-              <span class="video-overlay-title" id="currentVideoTitle"></span>
-              <span class="badge bg-warning text-dark ms-auto fw-bold px-2 py-1" id="overlayRoomCode" style="font-size: 10.5px; border-radius: 5px; pointer-events: auto; cursor: pointer;"></span>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+              <button class="btn btn-sm btn-outline-light rounded-pill px-3 py-1 d-none" id="btnScrPlayPause" title="Play/Pause your local file">
+                <i class="bi bi-pause-fill" id="btnScrPlayPauseIcon"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1" id="btnScrAudio" title="Toggle Audio (Screenshare starts muted for browser compliance)">
+                <i class="bi bi-volume-mute-fill" id="btnScrAudioIcon"></i> <span id="btnScrAudioText" class="d-none d-sm-inline small">Unmute</span>
+              </button>
+              <button class="btn btn-sm btn-outline-light rounded-pill px-3 py-1" id="btnScrFullscreen" title="Toggle Fullscreen">
+                <i class="bi bi-arrows-fullscreen"></i>
+              </button>
+              <button class="btn btn-sm btn-danger rounded-pill px-3 py-1 d-none fw-bold shadow-sm" id="btnStopLocalShare">
+                <i class="bi bi-stop-circle-fill me-1"></i> Stop Sharing
+              </button>
             </div>
+          </div>
+          <!-- Host-only seek control for local-file WebRTC broadcast source (mainVid) -->
+          <div class="d-none align-items-center gap-2 w-100 mt-2" id="scrSeekRow">
+            <span class="text-white small flex-shrink-0" id="scrSeekCurrentTime" style="font-size:0.7rem; min-width:38px;">0:00</span>
+            <input type="range" class="form-range flex-grow-1" id="scrSeekBar" min="0" max="100" step="0.1" value="0" title="Seek your local file (viewers will see the new position)">
+            <span class="text-white-50 small flex-shrink-0" id="scrSeekDuration" style="font-size:0.7rem; min-width:38px;">0:00</span>
+          </div>
+        </div>
 
-            <!-- Central Clickable Play Indicator -->
-            <button class="center-play-button" id="centerPlayBtn" title="Play / Pause">
-              <i class="bi bi-play-fill" id="centerPlayIcon"></i>
+        <!-- Armed / Buffering Load Gate Overlay -->
+        <div class="ut-gate-overlay d-none" id="gateOverlay">
+          <div class="ut-spinner"></div>
+          <span class="ut-gate-label ms-2 small text-white-50" id="gateLabel">Synchronizing playback buffers…</span>
+        </div>
+
+        <!-- Top Video Info Bar (Overlay with Auto-Fade) -->
+        <div class="video-top-bar" id="videoTopBar">
+          <span class="yt-badge" id="ytBadge">YOUTUBE</span>
+          <span class="video-title" id="videoTitle">Connecting to room stream...</span>
+        </div>
+
+        <!-- Top Corner Floating Active Speaker Island -->
+        <div class="active-speaker-island" id="activeSpeakerIsland" title="Active Speaker Status">
+          <div class="speaker-wave-box" id="speakerWaveBox">
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+          </div>
+          <span class="active-speaker-name text-truncate" id="activeSpeakerName">Voice Channel Ready</span>
+        </div>
+
+        <!-- Fullscreen Floating Translucent Glass Chat Overlay (Twitch/YouTube Live Style) -->
+        <div class="fullscreen-chat-overlay d-none" id="fullscreenChatOverlay">
+          <div class="fs-chat-header d-flex align-items-center justify-content-between px-3 py-2">
+            <span class="small fw-bold text-white"><i class="bi bi-chat-quote-fill me-1 text-danger"></i>Live Stream Chat</span>
+            <button class="btn btn-sm text-white-50 p-0" onclick="toggleFullscreenChatOverlay()" title="Hide Overlay">
+              <i class="bi bi-x-lg"></i>
             </button>
+          </div>
+          <div class="fs-chat-messages" id="fsChatMessages">
+            <div class="fs-chat-item text-white-50 small fst-italic">Chat overlay active. Messages stream here in real time.</div>
+          </div>
+          <div class="fs-chat-input-bar p-2 d-flex align-items-center gap-2">
+            <input type="text" class="form-control form-control-sm fs-chat-input" id="fsChatInput" placeholder="Send chat in fullscreen..." onkeydown="if(event.key==='Enter') sendFullscreenMsg()">
+            <button class="btn btn-sm btn-danger rounded-circle p-0 fs-chat-send" style="width:28px; height:28px; flex-shrink:0;" onclick="sendFullscreenMsg()" title="Send Message">
+              <i class="bi bi-send-fill" style="font-size:0.75rem;"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-light rounded-circle p-0 fs-chat-mic" style="width:28px; height:28px; flex-shrink:0;" onclick="toggleMicrophone()" title="Toggle Microphone">
+              <i class="bi bi-mic-fill" id="fsChatMicIcon"></i>
+            </button>
+          </div>
+        </div>
 
-            <!-- Bottom Player Controls Bar (Only for HTML5 uploads/streams, hidden for YouTube) -->
-            <div class="video-bottom-bar" id="playerBottomBar" style="display: none;">
-              <div class="timeline-scrubber" id="timelineScrubber">
-                <div class="timeline-progress-yellow" id="timelineProgress">
-                  <div class="timeline-playhead-knob"></div>
-                </div>
-              </div>
+        <!-- Restore Mini-Player Floating Action Button -->
+        <button class="mini-restore-btn d-none" id="btnRestoreMiniPlayer" title="Restore video player to main stage">
+          <i class="bi bi-arrows-angle-expand me-1"></i> Expand Stage
+        </button>
 
-              <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2">
-                  <button class="ctrl-icon-btn" id="ctrlPlayPauseBtn" title="Play / Pause">
-                    <i class="bi bi-pause-fill" id="ctrlPlayPauseIcon"></i>
-                  </button>
-                  <button class="ctrl-icon-btn" id="ctrlRewindBtn" title="Rewind 10s">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                  </button>
-                  <div class="d-flex align-items-center gap-1 ms-1">
-                    <button class="ctrl-icon-btn" id="ctrlMuteBtn" title="Mute / Unmute">
-                      <i class="bi bi-volume-up-fill" id="ctrlVolumeIcon"></i>
-                    </button>
-                    <div class="volume-slider-track d-none d-sm-block" id="volumeTrack" style="cursor: pointer;">
-                      <div class="volume-slider-fill" id="volumeFill" style="width: 80%;"></div>
-                    </div>
-                  </div>
-                  <span class="timestamp-txt ms-1" id="timestampDisplay">00:00 / 00:00</span>
-                </div>
+        <!-- Emoji Floating Canvas Overlay -->
+        <div id="emojiCanvas"></div>
 
-                <div class="d-flex align-items-center gap-2">
-                  <span class="resolution-pill" id="playerResolutionBadge">1080p HD</span>
-                  <button class="ctrl-icon-btn d-none d-sm-block" id="ctrlPipBtn" title="Picture in Picture">
-                    <i class="bi bi-pip"></i>
-                  </button>
-                  <button class="ctrl-icon-btn" id="ctrlFullscreenBtn" title="Fullscreen">
-                    <i class="bi bi-fullscreen"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
+        <!-- Room Sync Toast Notification -->
+        <div class="sync-toast" id="syncToast"></div>
 
-            <!-- Floating User Webcam PiP Tile -->
-            <div id="webcamOverlayCard" class="webcam-pip-card" style="display: none;" title="Drag to move webcam preview">
-              <video id="userWebcamVideo" autoplay muted playsinline></video>
-              <div class="webcam-pip-top-bar">
-                <span class="webcam-live-badge">● LIVE</span>
-                <button type="button" id="btnCloseWebcam" class="webcam-close-btn" title="Turn off camera">✕</button>
-              </div>
-              <div class="webcam-pip-bottom-bar">
-                <span id="webcamTileName">Yasaru (You)</span>
-                <i class="bi bi-mic-fill text-success" id="webcamTileMicIcon"></i>
-              </div>
+        <!-- Centered Big Play / Pause Button -->
+        <button class="big-play-btn" id="bigPlayBtn" title="Play / Pause">
+          <i class="bi bi-play-fill" id="bigPlayIcon"></i>
+        </button>
+
+        <!-- Progress Timeline Area -->
+        <div class="progress-area" id="progressArea">
+          <div class="progress-track" id="progressTrack">
+            <div class="progress-fill" id="progressFill" style="width: 0%;">
+              <div class="progress-thumb"></div>
             </div>
           </div>
         </div>
 
-        <!-- 2. Choose Media Source Card -->
-        <section class="card-bordered">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <span class="card-title-gray">CHOOSE MEDIA SOURCE</span>
-            <button type="button" class="btn btn-link p-0 text-danger text-decoration-none fw-bold small" id="btnCustomStreamLink">+ Add Custom Stream (HLS/m3u8)</button>
-          </div>
-          <div class="d-flex flex-wrap gap-2">
-            <button class="btn-source-pill active" id="btnSourceYoutube" title="Play YouTube video">
-              <i class="bi bi-youtube text-danger"></i>
-              <span>YouTube</span>
-            </button>
-            <button class="btn-source-pill" id="btnSourceScreen" title="Share your screen with room participants">
-              <i class="bi bi-display text-primary"></i>
-              <span>Screenshare</span>
-            </button>
-            <button class="btn-source-pill" id="btnSourceUpload" title="Upload local video file from your computer">
-              <i class="bi bi-cloud-arrow-up text-success"></i>
-              <span>Upload File</span>
-            </button>
-          </div>
-        </section>
-
-        <!-- 3. Bottom Search Bar with Microphone, Camera & Play action -->
-        <div class="stage-bottom-search-bar">
-          <button class="btn-av-icon muted-av" id="btnToggleMic" title="Turn On Microphone">
-            <i class="bi bi-mic-mute-fill" id="micIcon"></i>
+        <!-- Custom Video Controls Bar -->
+        <div class="controls-bar d-flex align-items-center">
+          <!-- Previous Video in Queue -->
+          <button class="ctrl-btn d-none d-sm-inline-flex" id="btnPrevVideo" title="Previous Video">
+            <i class="bi bi-skip-start-fill"></i>
           </button>
-          <button class="btn-av-icon" id="btnToggleCam" title="Turn On Camera">
-            <i class="bi bi-camera-video" id="camIcon"></i>
+
+          <!-- Play / Pause -->
+          <button class="ctrl-btn" id="ppBtn" title="Play/Pause">
+            <i class="bi bi-play-fill" id="ppIcon"></i>
           </button>
-          <div class="paste-input-container">
-            <i class="bi bi-search"></i>
-            <input type="text" class="input-paste-pill" id="pasteMediaInput" placeholder="Paste YouTube link (e.g. youtube.com/watch?v=...) or video link...">
-            <button type="button" class="btn btn-sm btn-danger px-3 rounded-pill fw-bold" id="btnLoadMedia" style="white-space: nowrap; font-size: 12px;">Play Now</button>
+
+          <!-- Rewind 10s -->
+          <button class="ctrl-btn" id="rewindBtn" title="Rewind 10s">
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
+
+          <!-- Next Video in Queue -->
+          <button class="ctrl-btn d-none d-sm-inline-flex" id="btnNextVideo" title="Next Video in Queue">
+            <i class="bi bi-skip-end-fill"></i>
+          </button>
+
+          <!-- Volume / Mute -->
+          <button class="ctrl-btn" id="muteBtn" title="Mute/Unmute">
+            <i class="bi bi-volume-up-fill" id="volIcon"></i>
+          </button>
+
+          <!-- Microphone Toggle Button (Integrated into Player Controls Bar) -->
+          <button class="ctrl-btn ctrl-mic-btn" id="ctrlMicBtn" title="Toggle Microphone (M)">
+            <i class="bi bi-mic-mute-fill text-danger" id="ctrlMicIcon"></i>
+          </button>
+
+          <!-- Time Display -->
+          <span class="time-txt" id="timeDisplay">0:00 / 0:00</span>
+
+          <!-- Live NTP + 4-Zone PLL Sync Telemetry Pill -->
+          <div class="ut-sync-pill d-inline-flex align-items-center ms-2 cursor-pointer" id="syncPill" data-state="LOCKED" title="NTP + 4-Zone PLL Sync Telemetry. Click to toggle sync." onclick="toggleSyncOptOut(event)">
+            <span class="ut-sync-dot me-1"></span>
+            <i class="bi bi-broadcast text-success me-1" id="syncStatusIcon" style="font-size:0.7rem;"></i>
+            <span class="d-none d-sm-inline fw-bold text-success" style="font-size:0.65rem;" id="syncStatusLabel">LOCKED</span>
+            <span class="ut-divider mx-1 opacity-25 d-none d-md-inline">•</span>
+            <span id="syncDriftText" class="font-monospace d-none d-md-inline" style="font-size:0.68rem; color:#94a3b8;">0ms</span>
+            <span class="ut-divider mx-1 opacity-25 d-none d-lg-inline">•</span>
+            <span id="syncRateText" class="font-monospace d-none d-lg-inline" style="font-size:0.68rem; color:#94a3b8;">1.00x</span>
+            <span class="ut-divider mx-1 opacity-25 d-none d-xl-inline">•</span>
+            <span id="syncRttText" class="font-monospace d-none d-xl-inline" style="font-size:0.68rem; color:#94a3b8;">0ms</span>
           </div>
-        </div>
+          <button class="d-none" id="btnSyncOptOut" onclick="toggleSyncOptOut()"></button>
 
-      </main>
+          <div class="ctrl-spacer flex-grow-1"></div>
 
-      <!-- ----------------------------------------------------
-           RIGHT SIDEBAR (CHAT, QUEUE & PEOPLE / col-12 col-lg-3)
-           Compact sidebar leaving maximum width for video
-           ---------------------------------------------------- -->
-      <aside class="col-12 col-lg-3 sidebar-col">
-
-        <!-- Top Switcher: Chat (3) vs Queue (3) vs People (4) -->
-        <div class="sidebar-top-tabs">
-          <div class="segmented-tab-control">
-            <button class="tab-btn active" id="tabChatBtn">
-              <i class="bi bi-chat-left-dots"></i>
-              <span>Chat</span>
-              <span class="badge-tab-count" id="chatBadgeCount">3</span>
+          <!-- Interactive Playback Speed Dropdown -->
+          <div class="dropdown d-inline-block speed-dropdown me-1" id="speedDropdown">
+            <button class="ctrl-pill btn btn-link text-decoration-none p-0 d-flex align-items-center gap-1 dropdown-toggle" id="speedPillBtn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Playback Speed & Fast Forward">
+              <i class="bi bi-speedometer2 me-1" style="font-size:0.65rem;"></i>
+              <span id="speedLabel">1.0x</span>
             </button>
-            <button class="tab-btn" id="tabQueueBtn">
-              <i class="bi bi-collection-play-fill"></i>
-              <span>Queue</span>
-              <span class="badge-tab-count" id="queueBadgeCount" style="background-color: #f59e0b; color: #1e1b4b;">3</span>
-            </button>
-            <button class="tab-btn" id="tabPeopleBtn">
-              <i class="bi bi-people"></i>
-              <span id="tabPeopleLabel">People (1)</span>
-            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg rounded-3 py-1 border-0" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); min-width: 140px; z-index: 1050;">
+              <li><h6 class="dropdown-header text-muted py-1" style="font-size:0.68rem; letter-spacing:0.05em;">PLAYBACK SPEED</h6></li>
+              <li><a class="dropdown-item speed-opt text-white" href="#" data-speed="0.5" onclick="changePlaybackSpeed(0.5, event)">0.5x</a></li>
+              <li><a class="dropdown-item speed-opt text-white" href="#" data-speed="0.75" onclick="changePlaybackSpeed(0.75, event)">0.75x</a></li>
+              <li><a class="dropdown-item active speed-opt text-white fw-bold" href="#" data-speed="1.0" onclick="changePlaybackSpeed(1.0, event)"><i class="bi bi-check2 me-2 check-icon"></i>1.0x (Normal)</a></li>
+              <li><a class="dropdown-item speed-opt text-white" href="#" data-speed="1.25" onclick="changePlaybackSpeed(1.25, event)">1.25x (Fast)</a></li>
+              <li><a class="dropdown-item speed-opt text-white" href="#" data-speed="1.5" onclick="changePlaybackSpeed(1.5, event)">1.5x</a></li>
+              <li><a class="dropdown-item speed-opt text-white" href="#" data-speed="1.75" onclick="changePlaybackSpeed(1.75, event)">1.75x</a></li>
+              <li><a class="dropdown-item speed-opt text-white" href="#" data-speed="2.0" onclick="changePlaybackSpeed(2.0, event)">2.0x (Double)</a></li>
+            </ul>
           </div>
-        </div>
 
-        <!-- Invite CTA Button -->
-        <div class="sidebar-invite-row" id="sidebarInviteRow">
-          <button class="btn-invite-amber" id="btnInviteRoom" title="Copy room invite link to clipboard">
-            <i class="bi bi-person-plus-fill"></i>
-            <span>Invite</span>
+          <!-- Theater Mode Toggle -->
+          <button class="ctrl-btn d-none d-sm-inline-flex" id="theaterBtn" title="Theater Mode (T)">
+            <i class="bi bi-layout-sidebar-reverse" id="theaterIcon"></i>
+          </button>
+
+          <!-- Mini Player Picture-in-Picture -->
+          <button class="ctrl-btn d-none d-sm-inline-flex" id="pipBtn" title="Mini Player (P)">
+            <i class="bi bi-pip" id="pipIcon"></i>
+          </button>
+
+          <!-- Floating Glass Chat Overlay Toggle (Twitch/YouTube Live Style) -->
+          <button class="ctrl-btn d-none d-sm-inline-flex" id="btnToggleFsChat" onclick="toggleFullscreenChatOverlay()" title="Toggle Floating Chat Overlay">
+            <i class="bi bi-chat-quote-fill"></i>
+          </button>
+
+          <!-- Fullscreen Toggle -->
+          <button class="ctrl-btn" id="fsBtn" title="Fullscreen">
+            <i class="bi bi-fullscreen" id="fsIcon"></i>
           </button>
         </div>
 
-        <!-- 1. Chat Messages Stream -->
-        <div class="messages-stream-container" id="chatStream">
-          <div class="text-center py-4 text-muted small" id="emptyChatNotice">
-            <i class="bi bi-chat-dots fs-3 d-block mb-1 text-secondary"></i>
-            <span>No messages yet. Send a message or attach a file to get started!</span>
-          </div>
-        </div>
+      </div><!-- /video-container -->
 
-        <!-- 2. Playlist Queue Tab Panel (Moved to Right Side) -->
-        <div class="queue-stream-container" id="queueStream" style="display: none;">
-          
-          <!-- Queue Status Bar -->
-          <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
-            <div class="d-flex align-items-center gap-1">
-              <span class="badge bg-danger rounded-pill px-2 py-1 fw-bold" style="font-size: 10px;">
-                <i class="bi bi-music-note-list me-1"></i> PLAYLIST
-              </span>
-              <span class="fw-bold small text-dark" style="font-size: 11.5px;">Queue (<span id="queueCountDisplay">3</span> Videos)</span>
-            </div>
-            <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2" style="font-size: 10px; font-weight: 700;">
-              <i class="bi bi-arrow-repeat me-1"></i> Autoplay ON
+      <!-- Lower Stage Area (Minimal Sources & Tokens) -->
+      <div class="stage-lower flex-grow-1 overflow-y-auto px-3 py-2 bg-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <!-- Media Source Segmented Bar -->
+          <div class="media-source-pill-bar">
+            <button class="media-src-btn active btn-src" id="srcYt">
+              <i class="bi bi-youtube text-danger"></i> YouTube
+            </button>
+            <button class="media-src-btn btn-src" id="srcScreen">
+              <i class="bi bi-display text-primary"></i> Screenshare
+            </button>
+            <button class="media-src-btn btn-src" id="srcUpload" data-bs-toggle="modal" data-bs-target="#localFileSyncChoiceModal">
+              <i class="bi bi-folder-symlink-fill text-warning"></i> Local File
+            </button>
+            <button class="media-src-btn" data-bs-toggle="modal" data-bs-target="#customStreamModal">
+              <i class="bi bi-broadcast text-info"></i> Direct HLS
+            </button>
+          </div>
+
+          <!-- Crisp Dashboard Status Tokens -->
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="token-badge token-live" id="tokenSyncStatus">
+              <i class="bi bi-broadcast"></i> SYNCED
+            </span>
+            <span class="token-badge token-lock" id="tokenLockStatus">
+              <i class="bi bi-lock-fill"></i> HOST LOCK
+            </span>
+            <span class="token-badge">
+              <i class="bi bi-hd"></i> 1080p
             </span>
           </div>
+        </div>
+      </div><!-- /stage-lower -->
 
-          <!-- A. Now Playing Card -->
-          <div class="queue-item-card p-2 rounded-3 border" id="nowPlayingCard" style="background: #fffbeb; border-color: #fde68a !important; cursor: pointer;" data-url="https://www.youtube.com/watch?v=MsRSKLbz3ss" data-title="Study Stream">
-            <div class="d-flex align-items-center gap-2">
-              <div class="position-relative flex-shrink-0">
-                <img class="rounded-2" id="nowPlayingThumb" src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=120&q=80" alt="Now Playing Thumbnail" style="width: 58px; height: 38px; object-fit: cover;">
-                <span class="position-absolute top-50 start-50 translate-middle badge bg-danger rounded-circle p-1" style="font-size: 8px;">
-                  <i class="bi bi-play-fill text-white"></i>
-                </span>
-              </div>
-              <div class="flex-grow-1 min-w-0">
-                <span class="badge bg-danger text-white px-1.5 py-0.5 mb-1" id="nowPlayingBadge" style="font-size: 9px; font-weight: 800; letter-spacing: 0.04em;">NOW PLAYING</span>
-                <div class="fw-bold text-dark text-truncate" id="nowPlayingTitle" style="font-size: 12px;">Interstellar — Official Trailer</div>
-                <div class="text-muted small" id="nowPlayingMeta" style="font-size: 10.5px;">02:34 • Added by Alex</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section Label: Up Next -->
-          <div class="d-flex align-items-center justify-content-between px-1 mt-1">
-            <span class="text-muted fw-bold small text-uppercase" style="font-size: 10px; letter-spacing: 0.04em;">Up Next in Queue (Click to play)</span>
-            <span class="text-muted small" style="font-size: 10px;">Click to watch</span>
-          </div>
-
-          <!-- Up Next Items List -->
-          <div class="d-flex flex-column gap-2" id="queueItemsList">
-            
-            <!-- Queue Item 1 -->
-            <div class="queue-item-card queue-playable-item p-2 rounded-3 border bg-white shadow-sm d-flex align-items-center gap-2" style="cursor: pointer;" data-url="https://www.youtube.com/watch?v=1FhXG01tW28" data-title="Hans Zimmer Live Suite">
-              <div class="text-muted small px-1 fw-bold" style="font-size: 11px;">1</div>
-              <img class="rounded-2 flex-shrink-0" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=120&q=80" alt="Hans Zimmer" style="width: 52px; height: 34px; object-fit: cover;">
-              <div class="flex-grow-1 min-w-0">
-                <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;">Hans Zimmer Live Suite</div>
-                <div class="text-muted small" style="font-size: 10px;">04:12 • Added by Yasaru</div>
-              </div>
-              <button class="btn btn-sm btn-outline-secondary border-0 p-1 text-muted" title="Remove" onclick="event.stopPropagation(); this.closest('.queue-item-card').remove(); updateQueueCount();">
-                <i class="bi bi-x-lg" style="font-size: 11px;"></i>
-              </button>
-            </div>
-
-            <!-- Queue Item 2 -->
-            <div class="queue-item-card queue-playable-item p-2 rounded-3 border bg-white shadow-sm d-flex align-items-center gap-2" style="cursor: pointer;" data-url="https://www.youtube.com/watch?v=2rUtS5qL3lM" data-title="Hubble 3D Cosmic Journey">
-              <div class="text-muted small px-1 fw-bold" style="font-size: 11px;">2</div>
-              <img class="rounded-2 flex-shrink-0" src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=120&q=80" alt="Hubble 3D" style="width: 52px; height: 34px; object-fit: cover;">
-              <div class="flex-grow-1 min-w-0">
-                <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;">Hubble 3D Cosmic Journey</div>
-                <div class="text-muted small" style="font-size: 10px;">05:45 • Added by Ramesh</div>
-              </div>
-              <button class="btn btn-sm btn-outline-secondary border-0 p-1 text-muted" title="Remove" onclick="event.stopPropagation(); this.closest('.queue-item-card').remove(); updateQueueCount();">
-                <i class="bi bi-x-lg" style="font-size: 11px;"></i>
-              </button>
-            </div>
-
-          </div>
-
-          <!-- Bottom Add-to-Queue Form -->
-          <div class="queue-add-box mt-auto p-2 bg-white rounded-3 border shadow-sm">
-            <div class="text-muted fw-bold mb-1 d-flex align-items-center justify-content-between" style="font-size: 10.5px;">
-              <span><i class="bi bi-plus-circle-fill text-danger me-1"></i> Add Video to Queue</span>
-              <span class="badge bg-light text-secondary border" style="font-size: 9.5px;">YouTube / Direct</span>
-            </div>
-            <form id="sidebarQueueForm" class="d-flex gap-1" onsubmit="event.preventDefault(); addSidebarQueueItem();">
-              <input type="text" class="form-control form-control-sm" id="sidebarQueueInput" placeholder="Paste YouTube link or title..." style="font-size: 11px; border-radius: 6px;">
-              <button type="submit" class="btn btn-sm btn-danger fw-bold px-2.5" style="font-size: 11px; border-radius: 6px; white-space: nowrap;">
-                + Add
-              </button>
-            </form>
-          </div>
-
+      <!-- Sticky Bottom Toolbar (Hardware Mic/Cam, Video URL Input, Three Dots Search & Play Button) -->
+      <div class="stage-bottom border-top px-3 py-2 bg-body d-flex align-items-center gap-2 flex-shrink-0" style="border-color: var(--border-subtle) !important;">
+        <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center btn-av" id="btnToggleMic" title="Toggle Microphone" style="width: 36px; height: 36px; flex-shrink: 0;">
+          <i class="bi bi-mic-fill" id="micIcon"></i>
+        </button>
+        
+        <!-- Mode 1: Direct Video URL Paste Bar -->
+        <div class="input-group input-group-sm flex-grow-1" id="defaultUrlBarGroup">
+          <input class="form-control form-control-sm rounded-start-pill px-3 paste-input" type="text" id="pasteInput" placeholder="Paste video URL (YouTube, MP4, HLS)..." style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+          <button class="btn btn-danger btn-sm px-3 fw-bold rounded-end-pill" id="btnSubmitUrl" title="Play Stream">
+            <i class="bi bi-play-fill me-1"></i> Play
+          </button>
         </div>
 
-        <!-- 3. People (Connected Members Stream) - Dynamically populated with real connected members -->
-        <div class="people-stream-container" id="peopleStream" style="display: none;">
-          <div class="text-center py-4 text-muted small" id="peopleLoadingPlaceholder">
-            <div class="spinner-border spinner-border-sm text-danger mb-2" role="status"></div>
-            <div>Syncing active room members...</div>
-          </div>
+        <!-- Mode 2: Universal Media Search & Web Scraper Group (Toggled by Three Dots) -->
+        <div class="input-group input-group-sm flex-grow-1 d-none" id="searchScraperBarGroup">
+          <button class="btn btn-outline-danger dropdown-toggle rounded-start-pill px-2 d-flex align-items-center gap-1" type="button" id="searchPlatformBtn" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.75rem; font-weight:700;">
+            <span id="selectedPlatformLabel"><i class="bi bi-youtube text-danger me-1"></i>YouTube</span>
+          </button>
+          <ul class="dropdown-menu shadow-lg border-0 py-1" style="background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(10px); z-index: 1060;">
+            <li><a class="dropdown-item text-white small" href="#" onclick="selectSearchPlatform('youtube', '🔴 YouTube', event)"><i class="bi bi-youtube text-danger me-2"></i>YouTube Search</a></li>
+            <li><a class="dropdown-item text-white small" href="#" onclick="selectSearchPlatform('facebook', '🔵 Facebook', event)"><i class="bi bi-facebook text-primary me-2"></i>Facebook Watch</a></li>
+            <li><a class="dropdown-item text-white small" href="#" onclick="selectSearchPlatform('twitch', '🟣 Twitch', event)"><i class="bi bi-twitch text-info me-2"></i>Twitch Streams</a></li>
+            <li><a class="dropdown-item text-white small" href="#" onclick="selectSearchPlatform('vimeo', '🟠 Vimeo', event)"><i class="bi bi-play-btn-fill text-warning me-2"></i>Vimeo Videos</a></li>
+            <li><hr class="dropdown-divider border-secondary my-1"></li>
+            <li><a class="dropdown-item text-warning small fw-bold" href="#" onclick="selectSearchPlatform('custom', '🌐 Custom Website', event)"><i class="bi bi-globe me-2"></i>Custom Website Scraper</a></li>
+          </ul>
+          <input class="form-control form-control-sm px-3 paste-input" type="text" id="searchScraperQueryInput" placeholder="Search keywords or video title..." style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);" onkeydown="if(event.key==='Enter') executeUniversalSearch()">
+          <input class="form-control form-control-sm px-2 d-none" type="text" id="scrapeDomainInput" placeholder="Target domain / website URL..." style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main); max-width: 200px;" onkeydown="if(event.key==='Enter') executeUniversalSearch()">
+          <button class="btn btn-warning btn-sm px-3 fw-bold rounded-end-pill" id="btnRunSearchScraper" onclick="executeUniversalSearch()" title="Search & Extract Video Streams">
+            <i class="bi bi-search me-1"></i> Discover
+          </button>
         </div>
 
-        <!-- Sidebar Footer: Emoji Reacts + Message Input -->
-        <div class="sidebar-footer-container">
-          <div class="d-flex align-items-center justify-content-between mb-1">
-            <div class="d-flex align-items-center gap-1">
-              <button class="emoji-badge-btn" onclick="postReaction('❤️')">❤️</button>
-              <button class="emoji-badge-btn" onclick="postReaction('🍿')">🍿</button>
-              <button class="emoji-badge-btn" onclick="postReaction('😂')">😂</button>
-              <button class="emoji-badge-btn" onclick="postReaction('🔥')">🔥</button>
-              <button class="emoji-badge-btn" onclick="postReaction('👏')">👏</button>
-            </div>
-            <span class="text-muted" style="font-size: 10px;" id="chatTypingHint">Online</span>
-          </div>
+        <!-- Three Dots Button to Toggle Search & Web Scraper Engine -->
+        <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" id="btnToggleSearchEngine" onclick="toggleSearchScraperBar()" title="Toggle Media Search & Web Scraper Engine" style="width: 36px; height: 36px; flex-shrink: 0;">
+          <i class="bi bi-three-dots"></i>
+        </button>
+      </div>
 
-          <!-- Attachment Preview Strip (shown when a file is selected) -->
-          <div id="attachmentPreviewStrip" style="display: none; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 4px 8px; margin-bottom: 5px; align-items: center; justify-content: space-between;">
-            <div class="d-flex align-items-center gap-2 text-truncate" style="max-width: 85%;">
-              <img id="attachmentThumbImg" src="" style="width: 22px; height: 22px; object-fit: cover; border-radius: 4px; display: none;">
-              <i id="attachmentDocIcon" class="bi bi-paperclip text-danger fs-6"></i>
-              <div class="text-truncate" style="font-size: 11px;">
-                <span id="attachmentFileName" class="fw-bold text-dark text-truncate">file.pdf</span>
-                <span id="attachmentFileSize" class="text-muted ms-1" style="font-size: 9.5px;"></span>
-              </div>
-            </div>
-            <button type="button" id="btnCancelAttachment" style="background: none; border: none; color: #ef4444; font-size: 12px; cursor: pointer; padding: 0 4px;" title="Remove attachment">✕</button>
-          </div>
+    </div><!-- /stage-col -->
 
-          <div class="chat-send-input-row">
-            <!-- Hidden File Input for chat attachments -->
-            <input type="file" id="chatFileInput" accept="image/*,.pdf,.doc,.docx,.txt,.zip" style="display: none;">
+    <!-- Draggable Layout Splitter / Resizer -->
+    <div class="layout-resizer" id="layoutResizer" title="Drag to resize video player and sidebar (Double-click to reset)">
+      <div class="resizer-handle"></div>
+    </div>
 
-            <!-- Attachment Button -->
-            <button type="button" class="btn-smile-icon" id="btnChatAttach" title="Attach file or image">
-              <i class="bi bi-paperclip" style="font-size: 15px;"></i>
-            </button>
+    <!-- Right Sidebar Column (Chat, Media Queue, People) -->
+    <aside class="sidebar-col d-flex flex-column bg-body border-start flex-shrink-0" id="sidebarCol" style="width: 310px; border-color: var(--border-subtle) !important;">
 
-            <!-- Quick Emoji Button -->
-            <button type="button" class="btn-smile-icon" onclick="postReaction('😊')" title="Add smile">
-              <i class="bi bi-emoji-smile"></i>
-            </button>
+      <!-- 3-Tab Segmented Strip -->
+      <div class="sb-tabs d-flex border-bottom bg-body-tertiary flex-shrink-0 w-100 overflow-hidden" style="border-color: var(--border-subtle) !important;">
+        <button class="sb-tab btn btn-link text-decoration-none flex-grow-1 active d-flex align-items-center justify-content-center" id="tabChatBtn" onclick="switchTab('chat')" title="Room Discussion (Chat)">
+          <i class="bi bi-chat-dots-fill tab-icon"></i>
+          <span class="tab-label text-truncate">Chat</span>
+          <span class="badge bg-danger rounded-pill tab-cnt ms-1" id="chatBadgeCount">0</span>
+        </button>
+        <button class="sb-tab btn btn-link text-decoration-none flex-grow-1 d-flex align-items-center justify-content-center" id="tabQueueBtn" onclick="switchTab('queue')" title="Media Queue & Playlist">
+          <i class="bi bi-collection-play-fill tab-icon"></i>
+          <span class="tab-label text-truncate">Queue</span>
+          <span class="badge bg-secondary rounded-pill tab-cnt ms-1" id="queueBadgeCount">0</span>
+        </button>
+        <button class="sb-tab btn btn-link text-decoration-none flex-grow-1 d-flex align-items-center justify-content-center" id="tabPeopleBtn" onclick="switchTab('people')" title="Room Participants">
+          <i class="bi bi-people-fill tab-icon"></i>
+          <span class="tab-label text-truncate">People</span>
+          <span class="badge bg-secondary rounded-pill tab-cnt grey ms-1" id="peopleBadgeCount">1</span>
+        </button>
+      </div>
 
-            <input type="text" class="chat-text-entry" id="chatInputBox" placeholder="Send message to room..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-            <button type="button" class="btn-send-red" onclick="sendChatMessage()" title="Send Message">
-              <i class="bi bi-send-fill"></i>
-            </button>
+      <!-- Quick Room Invite Row -->
+      <div class="invite-row p-2 border-bottom d-flex justify-content-center flex-shrink-0" style="border-color: var(--border-subtle) !important;">
+        <button class="btn btn-sm btn-warning text-dark fw-bold rounded-pill px-4 shadow-sm btn-invite">
+          <i class="bi bi-person-plus-fill me-1"></i> Invite Classmates
+        </button>
+      </div>
+
+      <!-- Tab View 1: Chat Feed -->
+      <div class="chat-feed flex-grow-1 overflow-y-auto p-3 d-flex flex-column gap-3" id="chatFeed">
+        <!-- Live chat messages dynamically rendered from encrypted database/socket history -->
+      </div><!-- /chat-feed -->
+
+      <!-- Tab View 2: Media Queue Pane (Dedicated Tab) -->
+      <div class="queue-feed flex-grow-1 overflow-y-auto p-3 d-none flex-column gap-2" id="queueFeed">
+        <!-- Rendered dynamically by room-sync.js renderQueueTab -->
+      </div><!-- /queueFeed -->
+
+      <!-- Tab View 3: People Feed View -->
+      <div class="people-feed flex-grow-1 overflow-y-auto p-2 d-none flex-column gap-2" id="peopleFeed">
+        <!-- Top Toolbar for People Tab -->
+        <div class="people-header p-2 rounded-3 mb-1 d-flex align-items-center justify-content-between" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle);">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-danger rounded-pill fw-bold" id="peopleOnlineBadge">1 ONLINE</span>
+            <span class="text-muted small" style="font-size:0.75rem;">Participants</span>
           </div>
         </div>
 
-      </aside>
+        <!-- Active Screenshare Notification Banner -->
+        <div id="screenshareAlertBanner" class="d-none alert alert-warning py-1 px-2 rounded-3 mb-1 small d-flex align-items-center justify-content-between border-0 shadow-sm" style="background: rgba(255, 200, 59, 0.15); color: var(--brand-gold);">
+          <div class="d-flex align-items-center gap-1 text-truncate">
+            <i class="bi bi-display-fill me-1"></i>
+            <span class="text-truncate"><strong id="screenshareSharerName">Host</strong> is sharing screen</span>
+          </div>
+          <button class="btn btn-xs btn-warning rounded-pill px-2 py-0 fw-bold ms-1" onclick="showScreenShareInPlayer()" style="font-size:0.65rem;">Watch</button>
+        </div>
 
+        <!-- Dynamic Participants Container -->
+        <div class="people-list-container d-flex flex-column gap-2" id="peopleListContainer">
+          <!-- Populated by renderMembersList -->
+        </div>
+      </div><!-- /peopleFeed -->
+
+      <!-- Emoji Reactions Row -->
+      <div class="emoji-row p-2 border-top d-flex justify-content-around flex-shrink-0" id="emojiRow" style="border-color: var(--border-subtle) !important;">
+        <button class="emoji-btn" onclick="spawnEmoji('❤️')">❤️</button>
+        <button class="emoji-btn" onclick="spawnEmoji('😂')">😂</button>
+        <button class="emoji-btn" onclick="spawnEmoji('😮')">😮</button>
+        <button class="emoji-btn" onclick="spawnEmoji('👏')">👏</button>
+        <button class="emoji-btn" onclick="spawnEmoji('🔥')">🔥</button>
+      </div>
+
+      <!-- Chat Input Bar -->
+      <div class="chat-input-bar p-2 border-top d-flex align-items-center gap-2 flex-shrink-0" id="chatInputBar" style="border-color: var(--border-subtle) !important;">
+        <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" id="btnChatAttach" onclick="document.getElementById('chatFileInput').click()" title="Attach Document, PDF, Notes or Image" style="width: 32px; height: 32px;">
+          <i class="bi bi-paperclip"></i>
+        </button>
+        <input type="file" id="chatFileInput" class="d-none" onchange="handleChatFileUpload(this)">
+        <input class="form-control form-control-sm rounded-pill px-3 chat-txt" id="chatInput" type="text" placeholder="Send encrypted message..." onkeydown="if(event.key==='Enter') sendMsg()" style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+        <button class="btn btn-sm btn-danger rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0 btn-send" style="width: 32px; height: 32px;" onclick="sendMsg()">
+          <i class="bi bi-send-fill" style="font-size: 0.75rem;"></i>
+        </button>
+      </div>
+
+      <!-- Queue Add URL Input Bar (Visible when Queue tab is selected) -->
+      <div class="p-2 border-top d-none align-items-center gap-2 flex-shrink-0" id="queueInputBar" style="border-color: var(--border-subtle) !important;">
+        <input class="form-control form-control-sm rounded-pill px-3" id="quickQueueUrlInput" type="url" placeholder="Paste YouTube/video URL..." style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+        <button class="btn btn-sm btn-danger rounded-pill px-3 fw-bold flex-shrink-0" id="btnQuickAddQueue">
+          <i class="bi bi-plus-lg me-1"></i> Add
+        </button>
+      </div>
+
+    </aside><!-- /sidebar-col -->
+
+  </main><!-- /room-body -->
+
+  <!-- Modal: Room Settings & Governance -->
+  <div class="modal fade" id="roomSettingsModal" tabindex="-1" aria-labelledby="roomSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: var(--bg-card);">
+        <div class="modal-header border-bottom px-4 py-3" style="border-color: var(--border-subtle) !important;">
+          <h5 class="modal-title fw-bold text-main" id="roomSettingsModalLabel">
+            <i class="bi bi-gear-fill text-danger me-2"></i> Room Settings & Governance
+          </h5>
+          <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="roomSettingsGuestAlert" class="alert alert-info py-2 px-3 rounded-3 small d-none mb-3">
+            <i class="bi bi-info-circle-fill me-2"></i><strong>View Only:</strong> Only the room host can modify room settings and governance.
+          </div>
+          <form id="roomSettingsForm">
+            <fieldset id="roomSettingsFieldset">
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-main">Room Visibility</label>
+              <select class="form-select rounded-3" id="settingVisibility" style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+                <option value="public" selected>Public (Visible in Hub)</option>
+                <option value="unlisted">Unlisted (Direct Link Only)</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-main">Passcode PIN (Leave blank for open access)</label>
+              <input type="text" class="form-control rounded-3" id="settingPasscode" placeholder="e.g. 2026" style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+            </div>
+
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="settingHostSyncLock">
+              <label class="form-check-label fw-bold text-main small" for="settingHostSyncLock">Host Sync Lock</label>
+              <small class="text-muted d-block" style="font-size:0.75rem;">Only the room host can pause, play, or seek video playback.</small>
+            </div>
+
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="settingSmoothCatchUp" checked>
+              <label class="form-check-label fw-bold text-main small" for="settingSmoothCatchUp">Smooth Speed Catch-Up</label>
+              <small class="text-muted d-block" style="font-size:0.75rem;">Uses subtle fast-forward (1.08x - 1.25x) instead of jarring seeks when drifting.</small>
+            </div>
+
+            <!-- Hardware A/V Sync Offset Calibration Slider (FEAT-53 / DEF-16) -->
+            <div class="mb-3 p-3 rounded-3" style="background: var(--bg-input); border: 1px solid var(--border-subtle);">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label small fw-bold text-main mb-0" for="settingSyncOffset">
+                  <i class="bi bi-sliders text-warning me-1"></i>Hardware Audio/Video Sync Offset
+                </label>
+                <span class="badge bg-dark border border-secondary text-warning" id="syncOffsetDisplay">0ms</span>
+              </div>
+              <small class="text-muted d-block mb-2" style="font-size:0.75rem;">Compensate for Bluetooth headphone or hardware decoding delay (-2000ms to +2000ms).</small>
+              <div class="d-flex align-items-center gap-2">
+                <input type="range" class="form-range flex-grow-1" id="settingSyncOffset" min="-2000" max="2000" step="25" value="0" oninput="updateSyncOffsetValue(this.value)">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0" style="font-size:0.75rem;" onclick="resetSyncOffset()">Reset</button>
+              </div>
+            </div>
+
+            <!-- Vote-to-Skip for Guests & Non-Hosts -->
+            <div class="mb-3 p-3 rounded-3" style="background: var(--bg-input); border: 1px solid var(--border-subtle);">
+              <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="settingVoteSkipEnabled" checked>
+                <label class="form-check-label fw-bold text-main small" for="settingVoteSkipEnabled">Enable Vote-to-Skip for Classmates</label>
+              </div>
+              <small class="text-muted d-block mb-2" style="font-size:0.75rem;">Allows guests and students to democratically initiate a vote to skip the current video.</small>
+              <div class="d-flex align-items-center gap-2">
+                <label class="form-label small fw-bold text-main mb-0 flex-shrink-0" style="font-size:0.75rem;">Majority Threshold:</label>
+                <select class="form-select form-select-sm rounded-pill" id="settingVoteSkipThreshold" style="background: var(--bg-card); border-color: var(--border-subtle); color: var(--text-main); max-width: 170px;">
+                  <option value="50" selected>50% (Simple Majority)</option>
+                  <option value="60">60% (Supermajority)</option>
+                  <option value="75">75% (Three-Quarters)</option>
+                  <option value="100">100% (Unanimous)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Dynamic Authoritative Scheduled Pause -->
+            <div class="mb-3 p-3 rounded-3" style="background: var(--bg-input); border: 1px solid var(--border-subtle);">
+              <label class="form-label small fw-bold text-main d-flex justify-content-between align-items-center mb-1">
+                <span><i class="bi bi-stopwatch text-warning me-1"></i>Scheduled Dynamic Pause</span>
+                <span class="badge bg-warning text-dark rounded-pill" id="currentDynamicPauseBadge">None</span>
+              </label>
+              <div class="input-group input-group-sm mt-1">
+                <input type="text" class="form-control" id="settingDynamicPauseInput" placeholder="Timestamp (e.g. 5:30 or 330s)..." style="background: var(--bg-card); border-color: var(--border-subtle); color: var(--text-main);">
+                <button type="button" class="btn btn-warning fw-bold px-3" onclick="scheduleDynamicPauseFromModal()">
+                  <i class="bi bi-check-lg me-1"></i> Set Target
+                </button>
+              </div>
+              <small class="text-muted d-block mt-1" style="font-size:0.7rem;">Room video plays until target timestamp and automatically pauses for all participants.</small>
+            </div>
+
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" id="settingAllowGuests" checked>
+              <label class="form-check-label fw-bold text-main small" for="settingAllowGuests">Allow Guests to Enter</label>
+              <small class="text-muted d-block" style="font-size:0.75rem;">Temporary guest accounts are permitted in this room.</small>
+            </div>
+
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" id="settingAllowGuestChat" checked>
+              <label class="form-check-label fw-bold text-main small" for="settingAllowGuestChat">Allow Guest Chat</label>
+              <small class="text-muted d-block" style="font-size:0.75rem;">Guests can type in the room chat feed.</small>
+            </div>
+
+            <div class="form-check form-switch mb-4">
+              <input class="form-check-input" type="checkbox" id="settingAllowGuestControl">
+              <label class="form-check-label fw-bold text-main small" for="settingAllowGuestControl">Allow Guest Controls</label>
+              <small class="text-muted d-block" style="font-size:0.75rem;">Guests can play, pause, seek, and add to playlist queue.</small>
+            </div>
+            </fieldset>
+
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+              <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-danger px-4 rounded-pill fw-bold" id="btnSaveRoomSettings">
+                Save Settings
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Interactive JavaScript Logic -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // ------------------------------------------------------------------------
-    // Room & Player State Management
-    // ------------------------------------------------------------------------
-    const video = document.getElementById('html5Video');
-    const youtubePlayerWrapper = document.getElementById('youtubePlayerWrapper');
-    const mainYoutubePlayer = document.getElementById('mainYoutubePlayer');
-    const videoFileInput = document.getElementById('videoFileInput');
-    const playerBottomBar = document.getElementById('playerBottomBar');
-    const centerPlayBtn = document.getElementById('centerPlayBtn');
-    const ctrlPlayPauseBtn = document.getElementById('ctrlPlayPauseBtn');
-    const ctrlPlayPauseIcon = document.getElementById('ctrlPlayPauseIcon');
-    const timelineProgress = document.getElementById('timelineProgress');
-    const timelineScrubber = document.getElementById('timelineScrubber');
-    const timestampDisplay = document.getElementById('timestampDisplay');
-    const ctrlMuteBtn = document.getElementById('ctrlMuteBtn');
-    const ctrlVolumeIcon = document.getElementById('ctrlVolumeIcon');
-    const volumeTrack = document.getElementById('volumeTrack');
-    const volumeFill = document.getElementById('volumeFill');
-    const ctrlFullscreenBtn = document.getElementById('ctrlFullscreenBtn');
-    const ctrlPipBtn = document.getElementById('ctrlPipBtn');
-    const currentSourceBadge = document.getElementById('currentSourceBadge');
-    const currentVideoTitle = document.getElementById('currentVideoTitle');
-    const headerRoomCode = document.getElementById('headerRoomCode');
-    const overlayRoomCode = document.getElementById('overlayRoomCode');
-    const btnSourceYoutube = document.getElementById('btnSourceYoutube');
-    const btnSourceScreen = document.getElementById('btnSourceScreen');
-    const btnSourceUpload = document.getElementById('btnSourceUpload');
-    const btnCustomStreamLink = document.getElementById('btnCustomStreamLink');
-    const pasteMediaInput = document.getElementById('pasteMediaInput');
-    const btnLoadMedia = document.getElementById('btnLoadMedia');
-    const btnToggleMic = document.getElementById('btnToggleMic');
-    const micIcon = document.getElementById('micIcon');
-    const btnToggleCam = document.getElementById('btnToggleCam');
-    const camIcon = document.getElementById('camIcon');
-    const btnInviteRoom = document.getElementById('btnInviteRoom');
-    const webcamOverlayCard = document.getElementById('webcamOverlayCard');
-    const userWebcamVideo = document.getElementById('userWebcamVideo');
-    const btnCloseWebcam = document.getElementById('btnCloseWebcam');
-    const webcamTileName = document.getElementById('webcamTileName');
-    const webcamTileMicIcon = document.getElementById('webcamTileMicIcon');
-    const myUserAvatar = document.getElementById('myUserAvatar');
-    const myProfileName = document.getElementById('myProfileName');
-    const myMicStatusText = document.getElementById('myMicStatusText');
-
-    let currentMode = 'youtube'; // 'youtube' | 'screenshare' | 'upload' | 'stream'
-    let activeScreenshareStream = null;
-    let userCamStream = null;
-    let userMicStream = null;
-    let isMicMuted = true;
-    let isCamActive = false;
-    let audioCtx = null;
-    let analyserNode = null;
-    let audioAnimId = null;
-
-    // ------------------------------------------------------------------------
-    // YouTube IFrame Player API Engine
-    // ------------------------------------------------------------------------
-    let ytPlayer = null;
-    let isYtApiReady = false;
-    let pendingYtInit = null;
-    let lastTrackedYtTime = 0;
-    let lastTrackedYtState = -1;
-
-    function sendYtCommand(func, args = []) {
-      const el = document.getElementById('mainYoutubePlayer');
-      if (el && el.contentWindow) {
-        try {
-          el.contentWindow.postMessage(JSON.stringify({
-            event: 'command',
-            func: func,
-            args: args
-          }), '*');
-        } catch (e) {}
-      }
-    }
-
-    window.onYouTubeIframeAPIReady = function() {
-      console.log('[YouTube Iframe API] API Ready');
-      isYtApiReady = true;
-      if (!ytPlayer && document.getElementById('mainYoutubePlayer')) {
-        try {
-          ytPlayer = new YT.Player('mainYoutubePlayer', {
-            events: {
-              onReady: (event) => {
-                console.log('[YouTube Player] Event: onReady attached');
-                if (pendingYtInit && pendingYtInit.autoplay) {
-                  try { event.target.playVideo(); } catch (e) {}
-                }
-              },
-              onStateChange: onYouTubePlayerStateChange
-            }
-          });
-        } catch (e) {
-          console.warn('[YouTube API] onReady attach error:', e);
-        }
-      }
-      if (pendingYtInit) {
-        initOrUpdateYouTube(pendingYtInit.videoId, pendingYtInit.startTime, pendingYtInit.autoplay);
-        pendingYtInit = null;
-      }
-    };
-
-    function initOrUpdateYouTube(videoId, startTime = 0, autoplay = true) {
-      if (!videoId) return;
-
-      if (youtubePlayerWrapper) youtubePlayerWrapper.style.display = 'block';
-      if (video) {
-        video.pause();
-        video.style.display = 'none';
-        video.style.zIndex = '1';
-      }
-      if (centerPlayBtn) centerPlayBtn.style.display = 'none';
-      if (playerBottomBar) playerBottomBar.style.display = 'none';
-
-      const origin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : 'http://localhost:5000';
-      const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&start=${Math.floor(startTime || 0)}&enablejsapi=1&playsinline=1&rel=0&origin=${encodeURIComponent(origin)}`;
-
-      if (mainYoutubePlayer) {
-        const currentSrc = mainYoutubePlayer.getAttribute('src') || '';
-        if (!currentSrc.includes(videoId)) {
-          mainYoutubePlayer.src = iframeSrc;
-        } else {
-          sendYtCommand('seekTo', [Math.floor(startTime || 0), true]);
-          if (autoplay) sendYtCommand('playVideo');
-        }
-        mainYoutubePlayer.style.display = 'block';
-      }
-
-      if (isYtApiReady && typeof YT !== 'undefined' && YT.Player) {
-        if (!ytPlayer) {
-          try {
-            ytPlayer = new YT.Player('mainYoutubePlayer', {
-              events: {
-                onReady: (event) => {
-                  console.log('[YouTube Player] Event: onReady attached');
-                  if (startTime > 0) event.target.seekTo(startTime, true);
-                  if (autoplay) {
-                    try { event.target.playVideo(); } catch (e) {}
-                  }
-                },
-                onStateChange: onYouTubePlayerStateChange
-              }
-            });
-          } catch (e) {
-            console.warn('[YouTube API] Attach error:', e);
-          }
-        } else if (typeof ytPlayer.loadVideoById === 'function') {
-          try {
-            ytPlayer.loadVideoById({
-              videoId: videoId,
-              startSeconds: Math.floor(startTime || 0)
-            });
-            if (autoplay) {
-              try { ytPlayer.playVideo(); } catch (e) {}
-            }
-          } catch (e) {
-            console.warn('[YouTube API] loadVideoById error:', e);
-          }
-        }
-      } else {
-        pendingYtInit = { videoId, startTime, autoplay };
-      }
-    }
-
-    function onYouTubePlayerStateChange(event) {
-      if (isSyncingFromRemote) return;
-      if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
-
-      const state = event.data;
-      const curTime = ytPlayer.getCurrentTime() || 0;
-
-      if (state === YT.PlayerState.PLAYING) {
-        broadcastPlaybackSync('play', curTime, true, currentLoadedMediaUrl, currentVideoTitle ? currentVideoTitle.textContent : '');
-      } else if (state === YT.PlayerState.PAUSED) {
-        broadcastPlaybackSync('pause', curTime, false, currentLoadedMediaUrl, currentVideoTitle ? currentVideoTitle.textContent : '');
-      }
-    }
-
-    // Scrub / Seek periodic detector for YouTube
-    setInterval(() => {
-      if (isSyncingFromRemote || !ytPlayer || typeof ytPlayer.getCurrentTime !== 'function' || typeof ytPlayer.getPlayerState !== 'function') {
-        return;
-      }
-      try {
-        const state = ytPlayer.getPlayerState();
-        const curTime = ytPlayer.getCurrentTime();
-        if (state === YT.PlayerState.PLAYING) {
-          if (lastTrackedYtState === YT.PlayerState.PLAYING && Math.abs(curTime - (lastTrackedYtTime + 0.8)) > 2.5) {
-            broadcastPlaybackSync('seek', curTime, true, currentLoadedMediaUrl, currentVideoTitle ? currentVideoTitle.textContent : '');
-          }
-          lastTrackedYtTime = curTime;
-        }
-        lastTrackedYtState = state;
-      } catch (e) {}
-    }, 800);
-
-    // Helper: Format Seconds to MM:SS
-    function formatTime(seconds) {
-      if (isNaN(seconds) || seconds === Infinity || seconds < 0) return '00:00';
-      const m = Math.floor(seconds / 60);
-      const s = Math.floor(seconds % 60);
-      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-
-    // Helper: Extract YouTube ID from any format URL or direct ID
-    function extractYouTubeId(url) {
-      if (!url) return null;
-      const trimmed = url.trim();
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = trimmed.match(regExp);
-      if (match && match[2] && match[2].length === 11) {
-        return match[2];
-      }
-      if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
-        return trimmed;
-      }
-      return null;
-    }
-
-    // ------------------------------------------------------------------------
-    // Core Engine: Universal Media Player Dispatcher
-    // ------------------------------------------------------------------------
-    function playMedia(sourceType, mediaUrl, title, startTime = 0, autoplay = true) {
-      // 1. Cleanup any previous active screenshare stream
-      if (activeScreenshareStream && sourceType !== 'screenshare') {
-        activeScreenshareStream.getTracks().forEach(t => t.stop());
-        activeScreenshareStream = null;
-      }
-
-      // Check if URL is YouTube regardless of explicit sourceType
-      const ytId = extractYouTubeId(mediaUrl);
-      if (ytId && sourceType !== 'screenshare' && sourceType !== 'upload') {
-        sourceType = 'youtube';
-      }
-
-      currentMode = sourceType;
-      currentLoadedMediaUrl = mediaUrl;
-
-      // Broadcast playback sync to room peers
-      if (!isSyncingFromRemote && typeof broadcastPlaybackSync === 'function') {
-        broadcastPlaybackSync('change_media', startTime, autoplay, mediaUrl, title);
-      }
-
-      // Update Media Source Buttons Active State
-      if (btnSourceYoutube) btnSourceYoutube.classList.toggle('active', sourceType === 'youtube');
-      if (btnSourceScreen) btnSourceScreen.classList.toggle('active', sourceType === 'screenshare');
-      if (btnSourceUpload) btnSourceUpload.classList.toggle('active', sourceType === 'upload');
-
-      if (sourceType === 'youtube') {
-        // Stop & Hide HTML5 video
-        video.pause();
-        video.src = '';
-        video.srcObject = null;
-        video.style.display = 'none';
-
-        // Hide HTML5 bottom player bar so YouTube's native player controls are clean without any fake yellow line
-        if (playerBottomBar) playerBottomBar.style.display = 'none';
-
-        if (currentSourceBadge) {
-          currentSourceBadge.className = 'badge-yt';
-          currentSourceBadge.textContent = 'YOUTUBE';
-        }
-        if (currentVideoTitle) {
-          currentVideoTitle.textContent = title || 'YouTube Synchronized Video';
-        }
-
-        centerPlayBtn.style.display = 'none';
-        if (timestampDisplay) timestampDisplay.textContent = 'YOUTUBE SYNC';
-        if (timelineProgress) timelineProgress.style.width = '0%';
-        if (ctrlPlayPauseIcon) ctrlPlayPauseIcon.className = 'bi bi-play-fill';
-
-        // Update Now Playing card
-        updateNowPlayingCard(title || 'YouTube Video', 'YouTube • Synchronized', `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`, mediaUrl);
-
-        // Load YouTube player
-        initOrUpdateYouTube(ytId, startTime, autoplay);
-      } 
-      else if (sourceType === 'upload' || sourceType === 'stream') {
-        // Stop & Hide YouTube
-        if (youtubePlayerWrapper) youtubePlayerWrapper.style.display = 'none';
-        sendYtCommand('pauseVideo');
-        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
-          try { ytPlayer.pauseVideo(); } catch (e) {}
-        }
-
-        video.srcObject = null;
-        video.src = mediaUrl;
-        video.style.display = 'block';
-        if (startTime > 0) video.currentTime = startTime;
-        if (autoplay) video.play().catch(e => console.log('Autoplay deferred:', e));
-
-        // Show HTML5 bottom player bar for uploaded local video or custom stream
-        if (playerBottomBar) playerBottomBar.style.display = 'flex';
-
-        if (currentSourceBadge) {
-          currentSourceBadge.className = 'badge-yt bg-success text-white';
-          currentSourceBadge.textContent = sourceType === 'upload' ? 'LOCAL FILE' : 'STREAM';
-        }
-        if (currentVideoTitle) {
-          currentVideoTitle.textContent = title || 'Custom Video Stream';
-        }
-
-        updateNowPlayingCard(title || 'Custom Video', `${sourceType.toUpperCase()} • Ready`, 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=120&q=80', mediaUrl);
-      }
-    }
-
-    // Update the "NOW PLAYING" card in the Queue Tab
-    function updateNowPlayingCard(title, meta, thumbUrl, url) {
-      const nowTitle = document.getElementById('nowPlayingTitle');
-      const nowMeta = document.getElementById('nowPlayingMeta');
-      const nowThumb = document.getElementById('nowPlayingThumb');
-      const nowCard = document.getElementById('nowPlayingCard');
-
-      if (nowTitle) nowTitle.textContent = title;
-      if (nowMeta) nowMeta.textContent = meta;
-      if (nowThumb && thumbUrl) nowThumb.src = thumbUrl;
-      if (nowCard && url) {
-        nowCard.setAttribute('data-url', url);
-        nowCard.setAttribute('data-title', title);
-      }
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 1: Screenshare (WebRTC Browser Screen Capture)
-    // ------------------------------------------------------------------------
-    async function startScreenshare() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        showToast('Your browser does not support WebRTC display capture.', 'danger');
-        return;
-      }
-
-      try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: { cursor: 'always' },
-          audio: false
-        });
-
-        activeScreenshareStream = stream;
-        currentMode = 'screenshare';
-
-        // 1. Hide YouTube Player & Pause
-        if (youtubePlayerWrapper) youtubePlayerWrapper.style.display = 'none';
-        sendYtCommand('pauseVideo');
-        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
-          try { ytPlayer.pauseVideo(); } catch (e) {}
-        }
-
-        // 2. Pipe Screen Stream to HTML5 Video Element
-        video.pause();
-        video.removeAttribute('src');
-        video.srcObject = stream;
-        video.muted = true;
-        video.playsInline = true;
-        video.setAttribute('muted', '');
-        video.setAttribute('playsinline', '');
-        video.setAttribute('autoplay', '');
-        video.style.zIndex = '12';
-        video.style.display = 'block';
-
-        try {
-          await video.play();
-        } catch (playErr) {
-          console.warn('Screenshare play note:', playErr);
-        }
-
-        // 3. UI Updates
-        document.querySelectorAll('.btn-source-pill').forEach(b => b.classList.remove('active'));
-        if (btnSourceScreen) btnSourceScreen.classList.add('active');
-
-        if (currentSourceBadge) {
-          currentSourceBadge.className = 'badge bg-danger text-white px-2 py-1 fw-bold';
-          currentSourceBadge.innerHTML = '<span class="spinner-grow spinner-grow-sm me-1" style="width: 7px; height: 7px;"></span>SCREENSHARE';
-        }
-        if (currentVideoTitle) {
-          currentVideoTitle.textContent = 'Desktop / Tab Screenshare (Broadcasting Live)';
-        }
-
-        centerPlayBtn.style.display = 'none';
-        if (playerBottomBar) playerBottomBar.style.display = 'none';
-        timestampDisplay.textContent = 'LIVE SCREEN';
-        timelineProgress.style.width = '100%';
-
-        updateNowPlayingCard('Screen Sharing Session', 'Live WebRTC Screen Stream', 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=120&q=80', 'screenshare');
-
-        showToast('Screenshare started! Sharing your screen with everyone in the room.', 'success');
-
-        // Automatically clean up when user clicks "Stop Sharing" on browser bar
-        stream.getVideoTracks()[0].onended = () => {
-          stopScreenshare();
-        };
-      } catch (err) {
-        console.warn('Screenshare cancelled or failed:', err);
-        if (err.name !== 'NotAllowedError') {
-          showToast('Could not start screenshare: ' + err.message, 'warning');
-        }
-      }
-    }
-
-    function stopScreenshare() {
-      if (activeScreenshareStream) {
-        activeScreenshareStream.getTracks().forEach(t => t.stop());
-        activeScreenshareStream = null;
-      }
-      if (video) {
-        video.pause();
-        video.srcObject = null;
-        video.style.display = 'none';
-        video.style.zIndex = '1';
-      }
-      showToast('Screenshare ended.', 'info');
-      // Revert to YouTube default demo video
-      playMedia('youtube', currentLoadedMediaUrl && currentLoadedMediaUrl.includes('youtube') ? currentLoadedMediaUrl : 'https://www.youtube.com/watch?v=1FhXG01tW28', 'Synchronized Video');
-    }
-
-    if (btnSourceScreen) {
-      btnSourceScreen.addEventListener('click', () => {
-        if (currentMode === 'screenshare' && activeScreenshareStream) {
-          stopScreenshare();
-        } else {
-          startScreenshare();
-        }
-      });
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 2: Local Video File Upload
-    // ------------------------------------------------------------------------
-    if (btnSourceUpload && videoFileInput) {
-      btnSourceUpload.addEventListener('click', () => {
-        videoFileInput.click();
-      });
-
-      videoFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        if (!file.type.startsWith('video/')) {
-          showToast('Please select a valid video file (.mp4, .webm, .mov, etc.)', 'warning');
-          return;
-        }
-
-        const fileUrl = URL.createObjectURL(file);
-        playMedia('upload', fileUrl, file.name);
-
-        showToast(`Loaded local video: ${file.name}`, 'success');
-        addQueueItemDirect(file.name, fileUrl, 'Local Video', 'You');
-      });
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 3: YouTube Source Button
-    // ------------------------------------------------------------------------
-    if (btnSourceYoutube) {
-      btnSourceYoutube.addEventListener('click', () => {
-        if (currentMode === 'youtube') {
-          showToast('Paste a YouTube link below or select a video from the Queue tab!', 'info');
-          if (pasteMediaInput) pasteMediaInput.focus();
-        } else {
-          playMedia('youtube', 'https://www.youtube.com/watch?v=zSWdZVtXT7E', 'Interstellar — Official Trailer');
-        }
-      });
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 4: Custom Stream Link Prompt (+ Add Custom Stream)
-    // ------------------------------------------------------------------------
-    if (btnCustomStreamLink) {
-      btnCustomStreamLink.addEventListener('click', () => {
-        const url = prompt('Enter Direct Video Stream URL (e.g. .mp4, .webm, or HLS stream):');
-        if (url && url.trim()) {
-          playMedia('stream', url.trim(), 'Custom Video Stream');
-          showToast('Loaded custom stream video!', 'success');
-        }
-      });
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 5: Bottom Paste Media Bar & "Play Now" Button
-    // ------------------------------------------------------------------------
-    function handleLoadEnteredMedia() {
-      if (!pasteMediaInput) return;
-      const url = pasteMediaInput.value.trim();
-      if (!url) {
-        showToast('Please paste a YouTube or video link first!', 'warning');
-        pasteMediaInput.focus();
-        return;
-      }
-
-      const ytId = extractYouTubeId(url);
-      if (ytId) {
-        playMedia('youtube', url, `YouTube Video (${ytId})`);
-        addQueueItemDirect(`YouTube Video (${ytId})`, url, '03:45', 'You');
-        showToast('Playing YouTube video!', 'success');
-      } else {
-        playMedia('stream', url, 'Custom Video');
-        addQueueItemDirect('Custom Video Stream', url, 'Live', 'You');
-        showToast('Playing video stream!', 'success');
-      }
-
-      pasteMediaInput.value = '';
-    }
-
-    if (btnLoadMedia) btnLoadMedia.addEventListener('click', handleLoadEnteredMedia);
-    if (pasteMediaInput) {
-      pasteMediaInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleLoadEnteredMedia();
-        }
-      });
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 6: Native HTML5 Video Controls & Scrubber Sync
-    // ------------------------------------------------------------------------
-    function toggleVideoPlay() {
-      if (currentMode === 'youtube') {
-        if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
-          const s = ytPlayer.getPlayerState();
-          if (s === YT.PlayerState.PLAYING) {
-            ytPlayer.pauseVideo();
-          } else {
-            ytPlayer.playVideo();
-          }
-        } else {
-          sendYtCommand('playVideo');
-        }
-        return;
-      }
-      if (video.paused) {
-        video.play().catch(() => {});
-        if (typeof broadcastPlaybackSync === 'function') {
-          broadcastPlaybackSync('play', video.currentTime, true);
-        }
-      } else {
-        video.pause();
-        if (typeof broadcastPlaybackSync === 'function') {
-          broadcastPlaybackSync('pause', video.currentTime, false);
-        }
-      }
-    }
-
-    if (centerPlayBtn) centerPlayBtn.addEventListener('click', toggleVideoPlay);
-    if (ctrlPlayPauseBtn) ctrlPlayPauseBtn.addEventListener('click', toggleVideoPlay);
-
-    video.addEventListener('play', () => {
-      if (centerPlayBtn) centerPlayBtn.style.display = 'none';
-      if (ctrlPlayPauseIcon) ctrlPlayPauseIcon.className = 'bi bi-pause-fill';
-    });
-
-    video.addEventListener('pause', () => {
-      if (currentMode !== 'youtube' && currentMode !== 'screenshare') {
-        if (centerPlayBtn) centerPlayBtn.style.display = 'flex';
-      }
-      if (ctrlPlayPauseIcon) ctrlPlayPauseIcon.className = 'bi bi-play-fill';
-    });
-
-    video.addEventListener('timeupdate', () => {
-      if (!video.duration || currentMode === 'screenshare') return;
-      const pct = (video.currentTime / video.duration) * 100;
-      if (timelineProgress) timelineProgress.style.width = pct + '%';
-      if (timestampDisplay) {
-        timestampDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
-      }
-    });
-
-    if (timelineScrubber) {
-      timelineScrubber.addEventListener('click', (e) => {
-        if (!video.duration || currentMode === 'screenshare') return;
-        const rect = timelineScrubber.getBoundingClientRect();
-        const pos = (e.clientX - rect.left) / rect.width;
-        video.currentTime = pos * video.duration;
-        if (typeof broadcastPlaybackSync === 'function') {
-          broadcastPlaybackSync('seek', video.currentTime, !video.paused);
-        }
-      });
-    }
-
-    // Mute / Unmute
-    if (ctrlMuteBtn) {
-      ctrlMuteBtn.addEventListener('click', () => {
-        video.muted = !video.muted;
-        if (ctrlVolumeIcon) {
-          ctrlVolumeIcon.className = video.muted ? 'bi bi-volume-mute-fill text-danger' : 'bi bi-volume-up-fill';
-        }
-        if (volumeFill) {
-          volumeFill.style.width = video.muted ? '0%' : (video.volume * 100) + '%';
-        }
-      });
-    }
-
-    // Volume Track Click
-    if (volumeTrack) {
-      volumeTrack.addEventListener('click', (e) => {
-        const rect = volumeTrack.getBoundingClientRect();
-        const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-        video.volume = pos;
-        video.muted = (pos === 0);
-        if (volumeFill) volumeFill.style.width = (pos * 100) + '%';
-        if (ctrlVolumeIcon) {
-          ctrlVolumeIcon.className = (pos === 0) ? 'bi bi-volume-mute-fill text-danger' : 'bi bi-volume-up-fill';
-        }
-      });
-    }
-
-    // Rewind 10 seconds
-    const rewindBtn = document.getElementById('ctrlRewindBtn');
-    if (rewindBtn) {
-      rewindBtn.addEventListener('click', () => {
-        if (currentMode === 'youtube') {
-          showToast('Use YouTube player controls to seek.', 'info');
-          return;
-        }
-        video.currentTime = Math.max(0, video.currentTime - 10);
-      });
-    }
-
-    // Fullscreen Toggle
-    if (ctrlFullscreenBtn) {
-      ctrlFullscreenBtn.addEventListener('click', () => {
-        const canvas = document.getElementById('videoCanvas');
-        if (!document.fullscreenElement) {
-          if (canvas.requestFullscreen) canvas.requestFullscreen().catch(() => {});
-        } else {
-          if (document.exitFullscreen) document.exitFullscreen();
-        }
-      });
-    }
-
-    // Picture-in-Picture
-    if (ctrlPipBtn) {
-      ctrlPipBtn.addEventListener('click', () => {
-        if (document.pictureInPictureElement) {
-          document.exitPictureInPicture().catch(() => {});
-        } else if (document.pictureInPictureEnabled && video.readyState >= 2) {
-          video.requestPictureInPicture().catch(() => {});
-        } else {
-          showToast('Picture-in-Picture is active for HTML5 video playback.', 'info');
-        }
-      });
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 7: Microphone & Camera AV Controls (Real WebRTC getUserMedia)
-    // ------------------------------------------------------------------------
-    function setSpeakingIndicator(isSpeaking) {
-      if (btnToggleMic && !isMicMuted && userMicStream) {
-        btnToggleMic.classList.toggle('speaking', isSpeaking);
-      } else if (btnToggleMic) {
-        btnToggleMic.classList.remove('speaking');
-      }
-
-      if (myUserAvatar) {
-        myUserAvatar.style.boxShadow = (isSpeaking && !isMicMuted) ? '0 0 0 3px #22c55e' : 'none';
-        myUserAvatar.style.borderRadius = '50%';
-      }
-
-      if (webcamOverlayCard && isCamActive) {
-        webcamOverlayCard.style.borderColor = (isSpeaking && !isMicMuted) ? '#22c55e' : '#ef4444';
-      }
-    }
-
-    function startVoiceDetection(stream) {
-      try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return;
-        if (!audioCtx) {
-          audioCtx = new AudioContextClass();
-        }
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-        const source = audioCtx.createMediaStreamSource(stream);
-        analyserNode = audioCtx.createAnalyser();
-        analyserNode.fftSize = 256;
-        source.connect(analyserNode);
-
-        const pcmData = new Uint8Array(analyserNode.frequencyBinCount);
-        function detectAudio() {
-          if (!userMicStream || isMicMuted) {
-            setSpeakingIndicator(false);
-            audioAnimId = requestAnimationFrame(detectAudio);
-            return;
-          }
-          analyserNode.getByteFrequencyData(pcmData);
-          let sum = 0;
-          for (let i = 0; i < pcmData.length; i++) {
-            sum += pcmData[i];
-          }
-          const avg = sum / pcmData.length;
-          const isSpeaking = avg > 14;
-          setSpeakingIndicator(isSpeaking);
-          audioAnimId = requestAnimationFrame(detectAudio);
-        }
-        detectAudio();
-      } catch (err) {
-        console.warn('Audio analyser setup note:', err);
-      }
-    }
-
-    function applyMicUIState() {
-      if (!btnToggleMic || !micIcon) return;
-      if (!userMicStream || isMicMuted) {
-        btnToggleMic.classList.remove('active-av', 'speaking');
-        btnToggleMic.classList.add('muted-av');
-        micIcon.className = 'bi bi-mic-mute-fill';
-        btnToggleMic.title = 'Microphone Muted (Click to Unmute)';
-        if (myMicStatusText) myMicStatusText.textContent = 'Connected · Mic Muted';
-        if (webcamTileMicIcon) webcamTileMicIcon.className = 'bi bi-mic-mute-fill text-danger';
-        setSpeakingIndicator(false);
-      } else {
-        btnToggleMic.classList.add('active-av');
-        btnToggleMic.classList.remove('muted-av');
-        micIcon.className = 'bi bi-mic-fill';
-        btnToggleMic.title = 'Mute Microphone';
-        if (myMicStatusText) myMicStatusText.textContent = 'Connected · Mic Live';
-        if (webcamTileMicIcon) webcamTileMicIcon.className = 'bi bi-mic-fill text-success';
-      }
-    }
-
-    async function toggleMicrophone() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showToast('Microphone access is not supported by this browser.', 'warning');
-        return;
-      }
-
-      // If mic has not been requested yet, request permission
-      if (!userMicStream) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          userMicStream = stream;
-          isMicMuted = false;
-          applyMicUIState();
-          startVoiceDetection(stream);
-
-          // Handle if user unplugs or stream ends
-          stream.getAudioTracks().forEach(track => {
-            track.onended = () => {
-              userMicStream = null;
-              isMicMuted = true;
-              applyMicUIState();
-              showToast('Microphone disconnected.', 'warning');
-            };
-          });
-
-          showToast('Microphone connected & unmuted! Speak now.', 'success');
-        } catch (err) {
-          console.warn('Microphone permission error:', err);
-          showToast('Microphone access denied or not found. Please allow microphone permission.', 'warning');
-        }
-        return;
-      }
-
-      // Already requested - toggle mute state
-      isMicMuted = !isMicMuted;
-      userMicStream.getAudioTracks().forEach(track => {
-        track.enabled = !isMicMuted;
-      });
-      applyMicUIState();
-      showToast(isMicMuted ? 'Microphone muted.' : 'Microphone unmuted (Live).', isMicMuted ? 'warning' : 'success');
-    }
-
-    async function toggleWebcam() {
-      if (isCamActive) {
-        stopWebcam();
-        showToast('Camera turned off.', 'info');
-        return;
-      }
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showToast('Camera access is not supported by this browser.', 'warning');
-        return;
-      }
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-            facingMode: 'user'
-          },
-          audio: false
-        });
-        userCamStream = stream;
-        isCamActive = true;
-
-        if (userWebcamVideo) {
-          userWebcamVideo.muted = true;
-          userWebcamVideo.playsInline = true;
-          userWebcamVideo.setAttribute('muted', '');
-          userWebcamVideo.setAttribute('playsinline', '');
-          userWebcamVideo.setAttribute('autoplay', '');
-          userWebcamVideo.srcObject = stream;
-          try {
-            await userWebcamVideo.play();
-          } catch (e) {
-            console.warn('Webcam play warning:', e);
-          }
-        }
-        if (webcamOverlayCard) {
-          webcamOverlayCard.style.display = 'flex';
-          webcamOverlayCard.style.zIndex = '999';
-        }
-        if (btnToggleCam) {
-          btnToggleCam.classList.add('active-av');
-          btnToggleCam.classList.remove('muted-av');
-          btnToggleCam.title = 'Turn Off Camera';
-        }
-        if (camIcon) {
-          camIcon.className = 'bi bi-camera-video-fill';
-        }
-
-        stream.getVideoTracks().forEach(track => {
-          track.onended = () => {
-            stopWebcam();
-            showToast('Camera disconnected.', 'warning');
-          };
-        });
-
-        showToast('Webcam live! You can drag the camera tile anywhere on screen.', 'success');
-      } catch (err) {
-        console.warn('Webcam permission error:', err);
-        showToast('Camera access denied or no camera device found. Please allow camera permission.', 'warning');
-      }
-    }
-
-    function stopWebcam() {
-      if (userCamStream) {
-        userCamStream.getTracks().forEach(track => track.stop());
-        userCamStream = null;
-      }
-      isCamActive = false;
-      if (userWebcamVideo) {
-        userWebcamVideo.srcObject = null;
-      }
-      if (webcamOverlayCard) {
-        webcamOverlayCard.style.display = 'none';
-      }
-      if (btnToggleCam) {
-        btnToggleCam.classList.remove('active-av');
-        btnToggleCam.classList.add('muted-av');
-        btnToggleCam.title = 'Turn On Camera';
-      }
-      if (camIcon) {
-        camIcon.className = 'bi bi-camera-video';
-      }
-    }
-
-    // Draggable Floating Webcam Tile
-    function initWebcamDraggable() {
-      if (!webcamOverlayCard) return;
-      const container = document.querySelector('.video-ratio-box');
-      if (!container) return;
-
-      let isDragging = false;
-      let startX = 0, startY = 0;
-      let startLeft = 0, startTop = 0;
-
-      webcamOverlayCard.addEventListener('mousedown', (e) => {
-        if (e.target.closest('#btnCloseWebcam')) return;
-        isDragging = true;
-        webcamOverlayCard.style.cursor = 'grabbing';
-        startX = e.clientX;
-        startY = e.clientY;
-
-        const cardRect = webcamOverlayCard.getBoundingClientRect();
-        const contRect = container.getBoundingClientRect();
-        startLeft = cardRect.left - contRect.left;
-        startTop = cardRect.top - contRect.top;
-
-        webcamOverlayCard.style.left = startLeft + 'px';
-        webcamOverlayCard.style.top = startTop + 'px';
-        webcamOverlayCard.style.right = 'auto';
-        webcamOverlayCard.style.bottom = 'auto';
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        e.preventDefault();
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        const contRect = container.getBoundingClientRect();
-        const cardRect = webcamOverlayCard.getBoundingClientRect();
-
-        const maxLeft = Math.max(0, contRect.width - cardRect.width);
-        const maxTop = Math.max(0, contRect.height - cardRect.height);
-        const newLeft = Math.max(0, Math.min(maxLeft, startLeft + dx));
-        const newTop = Math.max(0, Math.min(maxTop, startTop + dy));
-
-        webcamOverlayCard.style.left = newLeft + 'px';
-        webcamOverlayCard.style.top = newTop + 'px';
-      });
-
-      window.addEventListener('mouseup', () => {
-        if (isDragging) {
-          isDragging = false;
-          webcamOverlayCard.style.cursor = 'grab';
-        }
-      });
-    }
-
-    if (btnToggleMic) btnToggleMic.addEventListener('click', toggleMicrophone);
-    if (btnToggleCam) btnToggleCam.addEventListener('click', toggleWebcam);
-    if (btnCloseWebcam) btnCloseWebcam.addEventListener('click', toggleWebcam);
-    initWebcamDraggable();
-
-    // ------------------------------------------------------------------------
-    // Feature 9: Sidebar Tab Switching (Chat vs Queue vs People)
-    // ------------------------------------------------------------------------
-    const tabChatBtn = document.getElementById('tabChatBtn');
-    const tabQueueBtn = document.getElementById('tabQueueBtn');
-    const tabPeopleBtn = document.getElementById('tabPeopleBtn');
-    const chatStream = document.getElementById('chatStream');
-    const queueStream = document.getElementById('queueStream');
-    const peopleStream = document.getElementById('peopleStream');
-    const chatFooter = document.getElementById('chatFooterContainer');
-    const sidebarInviteRow = document.getElementById('sidebarInviteRow');
-
-    function switchSidebarTab(tab) {
-      if (tabChatBtn) tabChatBtn.classList.toggle('active', tab === 'chat');
-      if (tabQueueBtn) tabQueueBtn.classList.toggle('active', tab === 'queue');
-      if (tabPeopleBtn) tabPeopleBtn.classList.toggle('active', tab === 'people');
-
-      if (chatStream) chatStream.style.display = (tab === 'chat') ? 'flex' : 'none';
-      if (queueStream) queueStream.style.display = (tab === 'queue') ? 'flex' : 'none';
-      if (peopleStream) peopleStream.style.display = (tab === 'people') ? 'flex' : 'none';
-
-      if (chatFooter) {
-        chatFooter.style.display = (tab === 'chat') ? 'block' : 'none';
-      }
-      if (sidebarInviteRow) {
-        sidebarInviteRow.style.display = (tab === 'queue') ? 'none' : 'flex';
-      }
-    }
-
-    if (tabChatBtn) tabChatBtn.addEventListener('click', () => switchSidebarTab('chat'));
-    if (tabQueueBtn) tabQueueBtn.addEventListener('click', () => switchSidebarTab('queue'));
-    if (tabPeopleBtn) tabPeopleBtn.addEventListener('click', () => switchSidebarTab('people'));
-
-    // ------------------------------------------------------------------------
-    // Feature 10: Clickable Playlist Queue Engine
-    // ------------------------------------------------------------------------
-    function updateQueueCount() {
-      const items = document.querySelectorAll('#queueItemsList .queue-item-card');
-      const total = items.length + 1; // plus now playing
-      const badge = document.getElementById('queueBadgeCount');
-      const display = document.getElementById('queueCountDisplay');
-      if (badge) badge.textContent = total;
-      if (display) display.textContent = total;
-    }
-
-    // Helper: Add Item directly to Queue list with Click-to-Play
-    function addQueueItemDirect(title, url, duration = 'Ready', author = 'You') {
-      const list = document.getElementById('queueItemsList');
-      if (!list) return;
-
-      const items = list.querySelectorAll('.queue-item-card');
-      const nextIndex = items.length + 1;
-
-      const ytId = extractYouTubeId(url);
-      const thumbUrl = ytId 
-        ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` 
-        : 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&w=120&q=80';
-
-      const card = document.createElement('div');
-      card.className = 'queue-item-card queue-playable-item p-2 rounded-3 border bg-white shadow-sm d-flex align-items-center gap-2';
-      card.style.cursor = 'pointer';
-      card.setAttribute('data-url', url);
-      card.setAttribute('data-title', title);
-      card.innerHTML = `
-        <div class="text-muted small px-1 fw-bold" style="font-size: 11px;">${nextIndex}</div>
-        <img class="rounded-2 flex-shrink-0" src="${thumbUrl}" alt="Thumb" style="width: 52px; height: 34px; object-fit: cover;">
-        <div class="flex-grow-1 min-w-0">
-          <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;">${title.replace(/</g, '&lt;')}</div>
-          <div class="text-muted small" style="font-size: 10px;">${duration} • Added by ${author}</div>
+  <!-- Modal: Universal Media Discovery & Web Scraper Hub -->
+  <div class="modal fade" id="mediaDiscoveryHubModal" tabindex="-1" aria-labelledby="mediaDiscoveryHubLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: var(--bg-card); backdrop-filter: blur(16px); border: 1px solid var(--border-subtle) !important;">
+        <div class="modal-header border-bottom px-4 py-3 d-flex align-items-center justify-content-between" style="border-color: var(--border-subtle) !important;">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 bg-danger bg-opacity-10 text-danger">
+              <i class="bi bi-compass-fill fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold text-main mb-0" id="mediaDiscoveryHubLabel">
+                Universal Media Discovery & Web Scraper
+              </h5>
+              <small class="text-muted" id="discoverySubtitle">Search YouTube, Facebook, Twitch, Vimeo & Web Streams</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <button class="btn btn-sm btn-outline-secondary border-0 p-1 text-muted" title="Remove" onclick="event.stopPropagation(); this.closest('.queue-item-card').remove(); updateQueueCount();">
-          <i class="bi bi-x-lg" style="font-size: 11px;"></i>
-        </button>
-      `;
-
-      list.appendChild(card);
-      updateQueueCount();
-    }
-
-    function addSidebarQueueItem() {
-      const input = document.getElementById('sidebarQueueInput');
-      if (!input) return;
-      const text = input.value.trim();
-      if (!text) return;
-
-      const ytId = extractYouTubeId(text);
-      const title = ytId ? `YouTube Video (${ytId})` : text;
-      addQueueItemDirect(title, text, '03:45', 'You');
-
-      input.value = '';
-      showToast('Video added to playlist queue! Click it anytime to watch.', 'success');
-    }
-
-    // Delegate click on queue items list to play clicked video
-    const queueList = document.getElementById('queueItemsList');
-    if (queueList) {
-      queueList.addEventListener('click', (e) => {
-        const card = e.target.closest('.queue-playable-item');
-        if (!card) return;
-        // Ignore if clicked on delete button
-        if (e.target.closest('button')) return;
-
-        const url = card.getAttribute('data-url');
-        const title = card.getAttribute('data-title');
-        if (url) {
-          playMedia('youtube', url, title);
-          showToast(`Now Playing: ${title}`, 'success');
-        }
-      });
-    }
-
-    // Now Playing card click to replay
-    const nowPlayingCard = document.getElementById('nowPlayingCard');
-    if (nowPlayingCard) {
-      nowPlayingCard.addEventListener('click', () => {
-        const url = nowPlayingCard.getAttribute('data-url');
-        const title = nowPlayingCard.getAttribute('data-title');
-        if (url) {
-          playMedia('youtube', url, title);
-          showToast(`Now Playing: ${title}`, 'success');
-        }
-      });
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 11: Real-time Multi-user Chat & WatchTogether Synchronization
-    // ------------------------------------------------------------------------
-    const myPeerId = 'user_' + Math.random().toString(36).substring(2, 9);
-    let socket = null;
-    let currentRoomCode = 'UNI-8842';
-    let currentLoadedMediaUrl = '';
-    let isSyncingFromRemote = false;
-    const renderedMessageIds = new Set();
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    let currentAttachment = null;
-    const chatFileInput = document.getElementById('chatFileInput');
-    const btnChatAttach = document.getElementById('btnChatAttach');
-    const attachmentPreviewStrip = document.getElementById('attachmentPreviewStrip');
-    const attachmentFileName = document.getElementById('attachmentFileName');
-    const attachmentFileSize = document.getElementById('attachmentFileSize');
-    const attachmentThumbImg = document.getElementById('attachmentThumbImg');
-    const attachmentDocIcon = document.getElementById('attachmentDocIcon');
-    const btnCancelAttachment = document.getElementById('btnCancelAttachment');
-
-    if (btnChatAttach && chatFileInput) {
-      btnChatAttach.addEventListener('click', () => {
-        chatFileInput.click();
-      });
-
-      chatFileInput.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-
-        if (file.size > 8 * 1024 * 1024) {
-          showToast('Attachment exceeds 8MB limit.', 'warning');
-          chatFileInput.value = '';
-          return;
-        }
-
-        const isImg = file.type.startsWith('image/');
-        const sizeFormatted = file.size < 1024 * 1024 
-          ? `${Math.round(file.size / 1024)} KB` 
-          : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-
-        const reader = new FileReader();
-        reader.onload = (re) => {
-          currentAttachment = {
-            name: file.name,
-            type: file.type || 'application/octet-stream',
-            size: sizeFormatted,
-            dataUrl: re.target.result
-          };
-
-          if (attachmentFileName) attachmentFileName.textContent = file.name;
-          if (attachmentFileSize) attachmentFileSize.textContent = `(${sizeFormatted})`;
-
-          if (isImg && attachmentThumbImg) {
-            attachmentThumbImg.src = re.target.result;
-            attachmentThumbImg.style.display = 'inline-block';
-            if (attachmentDocIcon) attachmentDocIcon.style.display = 'none';
-          } else {
-            if (attachmentThumbImg) attachmentThumbImg.style.display = 'none';
-            if (attachmentDocIcon) attachmentDocIcon.style.display = 'inline-block';
-          }
-
-          if (attachmentPreviewStrip) attachmentPreviewStrip.style.display = 'flex';
-          const input = document.getElementById('chatInputBox');
-          if (input) input.focus();
-        };
-
-        reader.readAsDataURL(file);
-      });
-    }
-
-    if (btnCancelAttachment) {
-      btnCancelAttachment.addEventListener('click', () => {
-        currentAttachment = null;
-        if (chatFileInput) chatFileInput.value = '';
-        if (attachmentPreviewStrip) attachmentPreviewStrip.style.display = 'none';
-      });
-    }
-
-    function renderChatMessage(msg) {
-      if (!chatStream || !msg) return;
-      if (msg.id && renderedMessageIds.has(msg.id)) return;
-      if (msg.id) renderedMessageIds.add(msg.id);
-
-      const timeStr = msg.created_at 
-        ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      const sender = msg.user_name || 'Classmate';
-      const avatar = msg.user_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80';
-
-      let textContent = msg.message || '';
-      let attachmentObj = msg.attachment || null;
-
-      // Parse JSON if message includes structured attachment payload
-      if (typeof textContent === 'string' && textContent.startsWith('{') && textContent.includes('"attachment"')) {
-        try {
-          const parsed = JSON.parse(textContent);
-          textContent = parsed.text || '';
-          attachmentObj = parsed.attachment || attachmentObj;
-        } catch(e) {}
-      }
-
-      let attachmentHtml = '';
-      if (attachmentObj) {
-        if (attachmentObj.type && attachmentObj.type.startsWith('image/')) {
-          attachmentHtml = `
-            <div class="mt-1">
-              <img src="${attachmentObj.dataUrl}" alt="${escapeHtml(attachmentObj.name)}" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; object-fit: cover; box-shadow: 0 1px 4px rgba(0,0,0,0.1);" onclick="window.open(this.src, '_blank')">
+        <div class="modal-body p-4">
+          <!-- Active Search / Scraper Toolbar -->
+          <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
+            <div class="input-group input-group-sm flex-grow-1">
+              <span class="input-group-text bg-dark border-secondary text-warning" id="discoveryPlatformBadge">
+                <i class="bi bi-youtube me-1 text-danger"></i> YouTube
+              </span>
+              <input type="text" class="form-control bg-dark text-white border-secondary" id="modalDiscoveryQueryInput" placeholder="Search keywords, title, or target website..." onkeydown="if(event.key==='Enter') executeModalSearch()">
+              <button class="btn btn-warning fw-bold px-3" onclick="executeModalSearch()">
+                <i class="bi bi-search me-1"></i> Search
+              </button>
             </div>
-          `;
-        } else {
-          attachmentHtml = `
-            <div class="mt-1 p-2 rounded-2 d-flex align-items-center justify-content-between gap-2" style="background: #f8fafc; border: 1px solid #e2e8f0; font-size: 11px;">
-              <div class="d-flex align-items-center gap-2 text-truncate" style="min-width: 0;">
-                <i class="bi bi-file-earmark-text-fill text-danger fs-6"></i>
-                <div class="text-truncate">
-                  <div class="fw-bold text-dark text-truncate">${escapeHtml(attachmentObj.name)}</div>
-                  <div class="text-muted" style="font-size: 9.5px;">${attachmentObj.size || ''}</div>
-                </div>
-              </div>
-              <a href="${attachmentObj.dataUrl || '#'}" download="${escapeHtml(attachmentObj.name)}" class="btn btn-sm btn-white border py-0 px-2 text-danger fw-bold" style="font-size: 10.5px; white-space: nowrap;">
-                <i class="bi bi-download me-1"></i> Save
-              </a>
-            </div>
-          `;
-        }
-      }
-
-      let textBubbleHtml = '';
-      if (textContent && textContent.trim()) {
-        textBubbleHtml = `
-          <div class="chat-bubble-gray">
-            ${escapeHtml(textContent)}
           </div>
-        `;
-      }
 
-      const msgEl = document.createElement('div');
-      msgEl.className = 'd-flex gap-2 align-items-start';
-      msgEl.innerHTML = `
-        <img class="chat-user-avatar" src="${avatar}" alt="${escapeHtml(sender)}">
-        <div class="flex-grow-1 d-flex flex-column gap-1" style="min-width: 0;">
-          <div class="d-flex align-items-baseline gap-1">
-            <span class="chat-sender-name">${escapeHtml(sender)}</span>
-            <span class="chat-sender-time">${timeStr}</span>
+          <!-- Status / Results Summary Banner -->
+          <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom" style="border-color: var(--border-subtle) !important;">
+            <span class="text-white-50 small" id="discoveryStatusText">Ready to discover media. Enter a search query above.</span>
+            <span class="badge bg-secondary rounded-pill" id="discoveryResultsCount">0 results</span>
           </div>
-          ${textBubbleHtml}
-          ${attachmentHtml}
+
+          <!-- Results Grid Container -->
+          <div class="discovery-results-grid" id="discoveryResultsContainer">
+            <!-- Scraped / Searched Cards rendered here dynamically -->
+          </div>
         </div>
-      `;
-      const emptyNotice = document.getElementById('emptyChatNotice');
-      if (emptyNotice) emptyNotice.remove();
+        <div class="modal-footer border-top px-4 py-2 d-flex justify-content-between" style="border-color: var(--border-subtle) !important;">
+          <small class="text-muted"><i class="bi bi-shield-check me-1 text-success"></i>Direct client-side stream scraping with server proxy fallback</small>
+          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      chatStream.appendChild(msgEl);
-      chatStream.scrollTop = chatStream.scrollHeight;
-    }
-
-    async function loadRoomChat(code) {
-      if (typeof ApiClient !== 'undefined' && ApiClient.getMessages) {
-        try {
-          const res = await ApiClient.getMessages(code);
-          if (res && Array.isArray(res.messages)) {
-            chatStream.innerHTML = '';
-            renderedMessageIds.clear();
-            if (res.messages.length === 0) {
-              chatStream.innerHTML = `
-                <div class="text-center py-4 text-muted small" id="emptyChatNotice">
-                  <i class="bi bi-chat-dots fs-3 d-block mb-1 text-secondary"></i>
-                  <span>No messages yet in room #${escapeHtml(code)}. Start chatting!</span>
-                </div>
-              `;
-            } else {
-              res.messages.forEach(m => renderChatMessage(m));
-            }
-          }
-        } catch (err) {
-          console.warn('[Chat] Could not load messages:', err.message);
-        }
-      }
-    }
-
-    async function sendChatMessage() {
-      const input = document.getElementById('chatInputBox');
-      if (!input) return;
-      const text = input.value.trim();
-      
-      // If both text and attachment are empty, do nothing
-      if (!text && !currentAttachment) return;
-
-      const emptyNotice = document.getElementById('emptyChatNotice');
-      if (emptyNotice) emptyNotice.remove();
-
-      let senderName = 'Yasaru';
-      let senderAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80';
-      try {
-        const u = JSON.parse(localStorage.getItem('unitogether_user'));
-        if (u && u.name) senderName = u.name;
-        if (u && u.avatar) senderAvatar = u.avatar;
-      } catch (e) {}
-
-      input.value = '';
-      const attachmentToSend = currentAttachment;
-
-      // Reset attachment preview
-      currentAttachment = null;
-      if (chatFileInput) chatFileInput.value = '';
-      if (attachmentPreviewStrip) attachmentPreviewStrip.style.display = 'none';
-
-      // Encode payload
-      let messagePayload = text;
-      if (attachmentToSend) {
-        messagePayload = JSON.stringify({
-          text: text,
-          attachment: attachmentToSend
-        });
-      }
-
-      const msgData = {
-        user_name: senderName,
-        user_avatar: senderAvatar,
-        message: messagePayload,
-        created_at: new Date().toISOString()
-      };
-
-      // 1. Post to SQLite database
-      if (typeof ApiClient !== 'undefined' && ApiClient.sendMessage) {
-        try {
-          const res = await ApiClient.sendMessage(currentRoomCode, {
-            user_name: senderName,
-            user_avatar: senderAvatar,
-            message: messagePayload
-          });
-          if (res && res.chatMessage) {
-            renderChatMessage(res.chatMessage);
-          }
-        } catch (err) {
-          console.warn('[Chat] Failed to send message:', err.message);
-          renderChatMessage(msgData);
-        }
-      }
-
-      // 2. Broadcast via Socket.io
-      if (socket) {
-        socket.emit('new_chat_message', {
-          roomCode: currentRoomCode,
-          ...msgData
-        });
-      }
-    }
-
-    function postReaction(emoji) {
-      const input = document.getElementById('chatInputBox');
-      if (!input) return;
-      input.value += emoji;
-      input.focus();
-    }
-
-    // ------------------------------------------------------------------------
-    // WatchTogether Playback State Synchronization
-    // ------------------------------------------------------------------------
-    function broadcastPlaybackSync(action, time, isPlaying, mediaUrl, mediaTitle) {
-      if (isSyncingFromRemote) return;
-
-      let currentTimeVal = 0;
-      let isPlayingVal = true;
-
-      if (time !== undefined) {
-        currentTimeVal = time;
-      } else if (currentMode === 'youtube' && ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-        currentTimeVal = ytPlayer.getCurrentTime();
-      } else if (video) {
-        currentTimeVal = video.currentTime;
-      }
-
-      if (isPlaying !== undefined) {
-        isPlayingVal = isPlaying;
-      } else if (currentMode === 'youtube' && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
-        isPlayingVal = (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING);
-      } else if (video) {
-        isPlayingVal = !video.paused;
-      }
-
-      const syncPayload = {
-        roomCode: currentRoomCode,
-        current_time: currentTimeVal,
-        is_playing: isPlayingVal,
-        media_url: mediaUrl || currentLoadedMediaUrl,
-        media_title: mediaTitle || (currentVideoTitle ? currentVideoTitle.textContent : ''),
-        senderId: myPeerId
-      };
-
-      if (socket) {
-        socket.emit('sync_playback', syncPayload);
-      }
-
-      if (typeof ApiClient !== 'undefined' && ApiClient.syncRoom) {
-        ApiClient.syncRoom(currentRoomCode, syncPayload).catch(() => {});
-      }
-    }
-
-    function handleIncomingSync(data) {
-      if (!data || data.senderId === myPeerId) return;
-      if (currentMode === 'screenshare') return; // Protect active screenshare stream
-
-      isSyncingFromRemote = true;
-
-      // 1. Synchronize video change
-      const incomingYtId = extractYouTubeId(data.media_url);
-      const currentYtId = extractYouTubeId(currentLoadedMediaUrl);
-
-      const isDifferentMedia = incomingYtId 
-        ? (incomingYtId !== currentYtId) 
-        : (data.media_url && data.media_url !== currentLoadedMediaUrl);
-
-      if (isDifferentMedia) {
-        const type = incomingYtId ? 'youtube' : 'upload';
-        currentLoadedMediaUrl = data.media_url;
-        playMedia(type, data.media_url, data.media_title || 'Synchronized Video', data.current_time || 0, data.is_playing);
-        if (typeof showToast === 'function') {
-          showToast(`Video synchronized: "${data.media_title || 'New Stream'}"`, 'info');
-        }
-      } else {
-        // 2. Synchronize playback state (play/pause/seek)
-        if (currentMode === 'youtube') {
-          if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
-            const cur = ytPlayer.getCurrentTime() || 0;
-            if (data.current_time !== undefined && Math.abs(cur - data.current_time) > 2.0) {
-              ytPlayer.seekTo(data.current_time, true);
-            }
-            if (data.is_playing === true) {
-              if (ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
-                ytPlayer.playVideo();
-              }
-            } else if (data.is_playing === false) {
-              if (ytPlayer.getPlayerState() !== YT.PlayerState.PAUSED) {
-                ytPlayer.pauseVideo();
-              }
-            }
-          }
-        } else if (video) {
-          if (data.current_time !== undefined && Math.abs(video.currentTime - data.current_time) > 2.0) {
-            video.currentTime = data.current_time;
-          }
-          if (data.is_playing === true && video.paused) {
-            video.play().catch(() => {});
-          } else if (data.is_playing === false && !video.paused) {
-            video.pause();
-          }
-        }
-      }
-
-      setTimeout(() => {
-        isSyncingFromRemote = false;
-      }, 600);
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 12: Unique Room Invite Link Copying
-    // ------------------------------------------------------------------------
-    function copyRoomInviteLink() {
-      const inviteUrl = window.location.origin + '/pages/room.html?room=' + encodeURIComponent(currentRoomCode);
-
-      function fallbackCopy(text) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-          document.execCommand('copy');
-        } catch (err) {}
-        document.body.removeChild(textArea);
-      }
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(inviteUrl).catch(() => {
-          fallbackCopy(inviteUrl);
-        });
-      } else {
-        fallbackCopy(inviteUrl);
-      }
-
-      // Visual feedback on the button
-      if (btnInviteRoom) {
-        const originalContent = btnInviteRoom.innerHTML;
-        btnInviteRoom.style.backgroundColor = '#16a34a';
-        btnInviteRoom.style.borderColor = '#16a34a';
-        btnInviteRoom.innerHTML = '<i class="bi bi-check-lg text-white"></i> <span class="text-white">Copied!</span>';
-        setTimeout(() => {
-          btnInviteRoom.style.backgroundColor = '';
-          btnInviteRoom.style.borderColor = '';
-          btnInviteRoom.innerHTML = originalContent;
-        }, 2200);
-      }
-
-      if (typeof showToast === 'function') {
-        showToast(`Room invite link copied to clipboard!\n${inviteUrl}`, 'success');
-      } else {
-        alert(`Room invite link copied to clipboard!\n${inviteUrl}`);
-      }
-    }
-
-    if (btnInviteRoom) btnInviteRoom.addEventListener('click', copyRoomInviteLink);
-    if (headerRoomCode) {
-      headerRoomCode.style.cursor = 'pointer';
-      headerRoomCode.title = 'Click to copy invite link';
-      headerRoomCode.addEventListener('click', copyRoomInviteLink);
-    }
-    if (overlayRoomCode) {
-      overlayRoomCode.style.cursor = 'pointer';
-      overlayRoomCode.title = 'Click to copy invite link';
-      overlayRoomCode.addEventListener('click', copyRoomInviteLink);
-    }
-
-    // ------------------------------------------------------------------------
-    // Feature 12.5: Render Real-Time Connected Room Participants (Zero Dummies)
-    // ------------------------------------------------------------------------
-    function renderConnectedPeople(users) {
-      const peopleStream = document.getElementById('peopleStream');
-      const tabPeopleLabel = document.getElementById('tabPeopleLabel');
-      if (!peopleStream) return;
-
-      const userList = Array.isArray(users) ? users : [];
-      if (tabPeopleLabel) {
-        tabPeopleLabel.textContent = `People (${Math.max(1, userList.length)})`;
-      }
-
-      let currentLoggedUser = null;
-      try {
-        currentLoggedUser = JSON.parse(localStorage.getItem('unitogether_user'));
-      } catch(e) {}
-
-      if (userList.length === 0) {
-        const myName = (currentLoggedUser && currentLoggedUser.name) ? currentLoggedUser.name : 'You (Student)';
-        const myAvatar = (currentLoggedUser && currentLoggedUser.avatar) ? currentLoggedUser.avatar : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(myName)}`;
-        peopleStream.innerHTML = `
-          <div class="d-flex align-items-center gap-2 py-2 px-2 rounded-3 bg-light border mb-2">
-            <img class="chat-user-avatar" src="${escapeHtml(myAvatar)}" alt="${escapeHtml(myName)}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%;">
-            <div class="flex-grow-1 min-w-0">
-              <div class="chat-sender-name text-truncate">
-                <span>${escapeHtml(myName)}</span>
-                <span class="badge bg-danger-subtle text-danger ms-1 fw-bold" style="font-size: 9.5px;">You</span>
-              </div>
-              <div class="chat-sender-time" style="font-size: 10px;">
-                <i class="bi bi-circle-fill text-success" style="font-size: 7px;"></i> Connected · Active
-              </div>
+  <!-- Modal: Add Custom Stream (HLS / m3u8 / Direct) -->
+  <div class="modal fade" id="customStreamModal" tabindex="-1" aria-labelledby="customStreamModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: var(--bg-card);">
+        <div class="modal-header border-bottom px-4 py-3" style="border-color: var(--border-subtle) !important;">
+          <h5 class="modal-title fw-bold text-main" id="customStreamModalLabel">
+            <i class="bi bi-broadcast text-danger me-2"></i> Add Custom Video Stream
+          </h5>
+          <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="customStreamForm">
+            <div class="mb-3">
+              <label for="customStreamTitle" class="form-label small fw-bold text-main">Stream Title</label>
+              <input type="text" class="form-control rounded-3" id="customStreamTitle" placeholder="e.g. Live Campus Lecture Stream" required style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
             </div>
-          </div>
-          <div class="text-center py-4 text-muted small">
-            <i class="bi bi-people text-secondary fs-3 d-block mb-1"></i>
-            <span>You are the only member in this room.<br>Share the link to invite classmates!</span>
-          </div>
-        `;
-        return;
-      }
+            <div class="mb-3">
+              <label for="customStreamUrl" class="form-label small fw-bold text-main">Stream URL (HLS .m3u8, MP4, WebM)</label>
+              <input type="url" class="form-control rounded-3" id="customStreamUrl" placeholder="https://example.com/live/stream.m3u8" required style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+              <small class="text-muted d-block mt-1" style="font-size:0.75rem;">Supports Apple HLS (.m3u8), direct MP4, or WebM media links.</small>
+            </div>
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+              <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-danger px-4 rounded-pill fw-bold">
+                Broadcast Stream <i class="bi bi-play-circle-fill ms-1"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      peopleStream.innerHTML = userList.map(u => {
-        const isMe = currentLoggedUser && currentLoggedUser.email && u.email && (currentLoggedUser.email.toLowerCase() === u.email.toLowerCase());
-        const isHost = u.isHost;
-        const micStatus = u.micMuted ? 'Mic Muted' : 'Connected · Active';
-        const avatarUrl = u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(u.name || 'Student')}`;
+  <!-- Modal: Add to Playlist Queue -->
+  <div class="modal fade" id="addQueueModal" tabindex="-1" aria-labelledby="addQueueModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: var(--bg-card);">
+        <div class="modal-header border-bottom px-4 py-3" style="border-color: var(--border-subtle) !important;">
+          <h5 class="modal-title fw-bold text-main" id="addQueueModalLabel">
+            <i class="bi bi-collection-play-fill text-danger me-2"></i> Add Video to Playlist Queue
+          </h5>
+          <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="addQueueForm">
+            <div class="mb-3">
+              <label for="queueVideoTitle" class="form-label small fw-bold text-main">Video Title</label>
+              <input type="text" class="form-control rounded-3" id="queueVideoTitle" placeholder="e.g. Dynamic Programming Algorithms" required style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+            </div>
+            <div class="mb-3">
+              <label for="queueVideoUrl" class="form-label small fw-bold text-main">Video URL (YouTube or Direct Video)</label>
+              <input type="url" class="form-control rounded-3" id="queueVideoUrl" placeholder="https://www.youtube.com/watch?v=..." required style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+            </div>
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+              <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-danger px-4 rounded-pill fw-bold">
+                Add to Queue <i class="bi bi-plus-circle-fill ms-1"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        return `
-          <div class="d-flex align-items-center gap-2 py-1.5 px-2 rounded-3 mb-1.5" style="background: ${isMe ? '#fff1f2' : '#f8fafc'}; border: 1px solid ${isMe ? '#fecdd3' : '#e2e8f0'};">
-            <img class="chat-user-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(u.name)}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%;">
-            <div class="flex-grow-1 min-w-0">
-              <div class="chat-sender-name text-truncate d-flex align-items-center justify-content-between">
-                <span class="fw-bold text-dark" style="font-size: 12px;">${escapeHtml(u.name)}</span>
+  <!-- Modal: Passcode PIN Required -->
+  <div class="modal fade" id="passcodeModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="passcodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: var(--bg-card);">
+        <div class="modal-header border-bottom px-4 py-3" style="border-color: var(--border-subtle) !important;">
+          <h5 class="modal-title fw-bold text-main" id="passcodeModalLabel">
+            <i class="bi bi-lock-fill text-danger me-2"></i> Passcode Protected Room
+          </h5>
+        </div>
+        <div class="modal-body p-4">
+          <p class="small text-muted mb-3">
+            This watch room is locked by the host. Please enter the security PIN code to join the session.
+          </p>
+          <form id="passcodeEntryForm">
+            <div class="mb-3">
+              <label for="roomPinInput" class="form-label small fw-bold text-main">Security PIN</label>
+              <input type="password" class="form-control rounded-3" id="roomPinInput" placeholder="Enter PIN code" required autofocus style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+            </div>
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+              <a href="rooms.html" class="btn btn-outline-secondary rounded-pill px-3">Leave</a>
+              <button type="submit" class="btn btn-danger px-4 rounded-pill fw-bold">
+                Unlock & Join <i class="bi bi-unlock-fill ms-1"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Local File Synchronization & Streaming Dual-Mode Hub -->
+  <div class="modal fade" id="localFileSyncChoiceModal" tabindex="-1" aria-labelledby="localFileSyncChoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: var(--bg-card);">
+        <div class="modal-header border-bottom px-4 py-3" style="border-color: var(--border-subtle) !important;">
+          <h5 class="modal-title fw-bold text-main" id="localFileSyncChoiceModalLabel">
+            <i class="bi bi-folder-symlink-fill text-warning me-2"></i> Local Video Playback & Streaming Options
+          </h5>
+          <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="small text-muted mb-4">Choose how you want to share and synchronize your local video file with the watch room:</p>
+          
+          <div class="row g-3 mb-4">
+            <!-- Option 1: Timestamp Sync (Everyone has the file) -->
+            <div class="col-md-6">
+              <div class="p-3 rounded-4 h-100 d-flex flex-column justify-content-between" style="background: var(--bg-input); border: 2px solid var(--border-subtle);">
                 <div>
-                  ${isMe ? '<span class="badge bg-danger-subtle text-danger ms-1 fw-bold" style="font-size: 9px;">You</span>' : ''}
-                  ${isHost ? '<span class="badge bg-warning text-dark ms-1 fw-bold" style="font-size: 9px;">Host</span>' : ''}
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="rounded-circle p-2 bg-success bg-opacity-25 text-success">
+                      <i class="bi bi-hdd-network-fill fs-5"></i>
+                    </div>
+                    <div>
+                      <h6 class="fw-bold text-main mb-0">Synchronized Local Copy</h6>
+                      <span class="badge bg-success bg-opacity-10 text-success small" style="font-size:0.65rem;">ZERO BANDWIDTH</span>
+                    </div>
+                  </div>
+                  <p class="small text-muted mb-2">
+                    Select this if <strong>everyone in the room already has a copy of the video file</strong> (e.g. downloaded lecture or shared movie).
+                  </p>
+                  <ul class="small text-muted ps-3 mb-3" style="font-size:0.75rem;">
+                    <li>Zero server upload & zero network lag</li>
+                    <li>Full native resolution (4K / 1080p)</li>
+                    <li>Host syncs Play, Pause, and Seek timestamps</li>
+                  </ul>
                 </div>
+                <button type="button" class="btn btn-outline-success rounded-pill fw-bold w-100" onclick="triggerLocalFileSyncMode('sync')">
+                  <i class="bi bi-link-45deg me-1"></i> Link My Copy (Sync Mode)
+                </button>
               </div>
-              <div class="chat-sender-time" style="font-size: 10.5px;">
-                <i class="bi bi-circle-fill text-success" style="font-size: 6.5px;"></i> ${micStatus}
+            </div>
+
+            <!-- Option 2: WebRTC P2P Live Stream (Host broadcasts video & audio) -->
+            <div class="col-md-6">
+              <div class="p-3 rounded-4 h-100 d-flex flex-column justify-content-between" style="background: var(--bg-input); border: 2px solid var(--border-subtle);">
+                <div>
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="rounded-circle p-2 bg-danger bg-opacity-25 text-danger">
+                      <i class="bi bi-broadcast fs-5"></i>
+                    </div>
+                    <div>
+                      <h6 class="fw-bold text-main mb-0">WebRTC P2P Live Stream</h6>
+                      <span class="badge bg-danger bg-opacity-10 text-danger small" style="font-size:0.65rem;">HOST BROADCAST</span>
+                    </div>
+                  </div>
+                  <p class="small text-muted mb-2">
+                    Select this if <strong>only YOU have the video file</strong>. Your browser captures video & audio and streams it live to classmates.
+                  </p>
+                  <ul class="small text-muted ps-3 mb-3" style="font-size:0.75rem;">
+                    <li>Peers do NOT need the video file</li>
+                    <li>Synchronized video + system audio</li>
+                    <li>Direct peer-to-peer WebRTC mesh stream</li>
+                  </ul>
+                </div>
+                <button type="button" class="btn btn-danger rounded-pill fw-bold w-100" onclick="triggerLocalFileSyncMode('stream')">
+                  <i class="bi bi-camera-reels-fill me-1"></i> Stream to Room (WebRTC)
+                </button>
               </div>
             </div>
           </div>
-        `;
-      }).join('');
+
+          <!-- Hidden File Pickers -->
+          <input type="file" id="localVideoFileInputSync" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/mkv" class="d-none" onchange="handleLocalFilePicked(this, 'sync')">
+          <input type="file" id="localVideoFileInput" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/mkv" class="d-none">
+
+          <!-- Selected File Confirmation Card -->
+          <div id="localFileSelectedInfo" class="d-none p-3 rounded-3" style="background: rgba(255, 200, 59, 0.1); border: 1px solid var(--brand-gold);">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div class="text-truncate" style="max-width: 320px;">
+                <span class="fw-bold text-main small d-block text-truncate" id="localFileNameText">video.mp4</span>
+                <span class="text-muted small" id="localFileSizeText" style="font-size: 0.72rem;">0 MB</span>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-danger rounded-pill fw-bold px-3" id="btnStartLocalP2PStream" data-bs-dismiss="modal">
+                  <i class="bi bi-play-fill me-1"></i> Confirm & Launch
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Guest Local File Sync Prompt (When Host starts local-sync) -->
+  <div class="modal fade" id="localFileSyncModal" tabindex="-1" aria-labelledby="localFileSyncModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 1rem;">
+        <div class="modal-header border-bottom px-4 py-3" style="border-color: var(--border-subtle) !important;">
+          <h5 class="modal-title fw-bold text-main" id="localFileSyncModalLabel">
+            <i class="bi bi-folder-symlink-fill text-warning me-2"></i> Local Video File Sync
+          </h5>
+          <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="small text-muted mb-3">
+            The host loaded local file: <strong class="text-danger" id="targetLocalFileName">Video</strong>.
+            Select your matching local file copy to join synchronized playback with 0% server lag!
+          </p>
+          <div class="mb-3">
+            <input type="file" id="guestPromptLocalFileInput" class="form-control" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/mkv,video/*">
+          </div>
+          <div class="d-flex justify-content-end gap-2 pt-2 border-top" style="border-color: var(--border-subtle) !important;">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger rounded-pill fw-bold px-4" id="confirmLocalFileBtn">
+              Load & Sync Video
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subtitles Hub Modal -->
+  <div class="modal fade" id="roomSubtitlesModal" tabindex="-1" aria-labelledby="roomSubtitlesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content text-white" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem;">
+        <div class="modal-header border-secondary border-opacity-25">
+          <h5 class="modal-title d-flex align-items-center gap-2" id="roomSubtitlesModalLabel">
+            <i class="bi bi-badge-cc text-primary"></i> Subtitles & Captions Hub
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">Active Subtitle Track</label>
+            <select class="form-select bg-dark text-white border-secondary border-opacity-50" id="subtitleTrackSelect">
+              <option value="none">Off (No Subtitles)</option>
+              <option value="en">English (Generated / Uploaded)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">Upload Custom Track (.vtt, .srt)</label>
+            <input type="file" class="form-control bg-dark text-white border-secondary border-opacity-50" id="uploadSubtitleInput" accept=".vtt,.srt">
+          </div>
+        </div>
+        <div class="modal-footer border-secondary border-opacity-25">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnApplySubtitles" data-bs-dismiss="modal">Apply Track</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Change Display Name / Nickname -->
+  <div class="modal fade" id="changeNicknameModal" tabindex="-1" aria-labelledby="changeNicknameModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: var(--bg-card);">
+        <div class="modal-header border-bottom py-2 px-3" style="border-color: var(--border-subtle) !important;">
+          <h6 class="modal-title fw-bold text-main m-0" id="changeNicknameModalLabel">
+            <i class="bi bi-person-fill-gear text-danger me-2"></i>Change Display Name
+          </h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-3">
+          <label for="changeNicknameInput" class="form-label small fw-bold text-muted mb-1">Your Nickname</label>
+          <input type="text" class="form-control form-control-sm rounded-pill px-3" id="changeNicknameInput" maxlength="32" placeholder="e.g. Alex, Guest_Study" required style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+          <small class="text-muted d-block mt-1" style="font-size:0.7rem;">This name will be visible to everyone in the room and chat.</small>
+        </div>
+        <div class="modal-footer border-top py-2 px-3 d-flex justify-content-end gap-2" style="border-color: var(--border-subtle) !important;">
+          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" id="btnSaveNickname" data-bs-dismiss="modal">
+            Save Name
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global App Toast Notification Container -->
+  <div class="app-toast-container" id="appToastContainer"></div>
+
+  <!-- Bootstrap 5.3.3 Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Socket.io Real-Time Signaling -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- HLS.js for Live .m3u8 Streams -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
+  <!-- Plyr 3.7.8 Polyfilled for Universal Media (YouTube, MP4, HLS, Blob) -->
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  <!-- PeerJS for WebRTC Mesh & Screen Sharing -->
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- UniTogether High-Precision Room Sync Engine -->
+  <script src="../js/room-sync.js?v=3.0"></script>
+  
+  <script>
+    function switchTab(tab) {
+      const chatFeed   = document.getElementById('chatFeed');
+      const queueFeed  = document.getElementById('queueFeed');
+      const peopleFeed = document.getElementById('peopleFeed');
+      const emojiRow   = document.getElementById('emojiRow');
+      const chatBar    = document.getElementById('chatInputBar');
+      const queueBar   = document.getElementById('queueInputBar');
+      const tabChat    = document.getElementById('tabChatBtn');
+      const tabQueue   = document.getElementById('tabQueueBtn');
+      const tabPeople  = document.getElementById('tabPeopleBtn');
+
+      // Reset all tabs
+      [tabChat, tabQueue, tabPeople].forEach(btn => {
+        if (btn) {
+          btn.classList.remove('active', 'text-main');
+          btn.classList.add('text-muted');
+        }
+      });
+      [chatFeed, queueFeed, peopleFeed].forEach(pane => {
+        if (pane) {
+          pane.classList.remove('d-flex');
+          pane.classList.add('d-none');
+          pane.style.display = 'none';
+        }
+      });
+
+      if (tab === 'chat') {
+        if (chatFeed) { chatFeed.classList.remove('d-none'); chatFeed.classList.add('d-flex'); chatFeed.style.display = 'flex'; }
+        if (emojiRow) emojiRow.style.display = 'flex';
+        if (chatBar)  { chatBar.classList.remove('d-none'); chatBar.classList.add('d-flex'); chatBar.style.display = 'flex'; }
+        if (queueBar) { queueBar.classList.remove('d-flex'); queueBar.classList.add('d-none'); }
+        if (tabChat)  { tabChat.classList.add('active', 'text-main'); tabChat.classList.remove('text-muted'); }
+      } else if (tab === 'queue') {
+        if (queueFeed) { queueFeed.classList.remove('d-none'); queueFeed.classList.add('d-flex'); queueFeed.style.display = 'flex'; }
+        if (emojiRow) emojiRow.style.display = 'none';
+        if (chatBar)  { chatBar.classList.remove('d-flex'); chatBar.classList.add('d-none'); chatBar.style.display = 'none'; }
+        if (queueBar) { queueBar.classList.remove('d-none'); queueBar.classList.add('d-flex'); }
+        if (tabQueue) { tabQueue.classList.add('active', 'text-main'); tabQueue.classList.remove('text-muted'); }
+        if (window.RoomSync && window.RoomSync.currentQueue) {
+          window.RoomSync.renderQueueTab(window.RoomSync.currentQueue);
+        }
+      } else if (tab === 'people') {
+        if (peopleFeed) { peopleFeed.classList.remove('d-none'); peopleFeed.classList.add('d-flex'); peopleFeed.style.display = 'flex'; }
+        if (emojiRow) emojiRow.style.display = 'none';
+        if (chatBar)  { chatBar.classList.remove('d-flex'); chatBar.classList.add('d-none'); chatBar.style.display = 'none'; }
+        if (queueBar) { queueBar.classList.remove('d-flex'); queueBar.classList.add('d-none'); }
+        if (tabPeople) { tabPeople.classList.add('active', 'text-main'); tabPeople.classList.remove('text-muted'); }
+      }
     }
 
-    // ------------------------------------------------------------------------
-    // Feature 13: Room Code Initialization, Socket Connection & Polling
-    // ------------------------------------------------------------------------
-    async function initRoomWorkspace() {
-      const urlParams = new URLSearchParams(window.location.search);
-      currentRoomCode = urlParams.get('room') || 'UNI-8842';
-
-      // Always ensure address bar has room code so copying URL matches exactly
-      if (!urlParams.get('room')) {
-        const newUrl = window.location.pathname + '?room=' + encodeURIComponent(currentRoomCode);
-        window.history.replaceState({ path: newUrl }, '', newUrl);
+    // Quick Queue Add Form
+    document.getElementById('btnQuickAddQueue')?.addEventListener('click', async () => {
+      const input = document.getElementById('quickQueueUrlInput');
+      const url = input?.value?.trim();
+      if (!url) return;
+      input.value = '';
+      if (window.showSyncToast) window.showSyncToast('Fetching video title...');
+      const meta = (window.resolveMediaMetadata) ? await window.resolveMediaMetadata(url) : { url, title: 'Video', mediaType: 'youtube' };
+      if (window.RoomSync?.socket) {
+        window.RoomSync.socket.emit('queue-add', {
+          url: meta.url,
+          title: meta.title,
+          duration: meta.duration || 180,
+          mediaType: meta.mediaType
+        });
       }
+    });
 
-      if (headerRoomCode) headerRoomCode.textContent = currentRoomCode;
-      if (overlayRoomCode) overlayRoomCode.textContent = 'ROOM: ' + currentRoomCode;
+    // Room Settings Form Submission
+    // Settings Modal Show & Sync Listener
+    const settingsModalEl = document.getElementById('roomSettingsModal');
+    if (settingsModalEl) {
+      settingsModalEl.addEventListener('show.bs.modal', () => {
+        const isHost = Boolean(window.RoomSync && window.RoomSync.isHost);
+        const meta = (window.RoomSync && window.RoomSync.roomMeta) || {};
+        const fieldset = document.getElementById('roomSettingsFieldset');
+        const alertBox = document.getElementById('roomSettingsGuestAlert');
+        const saveBtn = document.getElementById('btnSaveRoomSettings');
 
-      // 1. Connect Socket.io for sub-50ms sync & active people tracking
-      let currentLoggedUser = null;
-      try {
-        currentLoggedUser = JSON.parse(localStorage.getItem('unitogether_user'));
-      } catch (e) {}
+        if (alertBox) alertBox.classList.toggle('d-none', isHost);
+        if (fieldset) fieldset.disabled = !isHost;
+        if (saveBtn) saveBtn.classList.toggle('d-none', !isHost);
 
-      if (typeof io !== 'undefined') {
-        try {
-          socket = io();
+        const vSel = document.getElementById('settingVisibility');
+        if (vSel && meta.visibility) vSel.value = meta.visibility;
 
-          // Send current user info along with room code so server tracks real connected participants
-          socket.emit('join_room', {
-            roomCode: currentRoomCode,
-            user: {
-              name: currentLoggedUser ? currentLoggedUser.name : 'Guest Participant',
-              email: currentLoggedUser ? currentLoggedUser.email : '',
-              avatar: (currentLoggedUser && currentLoggedUser.avatar) ? currentLoggedUser.avatar : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentLoggedUser ? currentLoggedUser.name : 'Guest')}`
-            }
-          });
+        const hostSync = document.getElementById('settingHostSyncLock');
+        if (hostSync) hostSync.checked = Boolean(meta.hostSyncLock);
 
-          // Listen for real-time connected participants list
-          socket.on('room_users', (usersList) => {
-            renderConnectedPeople(usersList);
-          });
+        const smooth = document.getElementById('settingSmoothCatchUp');
+        if (smooth) smooth.checked = Boolean(meta.smoothCatchUp !== false);
 
-          socket.on('receive_message', (msg) => {
-            renderChatMessage(msg);
-          });
+        const voteSkip = document.getElementById('settingVoteSkipEnabled');
+        if (voteSkip) voteSkip.checked = Boolean(meta.voteSkipEnabled !== false);
 
-          socket.on('peer_sync', (data) => {
-            handleIncomingSync(data);
-          });
+        const voteThresh = document.getElementById('settingVoteSkipThreshold');
+        if (voteThresh && meta.voteSkipThreshold) voteThresh.value = String(meta.voteSkipThreshold);
 
-          socket.on('room_details_updated', (updatedRoom) => {
-            if (updatedRoom && currentVideoTitle) {
-              currentVideoTitle.textContent = updatedRoom.title;
-            }
-          });
-        } catch (e) {
-          console.warn('[Socket.io] Socket connect note:', e.message);
-        }
-      }
+        const allowG = document.getElementById('settingAllowGuests');
+        if (allowG) allowG.checked = Boolean(meta.allowGuests !== false);
 
-      // Initial render of connected people with self
-      renderConnectedPeople([]);
+        const allowChat = document.getElementById('settingAllowGuestChat');
+        if (allowChat) allowChat.checked = Boolean(meta.allowGuestChat !== false);
 
-      // 2. Fetch room details from SQLite backend
-      let initialMedia = 'https://www.youtube.com/watch?v=MsRSKLbz3ss';
-      let initialTitle = 'Study Video Stream';
-      let initialTime = 0;
-      let initialPlaying = true;
-
-      if (typeof ApiClient !== 'undefined' && ApiClient.getRoom) {
-        try {
-          const res = await ApiClient.getRoom(currentRoomCode);
-          if (res && res.room) {
-            const r = res.room;
-            if (currentVideoTitle) currentVideoTitle.textContent = r.title || 'Study Room';
-            if (r.media_url && (r.media_url.startsWith('http://') || r.media_url.startsWith('https://'))) {
-              initialMedia = r.media_url;
-              initialTitle = r.media_title || r.title;
-            }
-            if (r.current_time !== undefined && r.current_time !== null) {
-              initialTime = Number(r.current_time);
-            }
-            if (r.is_playing !== undefined && r.is_playing !== null) {
-              initialPlaying = (r.is_playing === 1 || r.is_playing === true);
-            }
-          }
-        } catch (err) {
-          console.warn('[Room] Using default room state:', err.message);
-        }
-      }
-
-      // Check URL query for explicit video
-      const videoParam = urlParams.get('video');
-      if (videoParam) {
-        initialMedia = videoParam;
-        initialTitle = 'Custom Video Stream';
-      }
-
-      currentLoadedMediaUrl = initialMedia;
-      const type = (initialMedia.includes('youtube') || initialMedia.includes('youtu.be')) ? 'youtube' : 'upload';
-      playMedia(type, initialMedia, initialTitle, initialTime, initialPlaying);
-
-      // 3. Load chat history from SQLite
-      await loadRoomChat(currentRoomCode);
-
-      // 4. Background Sync & Polling Fallback (Every 2.5 seconds)
-      setInterval(async () => {
-        if (!currentRoomCode) return;
-
-        // Poll chat messages
-        try {
-          if (typeof ApiClient !== 'undefined' && ApiClient.getMessages) {
-            const res = await ApiClient.getMessages(currentRoomCode);
-            if (res && Array.isArray(res.messages)) {
-              res.messages.forEach(m => renderChatMessage(m));
-            }
-          }
-        } catch (e) {}
-
-        // Poll room media sync
-        try {
-          if (typeof ApiClient !== 'undefined' && ApiClient.getRoom && !isSyncingFromRemote) {
-            if (currentMode === 'screenshare') return; // Do not overwrite active screenshare!
-            const res = await ApiClient.getRoom(currentRoomCode);
-            if (res && res.room) {
-              const r = res.room;
-              if (r.media_url && r.media_url !== currentLoadedMediaUrl && r.media_url !== '') {
-                currentLoadedMediaUrl = r.media_url;
-                const mType = (r.media_url.includes('youtube') || r.media_url.includes('youtu.be')) ? 'youtube' : 'upload';
-                playMedia(mType, r.media_url, r.media_title || r.title, r.current_time || 0, r.is_playing === 1);
-              }
-            }
-          }
-        } catch (e) {}
-      }, 2500);
+        const allowCtrl = document.getElementById('settingAllowGuestControl');
+        if (allowCtrl) allowCtrl.checked = Boolean(meta.allowGuestControl);
+      });
     }
 
-    // Initialize room when document is ready
-    document.addEventListener('DOMContentLoaded', () => {
-      initRoomWorkspace();
+    // Coordinated toggle between Host Sync Lock and Allow Guest Controls
+    document.getElementById('settingAllowGuestControl')?.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        const hostSync = document.getElementById('settingHostSyncLock');
+        if (hostSync) hostSync.checked = false;
+      }
+    });
+    document.getElementById('settingHostSyncLock')?.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        const allowCtrl = document.getElementById('settingAllowGuestControl');
+        if (allowCtrl) allowCtrl.checked = false;
+      }
+    });
+
+    document.getElementById('roomSettingsForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!window.RoomSync?.socket || !window.RoomSync?.isHost) {
+        alert('Only the room host can modify settings.');
+        return;
+      }
+      const hostSyncLock = document.getElementById('settingHostSyncLock').checked;
+      const allowGuests = document.getElementById('settingAllowGuests').checked;
+      const allowGuestChat = document.getElementById('settingAllowGuestChat').checked;
+      const allowGuestControl = document.getElementById('settingAllowGuestControl').checked;
+      const smoothCatchUp = document.getElementById('settingSmoothCatchUp')?.checked ?? true;
+      const visibility = document.getElementById('settingVisibility').value;
+      const passcode = document.getElementById('settingPasscode').value.trim();
+      const voteSkipEnabled = document.getElementById('settingVoteSkipEnabled')?.checked ?? true;
+      const voteSkipThreshold = parseInt(document.getElementById('settingVoteSkipThreshold')?.value || '50', 10);
+
+      window.RoomSync.socket.emit('update-room-settings', {
+        hostSyncLock,
+        allowGuests,
+        allowGuestChat,
+        allowGuestControl,
+        smoothCatchUp,
+        visibility,
+        passcode,
+        voteSkipEnabled,
+        voteSkipThreshold
+      });
+
+      const modalEl = document.getElementById('roomSettingsModal');
+      if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+      }
+    });
+
+    // Stream Local File Modal Handlers
+    document.getElementById('srcUpload')?.addEventListener('click', () => {
+      const modalEl = document.getElementById('localFileSyncChoiceModal');
+      if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+    });
+
+    document.getElementById('localVideoFileInput')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      window._pendingLocalFile = file;
+      const infoBox = document.getElementById('localFileSelectedInfo');
+      const nameTxt = document.getElementById('localFileNameText');
+      const sizeTxt = document.getElementById('localFileSizeText');
+      if (nameTxt) nameTxt.textContent = file.name;
+      if (sizeTxt) sizeTxt.textContent = `${(file.size / (1024 * 1024)).toFixed(1)} MB (${file.type || 'video/mp4'})`;
+      if (infoBox) infoBox.classList.remove('d-none');
+    });
+
+    document.getElementById('btnStartLocalP2PStream')?.addEventListener('click', () => {
+      if (window._pendingLocalFile && window.RoomSync?.startLocalFileStream) {
+        window.RoomSync.startLocalFileStream(window._pendingLocalFile);
+      }
+    });
+
+    // Guest Local File Sync Prompt Modal Handler
+    document.getElementById('confirmLocalFileBtn')?.addEventListener('click', () => {
+      const fileInput = document.getElementById('guestPromptLocalFileInput');
+      if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        alert('Please select a local video file from your computer.');
+        return;
+      }
+      const file = fileInput.files[0];
+      if (window.RoomSync) {
+        window.RoomSync.currentLocalFile = file;
+        const blobUrl = (typeof window.createTrackedObjectUrl === 'function') 
+          ? window.createTrackedObjectUrl(file) 
+          : URL.createObjectURL(file);
+        if (typeof window.loadMediaSource === 'function') {
+          window.loadMediaSource(blobUrl, 'local', `[Local] ${file.name}`);
+        }
+        if (typeof window.showSyncToast === 'function') {
+          window.showSyncToast(`Local file "${file.name}" linked and synced!`);
+        }
+      }
+      const modalEl = document.getElementById('localFileSyncModal');
+      if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+      }
     });
   </script>
-
-  <!-- App Toast Notification Container -->
-  <div class="app-toast-container" id="appToastContainer"></div>
 </body>
 </html>

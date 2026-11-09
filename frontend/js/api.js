@@ -1,6 +1,6 @@
 /**
  * UniTogether - Frontend API Client
- * Seamless connection to Backend API & Render.com Services
+ * Seamless connection to SQLite Backend & Vercel Serverless API
  */
 
 const ApiClient = (function () {
@@ -12,14 +12,22 @@ const ApiClient = (function () {
     return localStorage.getItem('unitogether_token') || '';
   }
 
-  function getHeaders(includeAuth = false) {
+  function getHeaders(includeAuth = true) {
     const headers = {
       'Content-Type': 'application/json'
     };
-    if (includeAuth) {
-      const token = getToken();
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-    }
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    try {
+      const raw = localStorage.getItem('unitogether_user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        if (u.uuid) headers['x-user-uuid'] = u.uuid;
+        if (u.isGuest !== undefined) headers['x-is-guest'] = String(u.isGuest);
+      }
+    } catch (e) {}
+
     return headers;
   }
 
@@ -171,12 +179,15 @@ const ApiClient = (function () {
       if (user && user.email && !roomData.host_email) {
         roomData.host_email = user.email;
       }
+      if (user && user.uuid && !roomData.host_uuid) {
+        roomData.host_uuid = user.uuid;
+      }
       if (user && user.name && (!roomData.host_name || roomData.host_name === 'Yasaru' || roomData.host_name === 'Guest Host')) {
         roomData.host_name = user.name;
       }
       return request('/rooms', {
         method: 'POST',
-        headers: getHeaders(),
+        headers: getHeaders(true),
         body: JSON.stringify(roomData)
       });
     },

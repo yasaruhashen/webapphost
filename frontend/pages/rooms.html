@@ -663,9 +663,9 @@
     <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
       <a href="../index.html">Home</a>
       <a href="rooms.html" class="active">Manage Rooms</a>
+      <a href="room.html?room=UNI-8842">Watch Room</a>
       <a href="profile.html">Profile</a>
       <a href="contact.html">Contact Us</a>
-      <a href="../index.html#features">Features</a>
     </nav>
 
     <!-- Dynamic Auth Container -->
@@ -1105,17 +1105,31 @@
             if (res && Array.isArray(res.rooms)) {
               loadedRooms = res.rooms;
 
-              // Filter by live if on Live tab
+              // Filter by current active tab
               let displayRooms = loadedRooms;
               if (currentFilter === 'live') {
-                displayRooms = loadedRooms.filter(r => r.is_playing === 1 || r.is_playing === true);
+                displayRooms = loadedRooms.filter(r => r.is_playing === 1 || r.is_playing === true || r.isPlaying === true);
+              } else if (currentFilter === 'my-rooms') {
+                displayRooms = loadedRooms.filter(r => {
+                  const matchEmail = hostEmail && r.host_email && (r.host_email.trim().toLowerCase() === hostEmail);
+                  const matchUuid = currentUser && currentUser.uuid && (r.host_uuid === currentUser.uuid || r.hostUuid === currentUser.uuid);
+                  const matchName = currentUser && (currentUser.name || currentUser.fullName) && 
+                    (r.host_name === currentUser.name || r.hostName === currentUser.name || r.host_name === currentUser.fullName || r.hostName === currentUser.fullName);
+                  return matchEmail || matchUuid || matchName;
+                });
               }
               renderRoomsList(displayRooms);
+              return;
+            } else {
+              renderRoomsList([]);
               return;
             }
           } catch (err) {
             console.warn('[Rooms] Could not fetch rooms from API:', err.message);
+            renderRoomsList([]);
           }
+        } else {
+          renderRoomsList([]);
         }
       }
 
