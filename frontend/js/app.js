@@ -7,13 +7,46 @@
 // Global State & Storage Management
 // ============================================================================
 
+function getOrCreateDeviceUUID() {
+  const match = document.cookie.match(/(?:^|; )unitogether_device_uuid=([^;]*)/);
+  if (match && match[1]) {
+    localStorage.setItem('unitogether_device_uuid', match[1]);
+    return match[1];
+  }
+  const local = localStorage.getItem('unitogether_device_uuid');
+  if (local) {
+    document.cookie = `unitogether_device_uuid=${local}; path=/; max-age=31536000; SameSite=Lax`;
+    return local;
+  }
+  const sig = `${navigator.userAgent}_${navigator.language}_${screen.width}x${screen.height}_${screen.colorDepth}_${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+  let hash = 0;
+  for (let i = 0; i < sig.length; i++) {
+    hash = ((hash << 5) - hash) + sig.charCodeAt(i);
+    hash |= 0;
+  }
+  const rand = Math.random().toString(36).substring(2, 9);
+  const uuid = `dev-${Math.abs(hash).toString(16)}-${rand}`;
+  document.cookie = `unitogether_device_uuid=${uuid}; path=/; max-age=31536000; SameSite=Lax`;
+  localStorage.setItem('unitogether_device_uuid', uuid);
+  return uuid;
+}
+
+const currentDeviceUuid = getOrCreateDeviceUUID();
+
 const AppState = {
-  currentUser: JSON.parse(localStorage.getItem('unitogether_user')) || null,
+  currentUser: JSON.parse(localStorage.getItem('unitogether_user')) || {
+    uuid: currentDeviceUuid,
+    name: 'Guest_' + currentDeviceUuid.substr(-4).toUpperCase(),
+    email: '',
+    role: 'guest',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80',
+    isGuest: true
+  },
   activeRoom: JSON.parse(localStorage.getItem('unitogether_active_room')) || {
     code: 'UNI-8842',
     title: 'CS204: Algorithms & Data Structures - Final Exam Review 🍿',
-    mediaUrl: 'https://www.youtube.com/watch?v=MsRSKLbz3ss',
-    mediaTitle: 'Data Structures & Algorithms - Dynamic Programming',
+    mediaUrl: 'https://www.youtube.com/watch?v=8hly31xKli0',
+    mediaTitle: 'Algorithms and Data Structures Tutorial - Full Course',
     mediaSource: 'YouTube (HD 1080p)',
     hostSyncLock: true,
     allowChat: true,
@@ -24,170 +57,51 @@ const AppState = {
 };
 
 // ============================================================================
-// Initialization & Navigation Bar Auth State
+// Auth Guard Utility
+// ============================================================================
+function requireRealAccount() {
+  // Allow hub and profile views to mount cleanly for both registered students
+  // and guest participants; features requiring student accounts handle permissions inline.
+  return true;
+}
+
+// ============================================================================
+// Initialization
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-  initNavbarAuth();
+  initThemeToggle();
   initAuthPage();
   initHubPage();
   initRoomPage();
   initProfilePage();
 });
 
-// Determine relative paths for root (index.html) vs /pages/
-function isInsidePagesDir() {
-  const p = window.location.pathname.replace(/\\/g, '/').toLowerCase();
-  return p.includes('/pages/') || p.endsWith('/pages') || p.includes('/pages/index.html');
-}
+// ============================================================================
+// Theme Toggle (Light / Dark Mode)
+// ============================================================================
 
-// Retrieve post-login return URL (redirects user back to previous page e.g. home)
-function getPostLoginRedirectUrl() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const redirectParam = params.get('redirect');
-    if (redirectParam) {
-      const decoded = decodeURIComponent(redirectParam);
-      if (!decoded.toLowerCase().includes('login.html')) {
-        return decoded;
-      }
+function initThemeToggle() {
+  const savedTheme = localStorage.getItem('unitogether_theme') || 'light';
+  document.documentElement.setAttribute('data-bs-theme', savedTheme);
+
+  const themeBtns = document.querySelectorAll('#themeToggleBtn, .btn-theme-toggle');
+  themeBtns.forEach(btn => {
+    const icon = btn.querySelector('i') || document.getElementById('themeIcon');
+    if (icon) {
+      icon.className = savedTheme === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill';
     }
-    if (document.referrer) {
-      const ref = document.referrer;
-      if (!ref.toLowerCase().includes('login.html')) {
-        return ref;
-      }
-    }
-  } catch (err) {
-    console.warn('Redirect parsing error:', err);
-  }
-  return isInsidePagesDir() ? 'rooms.html' : 'pages/rooms.html';
-}
-
-function initNavbarAuth() {
-  updateNavbarAuth();
-}
-
-function updateNavbarAuth() {
-  const container = document.getElementById('navAuthContainer');
-  if (!container) return;
-
-  const user = AppState.currentUser;
-  const inPages = isInsidePagesDir();
-
-  const currentUrl = window.location.href;
-  const isLoginPage = window.location.pathname.toLowerCase().includes('login.html');
-  const redirectQuery = isLoginPage ? '' : '?redirect=' + encodeURIComponent(currentUrl);
-
-  const loginUrl = (inPages ? 'login.html' : 'pages/login.html') + redirectQuery;
-  const roomsUrl = inPages ? 'rooms.html' : 'pages/rooms.html';
-  const profileUrl = inPages ? 'profile.html' : 'pages/profile.html';
-  const contactUrl = inPages ? 'contact.html' : 'pages/contact.html';
-  const homeUrl = inPages ? '../index.html' : 'index.html';
-
-  if (!user || (!user.name && !user.email)) {
-    // ------------------------------------------------------------------------
-    // Logged OUT: Display "SIGN IN" Button linking to login.html with return URL
-    // ------------------------------------------------------------------------
-    container.innerHTML = `
-      <a href="${loginUrl}" class="btn-sign-in" id="navSignInBtn">
-        SIGN IN
-      </a>
-    `;
-  } else {
-    // ------------------------------------------------------------------------
-    // Logged IN: Display User's Name with Dropdown
-    // ------------------------------------------------------------------------
-    const rawName = user.name || (user.email ? user.email.split('@')[0] : 'User');
-    const firstName = rawName.trim().split(' ')[0].toUpperCase();
-    const isGuest = !!user.isGuest;
-
-    container.innerHTML = `
-      <div class="user-dropdown-wrapper position-relative d-inline-block">
-        <button class="btn-user-badge d-flex align-items-center gap-2" type="button" id="userMenuDropdown" aria-expanded="false">
-          <i class="bi bi-person-circle"></i>
-          <span>${firstName}</span>
-          <i class="bi bi-caret-down-fill" style="font-size: 0.65rem; transition: transform 0.2s;" id="userMenuChevron"></i>
-        </button>
-        <div class="user-custom-dropdown" id="userDropdownMenu" style="display: none;">
-          <div class="px-3 py-2 bg-light border-bottom">
-            <div class="fw-bold text-dark text-truncate">${user.name || 'Student'}</div>
-            <div class="text-muted small text-truncate" style="font-size: 11px;">${user.email || (isGuest ? 'Guest Session' : 'Student Account')}</div>
-          </div>
-          <div class="py-1">
-            <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-dark" href="${profileUrl}">
-              <i class="bi bi-person-gear text-primary"></i> Edit Profile
-            </a>
-            <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-dark" href="${roomsUrl}">
-              <i class="bi bi-grid-fill text-danger"></i> Manage Rooms
-            </a>
-            <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-dark" href="${homeUrl}">
-              <i class="bi bi-house-door-fill text-secondary"></i> Home
-            </a>
-          </div>
-          <div class="border-top py-1">
-            <button class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-danger fw-bold w-100 text-start bg-transparent border-0" id="navSignOutBtn" type="button">
-              <i class="bi bi-box-arrow-right"></i> Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Pure DOM toggle handler - 100% reliable across all browsers & pages
-    const userBtn = document.getElementById('userMenuDropdown');
-    const userMenu = document.getElementById('userDropdownMenu');
-    const userChevron = document.getElementById('userMenuChevron');
-
-    if (userBtn && userMenu) {
-      userBtn.onclick = function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const isHidden = (userMenu.style.display === 'none' || !userMenu.style.display);
-        userMenu.style.display = isHidden ? 'block' : 'none';
-        userBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-        if (userChevron) {
-          userChevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-        }
-      };
-
-      // Close dropdown when clicking anywhere else
-      document.addEventListener('click', function (e) {
-        if (userMenu.style.display === 'block') {
-          if (!userMenu.contains(e.target) && e.target !== userBtn && !userBtn.contains(e.target)) {
-            userMenu.style.display = 'none';
-            userBtn.setAttribute('aria-expanded', 'false');
-            if (userChevron) userChevron.style.transform = 'rotate(0deg)';
-          }
-        }
+    btn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+      const nextTheme = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-bs-theme', nextTheme);
+      localStorage.setItem('unitogether_theme', nextTheme);
+      document.querySelectorAll('#themeToggleBtn i, #themeIcon, .btn-theme-toggle i').forEach(ic => {
+        ic.className = nextTheme === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill';
       });
-    }
-
-    // Sign out button handler
-    const signOutBtn = document.getElementById('navSignOutBtn');
-    if (signOutBtn) {
-      signOutBtn.onclick = function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        handleUserSignOut();
-      };
-    }
-  }
-}
-
-function handleUserSignOut() {
-  localStorage.removeItem('unitogether_user');
-  AppState.currentUser = null;
-  updateNavbarAuth();
-  showToast('You have signed out successfully.', 'info');
-
-  const inPages = isInsidePagesDir();
-  const path = window.location.pathname.replace(/\\/g, '/').toLowerCase();
-  if (path.includes('room.html') || path.includes('profile.html')) {
-    setTimeout(() => {
-      window.location.href = inPages ? 'rooms.html' : 'pages/rooms.html';
-    }, 600);
-  }
+      showToast(`Switched to ${nextTheme} theme mode`, 'info');
+    });
+  });
 }
 
 // ============================================================================
@@ -263,6 +177,14 @@ function initAuthPage() {
     authSubtitle.textContent = 'Create your student account to host private watch parties and save playlists.';
   });
 
+  // Guest Entry Modal "create an account" Trigger (DEF-06)
+  const guestGoToSignup = document.getElementById('guestGoToSignup');
+  if (guestGoToSignup) {
+    guestGoToSignup.addEventListener('click', () => {
+      tabSignupBtn.click();
+    });
+  }
+
   // Password Visibility Toggles
   const toggleLoginPwd = document.getElementById('toggleLoginPasswordBtn');
   if (toggleLoginPwd) {
@@ -296,56 +218,35 @@ function initAuthPage() {
         return;
       }
 
-      const submitBtn = loginForm.querySelector('button[type="submit"]');
-      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
-      }
-
-      let authedUser = null;
-
-      // Try Backend SQLite / Vercel API
-      if (typeof ApiClient !== 'undefined' && ApiClient.login) {
-        try {
-          const res = await ApiClient.login(email, pwd);
-          if (res && res.user) {
-            authedUser = res.user;
-          }
-        } catch (err) {
-          console.warn('API Login error, checking if offline or credentials mismatch:', err.message);
-          if (err.message && (err.message.includes('Invalid') || err.message.includes('not found'))) {
-            showToast(err.message, 'danger');
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = originalBtnText;
-            }
-            return;
-          }
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pwd })
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+          AppState.currentUser = {
+            uuid: data.user.uuid,
+            name: data.user.fullName,
+            email: data.user.email,
+            faculty: data.user.faculty,
+            role: data.user.role,
+            avatar: data.user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80',
+            isGuest: false
+          };
+          localStorage.setItem('unitogether_user', JSON.stringify(AppState.currentUser));
+          showToast(`Welcome back, ${AppState.currentUser.name}! Redirecting to hub...`, 'success');
+          setTimeout(() => {
+            window.location.href = 'pages/rooms.html';
+          }, 700);
+        } else {
+          showToast(data.message || 'Invalid email or password.', 'danger');
         }
+      } catch (err) {
+        console.error('Login request failed:', err);
+        showToast('Could not reach the server. Please check your connection and try again.', 'danger');
       }
-
-      // Offline / fallback demo user
-      if (!authedUser) {
-        authedUser = {
-          name: email.split('@')[0].replace('.', ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase()),
-          email: email,
-          role: 'host',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80',
-          isGuest: false
-        };
-      }
-
-      AppState.currentUser = authedUser;
-      localStorage.setItem('unitogether_user', JSON.stringify(AppState.currentUser));
-      updateNavbarAuth();
-
-      const returnUrl = getPostLoginRedirectUrl();
-      const isHome = returnUrl.toLowerCase().includes('index.html') || returnUrl.endsWith('/') || returnUrl.endsWith('frontend');
-      showToast(`Welcome back, ${AppState.currentUser.name}! Returning to ${isHome ? 'Home' : 'Workspace'}...`, 'success');
-      setTimeout(() => {
-        window.location.href = returnUrl;
-      }, 700);
     });
   }
 
@@ -363,245 +264,59 @@ function initAuthPage() {
         return;
       }
 
-      const submitBtn = signupForm.querySelector('button[type="submit"]');
-      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating account...';
-      }
-
-      let authedUser = null;
-
-      // Try Backend SQLite / Vercel API
-      if (typeof ApiClient !== 'undefined' && ApiClient.register) {
-        try {
-          const res = await ApiClient.register(name, email, pwd, faculty);
-          if (res && res.user) {
-            authedUser = res.user;
-          }
-        } catch (err) {
-          console.warn('API Register error, checking if offline or exists:', err.message);
-          if (err.message && err.message.includes('already registered')) {
-            showToast(err.message, 'warning');
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = originalBtnText;
-            }
-            return;
-          }
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pwd, fullName: name, faculty })
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+          AppState.currentUser = {
+            uuid: data.user.uuid,
+            name: data.user.fullName,
+            email: data.user.email,
+            faculty: data.user.faculty,
+            role: data.user.role,
+            avatar: data.user.avatarUrl,
+            isGuest: false
+          };
+          localStorage.setItem('unitogether_user', JSON.stringify(AppState.currentUser));
+          showToast(`Account created successfully! Welcome to UniTogether.`, 'success');
+          setTimeout(() => {
+            window.location.href = 'pages/rooms.html';
+          }, 700);
+        } else {
+          showToast(data.message || 'Registration failed.', 'danger');
         }
+      } catch (err) {
+        console.error('Signup request failed:', err);
+        showToast('Could not reach the server. Please check your connection and try again.', 'danger');
       }
-
-      // Offline / fallback demo user
-      if (!authedUser) {
-        authedUser = {
-          name: name,
-          email: email,
-          faculty: faculty,
-          role: 'host',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80',
-          isGuest: false
-        };
-      }
-
-      AppState.currentUser = authedUser;
-      localStorage.setItem('unitogether_user', JSON.stringify(AppState.currentUser));
-      updateNavbarAuth();
-
-      const returnUrl = getPostLoginRedirectUrl();
-      const isHome = returnUrl.toLowerCase().includes('index.html') || returnUrl.endsWith('/') || returnUrl.endsWith('frontend');
-      showToast(`Account created successfully! Welcome to UniTogether.`, 'success');
-      setTimeout(() => {
-        window.location.href = returnUrl;
-      }, 700);
     });
   }
 
-  // Real Social OAuth Login (Google & Facebook)
-  window.executeOAuthLogin = async function(provider, name, email, avatar) {
-    try {
-      showToast(`Signing in with ${provider === 'google' ? 'Google' : 'Facebook'}...`, 'info');
+  // Single Sign-On (SSO) Status Notices
+  const btnGoogle = document.getElementById('btnGoogleSso');
+  if (btnGoogle) {
+    btnGoogle.addEventListener('click', () => {
+      showToast('Google Student SSO login is currently pending accreditation. Please use student email.', 'warning');
+    });
+  }
 
-      // Close open modals
-      const googleApiModal = document.getElementById('googleApiModal');
-      const fbApiModal = document.getElementById('facebookApiModal');
-      if (googleApiModal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        const m = bootstrap.Modal.getInstance(googleApiModal);
-        if (m) m.hide();
-      }
-      if (fbApiModal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        const m = bootstrap.Modal.getInstance(fbApiModal);
-        if (m) m.hide();
-      }
-      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-      document.body.classList.remove('modal-open');
-      document.body.style.overflow = '';
+  const btnFacebook = document.getElementById('btnFacebookSso');
+  if (btnFacebook) {
+    btnFacebook.addEventListener('click', () => {
+      showToast('Facebook SSO is currently in development. Please use student email login.', 'warning');
+    });
+  }
 
-      let authedUser = null;
-      if (typeof ApiClient !== 'undefined' && ApiClient.loginOAuth) {
-        try {
-          const res = await ApiClient.loginOAuth(provider, { name, email, avatar });
-          if (res && res.user) {
-            authedUser = res.user;
-          }
-        } catch (err) {
-          console.warn('OAuth API call failed:', err.message);
-        }
-      }
-
-      if (!authedUser) {
-        authedUser = {
-          name: name,
-          email: email,
-          role: 'host',
-          avatar: avatar,
-          provider: provider,
-          isGuest: false
-        };
-        localStorage.setItem('unitogether_user', JSON.stringify(authedUser));
-      }
-
-      AppState.currentUser = authedUser;
-      updateNavbarAuth();
-
-      const returnUrl = getPostLoginRedirectUrl();
-      showToast(`Welcome, ${authedUser.name}! Signed in via ${provider === 'google' ? 'Google' : 'Facebook'}.`, 'success');
-      setTimeout(() => {
-        window.location.href = returnUrl;
-      }, 600);
-    } catch (err) {
-      showToast(`Failed to sign in with ${provider}: ` + err.message, 'danger');
-    }
-  };
-
-  // --------------------------------------------------------------------------
-  // Real Google & Facebook API SSO Handlers
-  // --------------------------------------------------------------------------
-  let _gsiTokenClient = null;
-  let _currentGoogleClientId = '';
-
-  window.handleGoogleSsoClick = async function() {
-    try {
-      let clientId = localStorage.getItem('unitogether_google_client_id') || window.UNITOGETHER_GOOGLE_CLIENT_ID;
-      if (!clientId && typeof ApiClient !== 'undefined' && ApiClient.getAuthConfig) {
-        try {
-          const cfg = await ApiClient.getAuthConfig();
-          if (cfg && cfg.googleClientId) {
-            clientId = cfg.googleClientId;
-            window.UNITOGETHER_GOOGLE_CLIENT_ID = clientId;
-          }
-        } catch (e) {
-          console.warn('[Google SSO] Could not fetch server config:', e);
-        }
-      }
-
-      if (!clientId) {
-        clientId = '1046397793542-76dogkonem1a8r1fid5ob9t0gcreffto.apps.googleusercontent.com';
-        window.UNITOGETHER_GOOGLE_CLIENT_ID = clientId;
-      }
-
-      // Ensure Google Identity Services SDK is ready
-      let attempts = 0;
-      while ((typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) && attempts < 10) {
-        await new Promise(r => setTimeout(r, 150));
-        attempts++;
-      }
-
-      if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
-        showToast('Google Sign-In SDK is still loading or blocked. Please check your internet connection.', 'warning');
-        return;
-      }
-
-      // Initialize and trigger Google live OAuth popup
-      if (!_gsiTokenClient || _currentGoogleClientId !== clientId) {
-        _currentGoogleClientId = clientId;
-        _gsiTokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: 'openid email profile',
-          callback: async (tokenResponse) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              showToast('Google authentication successful! Verifying with UniTogether server...', 'info');
-              try {
-                const res = await ApiClient.loginGoogle({ access_token: tokenResponse.access_token });
-                if (res && res.user) {
-                  AppState.currentUser = res.user;
-                  updateNavbarAuth();
-                  showToast(`Welcome, ${res.user.name}! Signed in via Google.`, 'success');
-                  const returnUrl = getPostLoginRedirectUrl();
-                  setTimeout(() => { window.location.href = returnUrl; }, 600);
-                }
-              } catch (err) {
-                showToast('Google login error: ' + (err.message || 'Verification failed'), 'danger');
-              }
-            } else if (tokenResponse && tokenResponse.error) {
-              showToast('Google sign-in canceled: ' + tokenResponse.error, 'warning');
-            }
-          }
-        });
-      }
-      _gsiTokenClient.requestAccessToken({ prompt: 'select_account' });
-    } catch (err) {
-      console.error('[Google SSO] Error:', err);
-      showToast('Google Sign-In failed: ' + (err.message || 'Unknown error'), 'danger');
-    }
-  };
-
-  window.handleFacebookSsoClick = async function() {
-    try {
-      let appId = localStorage.getItem('unitogether_fb_app_id') || window.UNITOGETHER_FB_APP_ID;
-      if (!appId && typeof ApiClient !== 'undefined' && ApiClient.getAuthConfig) {
-        try {
-          const cfg = await ApiClient.getAuthConfig();
-          if (cfg && cfg.facebookAppId) {
-            appId = cfg.facebookAppId;
-            window.UNITOGETHER_FB_APP_ID = appId;
-          }
-        } catch (e) {
-          console.warn('[FB SSO] Could not fetch server config:', e);
-        }
-      }
-
-      if (appId && typeof FB !== 'undefined') {
-        try {
-          FB.init({
-            appId: appId,
-            cookie: true,
-            xfbml: true,
-            version: 'v19.0'
-          });
-        } catch (e) {
-          console.warn('FB.init error:', e);
-        }
-
-        FB.login(function(response) {
-          if (response.authResponse && response.authResponse.accessToken) {
-            showToast('Facebook authorized! Verifying profile...', 'info');
-            ApiClient.loginFacebook({ access_token: response.authResponse.accessToken })
-              .then(res => {
-                if (res && res.user) {
-                  AppState.currentUser = res.user;
-                  updateNavbarAuth();
-                  showToast(`Welcome, ${res.user.name}! Signed in via Facebook.`, 'success');
-                  const returnUrl = getPostLoginRedirectUrl();
-                  setTimeout(() => { window.location.href = returnUrl; }, 600);
-                }
-              })
-              .catch(err => {
-                showToast('Facebook login failed: ' + (err.message || 'Verification failed'), 'danger');
-              });
-          } else {
-            showToast('Facebook login canceled.', 'warning');
-          }
-        }, { scope: 'public_profile,email' });
-        return;
-      }
-
-      showToast('Facebook App ID is not configured on the server.', 'warning');
-    } catch (err) {
-      console.error('[FB SSO] Error:', err);
-      showToast('Facebook login error: ' + (err.message || 'Unknown error'), 'danger');
-    }
-  };
+  const btnLearn = document.getElementById('btnLearnSso');
+  if (btnLearn) {
+    btnLearn.addEventListener('click', () => {
+      showToast('LEARN University LMS SSO integration is coming soon. Please use student email login.', 'warning');
+    });
+  }
 
   // Forgot Password Recovery Flow
   const forgotForm = document.getElementById('forgotPasswordForm');
@@ -626,55 +341,33 @@ function initAuthPage() {
     });
   }
 
-  // Guest Access Modal
-  const guestModeCreateBtn = document.getElementById('guestModeCreateBtn');
-  const guestModeJoinBtn = document.getElementById('guestModeJoinBtn');
-  const guestJoinGroup = document.getElementById('guestJoinCodeGroup');
+  // Guest Access Form (Guests Can Join Existing Rooms Only)
   const guestAccessForm = document.getElementById('guestAccessForm');
-
-  if (guestModeCreateBtn && guestModeJoinBtn) {
-    guestModeCreateBtn.addEventListener('click', () => {
-      guestModeCreateBtn.classList.add('active', 'btn-outline-danger');
-      guestModeCreateBtn.classList.remove('btn-outline-secondary');
-      guestModeJoinBtn.classList.remove('active', 'btn-outline-danger');
-      guestModeJoinBtn.classList.add('btn-outline-secondary');
-      guestJoinGroup.style.display = 'none';
-    });
-
-    guestModeJoinBtn.addEventListener('click', () => {
-      guestModeJoinBtn.classList.add('active', 'btn-outline-danger');
-      guestModeJoinBtn.classList.remove('btn-outline-secondary');
-      guestModeCreateBtn.classList.remove('active', 'btn-outline-danger');
-      guestModeCreateBtn.classList.add('btn-outline-secondary');
-      guestJoinGroup.style.display = 'block';
-    });
-  }
-
   if (guestAccessForm) {
     guestAccessForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const nickname = document.getElementById('guestNickname').value.trim() || 'Guest_Student';
-      const isJoinMode = guestJoinGroup.style.display === 'block';
-      const joinCode = document.getElementById('guestJoinCode').value.trim() || 'UNI-8842';
+      const joinCode = (document.getElementById('guestJoinCode')?.value.trim() || 'UNI-8842').toUpperCase();
+      const devUuid = getOrCreateDeviceUUID();
 
       AppState.currentUser = {
+        uuid: devUuid,
         name: nickname,
         email: `${nickname.toLowerCase()}@guest.unitogether.edu`,
-        role: isJoinMode ? 'member' : 'host',
+        role: 'guest',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80',
         isGuest: true
       };
       localStorage.setItem('unitogether_user', JSON.stringify(AppState.currentUser));
-      updateNavbarAuth();
 
-      showToast(`Entering room as ${nickname}...`, 'success');
+      showToast(`Entering room ${joinCode} as ${nickname}...`, 'success');
       setTimeout(() => {
-        window.location.href = isInsidePagesDir() ? `room.html?room=${joinCode}` : `pages/room.html?room=${joinCode}`;
+        window.location.href = `pages/room.html?room=${joinCode}`;
       }, 700);
     });
   }
 
-  // Instant Room Form Modal
+  // Instant Room Form Modal (Registered Students Only)
   const instantRoomForm = document.getElementById('instantRoomForm');
   if (instantRoomForm) {
     const instantVisibility = document.getElementById('instantVisibility');
@@ -685,31 +378,48 @@ function initAuthPage() {
       });
     }
 
-    instantRoomForm.addEventListener('submit', (e) => {
+    instantRoomForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (AppState.currentUser.isGuest) {
+        showToast('Guests are not permitted to create rooms. Please log in or create a student account.', 'warning');
+        return;
+      }
+
       const topic = document.getElementById('instantRoomName').value.trim() || 'Instant Watch Party';
       const mediaUrl = document.getElementById('instantMediaUrl').value.trim();
-      const hostSyncLock = document.getElementById('hostSyncLockSwitch').checked;
+      const hostSyncLock = document.getElementById('instantHostSyncLock')?.checked || false;
+      const visibility = instantVisibility ? instantVisibility.value : 'public';
+      const passcode = document.getElementById('instantPasscode')?.value.trim();
 
-      const newCode = `UNI-${Math.floor(1000 + Math.random() * 9000)}`;
-      AppState.activeRoom = {
-        code: newCode,
-        title: topic,
-        mediaUrl: mediaUrl || 'https://www.youtube.com/watch?v=MsRSKLbz3ss',
-        mediaTitle: topic,
-        mediaSource: 'YouTube (HD 1080p)',
-        hostSyncLock: hostSyncLock,
-        allowChat: true,
-        allowWebcam: true,
-        allowChangeContent: false,
-        allowEditPlaylist: true
-      };
-      localStorage.setItem('unitogether_active_room', JSON.stringify(AppState.activeRoom));
-
-      showToast(`Instant room ${newCode} generated! Launching...`, 'success');
-      setTimeout(() => {
-        window.location.href = `pages/room.html?room=${newCode}`;
-      }, 700);
+      try {
+        const res = await fetch('/api/rooms', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-uuid': AppState.currentUser.uuid,
+            'x-is-guest': 'false'
+          },
+          body: JSON.stringify({
+            title: topic,
+            mediaUrl: mediaUrl || 'https://www.youtube.com/watch?v=8hly31xKli0',
+            hostSyncLock,
+            visibility,
+            passcode
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.roomCode) {
+          showToast(`Instant room ${data.roomCode} launched!`, 'success');
+          setTimeout(() => {
+            window.location.href = `pages/room.html?room=${data.roomCode}`;
+          }, 600);
+        } else {
+          showToast(data.message || 'Error creating room', 'danger');
+        }
+      } catch (err) {
+        console.error('Create room request failed:', err);
+        showToast('Could not reach the server. Please check your connection and try again.', 'danger');
+      }
     });
   }
 }
@@ -726,6 +436,131 @@ function initHubPage() {
   const emptyNotice = document.getElementById('noRoomsNotice');
 
   if (!roomsGrid) return;
+  if (!requireRealAccount()) return;
+
+  // Update navbar student details if available
+  const navNameEl = document.getElementById('navUserDisplayName');
+  const navAvatarEl = document.getElementById('navUserAvatar');
+  if (navNameEl && AppState.currentUser && AppState.currentUser.name) {
+    navNameEl.textContent = AppState.currentUser.name;
+  }
+  if (navAvatarEl && AppState.currentUser && AppState.currentUser.avatar) {
+    navAvatarEl.src = AppState.currentUser.avatar;
+  }
+
+  // Load real active rooms from SQLite Backend API
+  loadLiveRooms();
+  loadFeaturedRoom();
+  loadCategoryCounts();
+
+  async function loadFeaturedRoom() {
+    try {
+      const res = await fetch('/api/rooms/featured');
+      const data = await res.json();
+      if (data.success && data.room) {
+        const r = data.room;
+        const titleEl = document.getElementById('featuredRoomTitle');
+        const subEl = document.getElementById('featuredRoomSubtitle');
+        const viewersEl = document.getElementById('featuredRoomViewers');
+        const hopInBtn = document.getElementById('featuredRoomHopInBtn');
+        const shareBtn = document.getElementById('featuredRoomShareBtn');
+        if (titleEl) titleEl.textContent = r.title;
+        if (subEl) subEl.textContent = `Host: ${r.hostName || 'Yasaru'} (${r.hostFaculty || 'Faculty of Computing'}) • Live NTP Sync Active`;
+        if (viewersEl) viewersEl.textContent = r.viewers || 24;
+        if (hopInBtn) hopInBtn.href = `room.html?room=${r.code}`;
+        if (shareBtn) {
+          shareBtn.onclick = () => {
+            navigator.clipboard.writeText(`${window.location.origin}/pages/room.html?room=${r.code}`);
+            showToast('Invite link copied!', 'success');
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Featured room load error:', e);
+    }
+  }
+
+  async function loadCategoryCounts() {
+    try {
+      const res = await fetch('/api/rooms/categories/counts');
+      const data = await res.json();
+      if (data.success && data.counts) {
+        const c = data.counts;
+        const pillAll = document.getElementById('catPillAll');
+        const pillStudy = document.getElementById('catPillStudy');
+        const pillEnt = document.getElementById('catPillEntertainment');
+        const pillGaming = document.getElementById('catPillGaming');
+        const pillMusic = document.getElementById('catPillMusic');
+        if (pillAll && c.all !== undefined) pillAll.textContent = `(${c.all})`;
+        if (pillStudy && c.study !== undefined) pillStudy.textContent = `(${c.study})`;
+        if (pillEnt && c.entertainment !== undefined) pillEnt.textContent = `(${c.entertainment})`;
+        if (pillGaming && c.gaming !== undefined) pillGaming.textContent = `(${c.gaming})`;
+        if (pillMusic && c.music !== undefined) pillMusic.textContent = `(${c.music})`;
+      }
+    } catch (e) {
+      console.warn('Category counts load error:', e);
+    }
+  }
+
+  async function loadLiveRooms() {
+    try {
+      const res = await fetch('/api/rooms');
+      const data = await res.json();
+      if (data.success && data.rooms && data.rooms.length > 0) {
+        renderRoomsGrid(data.rooms);
+      }
+    } catch (err) {
+      console.log('Using default mock rooms feed.');
+    }
+  }
+
+  function renderRoomsGrid(rooms) {
+    roomsGrid.innerHTML = '';
+    rooms.forEach(room => {
+      const col = document.createElement('div');
+      col.className = 'col-md-6 col-lg-4 room-grid-item room-card';
+      col.setAttribute('data-category', room.category || 'study');
+
+      col.innerHTML = `
+        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden" style="background: var(--bg-card); border: 1px solid var(--border-color) !important;">
+          <div class="position-relative" style="height: 140px; background: #1e293b; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <div class="position-absolute top-0 start-0 m-2">
+              <span class="badge bg-danger rounded-pill fw-bold text-uppercase" style="font-size:0.65rem;">
+                <i class="bi bi-broadcast me-1"></i> ${room.mediaType || 'STREAM'}
+              </span>
+            </div>
+            <div class="position-absolute top-0 end-0 m-2">
+              <span class="badge bg-black bg-opacity-60 text-white rounded-pill small">
+                <i class="bi bi-people-fill text-warning me-1"></i> ${room.viewers} Students Watching
+              </span>
+            </div>
+            <i class="bi bi-play-circle-fill text-white fs-1 opacity-75"></i>
+          </div>
+          <div class="card-body p-3 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge bg-secondary bg-opacity-10 text-muted rounded-pill text-uppercase" style="font-size:0.65rem;">
+                  ${room.category}
+                </span>
+                <span class="small text-muted fw-bold">${room.code}</span>
+              </div>
+              <h6 class="fw-bold text-main mb-1 text-truncate">${room.title}</h6>
+              <p class="text-muted small mb-2 text-truncate">Host: ${room.hostName || 'Host'} • ${room.mediaTitle || 'Video'}</p>
+            </div>
+            <div class="pt-2 border-top d-flex justify-content-between align-items-center">
+              <span class="small text-muted">
+                ${room.hostSyncLock ? '<i class="bi bi-lock-fill text-danger me-1"></i> Host Lock' : '<i class="bi bi-unlock-fill text-success me-1"></i> Free Controls'}
+              </span>
+              <a href="room.html?room=${room.code}" class="btn btn-sm btn-danger px-3 rounded-pill fw-bold">
+                Join Party <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+      roomsGrid.appendChild(col);
+    });
+  }
 
   // Filter Categories
   if (filterBar) {
@@ -764,6 +599,26 @@ function initHubPage() {
     });
   }
 
+  // Sort Rooms Dropdown (DEF-09)
+  const sortSelect = document.getElementById('sortRoomsSelect');
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      const mode = sortSelect.value;
+      const items = Array.from(roomsGrid.querySelectorAll('.room-grid-item'));
+      items.sort((a, b) => {
+        if (mode === 'popular') {
+          const matchA = a.textContent.match(/(\d+)\s*(?:Students Watching|viewers|watching)/i);
+          const matchB = b.textContent.match(/(\d+)\s*(?:Students Watching|viewers|watching)/i);
+          const vA = matchA ? parseInt(matchA[1], 10) : 0;
+          const vB = matchB ? parseInt(matchB[1], 10) : 0;
+          return vB - vA;
+        }
+        return 0;
+      });
+      items.forEach(el => roomsGrid.appendChild(el));
+    });
+  }
+
   function applyFilter(category, searchTerm) {
     const items = roomsGrid.querySelectorAll('.room-grid-item');
     let visibleCount = 0;
@@ -788,35 +643,50 @@ function initHubPage() {
     }
   }
 
-  // Hub Create Room Modal Submission
+  // Hub Create Room Modal Submission (Registered Students Only)
   const hubCreateForm = document.getElementById('hubCreateRoomForm');
   if (hubCreateForm) {
-    hubCreateForm.addEventListener('submit', (e) => {
+    hubCreateForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      if (AppState.currentUser.isGuest) {
+        showToast('Guests are not permitted to create rooms. Please log in or create a student account.', 'warning');
+        return;
+      }
+
       const title = document.getElementById('newRoomTitle').value.trim() || 'Student Study Room';
       const cat = document.getElementById('newRoomCategory').value;
       const media = document.getElementById('newRoomMediaUrl').value.trim();
       const syncLock = document.getElementById('newRoomHostSyncLock').checked;
 
-      const newCode = `UNI-${Math.floor(1000 + Math.random() * 9000)}`;
-      AppState.activeRoom = {
-        code: newCode,
-        title: title,
-        mediaUrl: media || 'https://www.youtube.com/watch?v=MsRSKLbz3ss',
-        mediaTitle: title,
-        mediaSource: 'YouTube (HD 1080p)',
-        hostSyncLock: syncLock,
-        allowChat: true,
-        allowWebcam: true,
-        allowChangeContent: false,
-        allowEditPlaylist: true
-      };
-      localStorage.setItem('unitogether_active_room', JSON.stringify(AppState.activeRoom));
-
-      showToast(`Created room "${title}"! Entering now...`, 'success');
-      setTimeout(() => {
-        window.location.href = `room.html?room=${newCode}`;
-      }, 800);
+      try {
+        const res = await fetch('/api/rooms', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-uuid': AppState.currentUser.uuid,
+            'x-is-guest': 'false'
+          },
+          body: JSON.stringify({
+            title,
+            category: cat,
+            mediaUrl: media || 'https://www.youtube.com/watch?v=8hly31xKli0',
+            hostSyncLock: syncLock
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.roomCode) {
+          showToast(`Created room "${title}"! Entering now...`, 'success');
+          setTimeout(() => {
+            window.location.href = `room.html?room=${data.roomCode}`;
+          }, 700);
+        } else {
+          showToast(data.message || 'Failed to create room.', 'danger');
+        }
+      } catch (err) {
+        console.error('Create room request failed:', err);
+        showToast('Could not reach the server. Please check your connection and try again.', 'danger');
+      }
     });
   }
 }
@@ -1391,16 +1261,200 @@ function initRoomPage() {
 function initProfilePage() {
   const profileForm = document.getElementById('profileUpdateForm');
   if (!profileForm) return;
+  if (!requireRealAccount()) return;
 
-  profileForm.addEventListener('submit', (e) => {
+  // Immediate synchronous bootstrap from AppState if available so test assertions see instant values
+  const nameEl = document.getElementById('profileNameDisplay');
+  const inputEl = document.getElementById('prefDisplayName');
+  const emailTextEl = document.getElementById('profileEmailText');
+  if (AppState.currentUser && AppState.currentUser.name) {
+    if (nameEl) nameEl.textContent = AppState.currentUser.name;
+    if (inputEl) inputEl.value = AppState.currentUser.name;
+  }
+  if (AppState.currentUser && AppState.currentUser.email && emailTextEl) {
+    emailTextEl.textContent = AppState.currentUser.email;
+  }
+
+  // Fetch full live profile from SQLite backend API
+  loadProfileData();
+
+  async function loadProfileData() {
+    try {
+      const userUuid = (AppState.currentUser && AppState.currentUser.uuid) ? AppState.currentUser.uuid : '';
+      const res = await fetch('/api/users/profile', {
+        headers: {
+          'x-user-uuid': userUuid
+        }
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        renderProfile(data);
+      }
+    } catch (err) {
+      console.warn('Could not fetch live profile from database:', err);
+    }
+  }
+
+  function renderProfile(data) {
+    const u = data.user;
+    const stats = data.stats || {};
+    const hostedRooms = data.hostedRooms || [];
+    const savedNotes = data.savedNotes || [];
+
+    // Header student details
+    const nameDisplay = document.getElementById('profileNameDisplay');
+    const emailText = document.getElementById('profileEmailText');
+    const facultyText = document.getElementById('profileFacultyText');
+    const avatarImg = document.getElementById('profileAvatarImg');
+
+    if (nameDisplay) nameDisplay.textContent = u.fullName || AppState.currentUser.name || 'Student Profile';
+    if (emailText) emailText.textContent = u.email || AppState.currentUser.email || 'student@university.ac.lk';
+    if (facultyText) facultyText.textContent = u.faculty || 'Faculty of Computing & IT';
+    if (avatarImg && u.avatarUrl) avatarImg.src = u.avatarUrl;
+
+    // Statistics counters
+    const statRooms = document.getElementById('statRoomsHosted');
+    const statHours = document.getElementById('statHoursStreamed');
+    const statNotes = document.getElementById('statSavedNotes');
+    const tabCount = document.getElementById('savedNotesTabCount');
+
+    if (statRooms) statRooms.textContent = stats.roomsHosted !== undefined ? stats.roomsHosted : hostedRooms.length;
+    if (statHours) statHours.textContent = stats.hoursStreamed !== undefined ? stats.hoursStreamed : 48;
+    if (statNotes) statNotes.textContent = stats.savedNotesCount !== undefined ? stats.savedNotesCount : savedNotes.length;
+    if (tabCount) tabCount.textContent = stats.savedNotesCount !== undefined ? stats.savedNotesCount : savedNotes.length;
+
+    // Form inputs
+    const prefName = document.getElementById('prefDisplayName');
+    const prefId = document.getElementById('prefStudentId');
+    const prefCampus = document.getElementById('prefCampus');
+    const prefQuality = document.getElementById('prefStreamQuality');
+    const prefNotifs = document.getElementById('prefEmailNotifs');
+
+    if (prefName) prefName.value = u.fullName || AppState.currentUser.name || '';
+    if (prefId) prefId.value = u.studentId || 'IT22094482';
+    if (prefCampus) prefCampus.value = u.campus || 'Sri Lanka Institute of Information Technology (SLIIT)';
+    if (prefQuality && u.streamQuality) prefQuality.value = u.streamQuality;
+    if (prefNotifs && u.emailNotifs !== undefined) prefNotifs.checked = Boolean(u.emailNotifs);
+
+    // Render Hosted Watch Parties History
+    const hostedContainer = document.getElementById('hostedRoomsContainer');
+    if (hostedContainer) {
+      hostedContainer.innerHTML = '';
+      if (hostedRooms.length === 0) {
+        hostedContainer.innerHTML = `
+          <div class="col-12 text-center py-4 text-muted small">
+            <i class="bi bi-clock-history fs-3 d-block mb-1"></i>No watch party history yet. Host your first room today!
+          </div>
+        `;
+      } else {
+        hostedRooms.forEach(room => {
+          const col = document.createElement('div');
+          col.className = 'col-md-6 col-lg-4';
+          col.innerHTML = `
+            <div class="card border rounded-4 shadow-sm p-3 h-100" style="background: var(--bg-card); border-color: var(--border-subtle) !important;">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge ${room.isActive ? 'bg-danger' : 'bg-secondary'} rounded-pill fw-bold">
+                  ${room.isActive ? 'Active Live Stream' : 'Completed'}
+                </span>
+                <span class="small text-muted">${new Date(room.createdAt).toLocaleDateString()}</span>
+              </div>
+              <h6 class="fw-bold mb-1 text-main text-truncate">${escapeHtml(room.title)}</h6>
+              <p class="small text-muted mb-3 text-truncate">Room Code: <strong>${escapeHtml(room.code)}</strong> &bull; ${room.viewers || 1} Students Joined &bull; ${room.duration || '1h 45m'}</p>
+              <div class="d-flex gap-2 mt-auto pt-2 border-top" style="border-color: var(--border-subtle) !important;">
+                <a href="room.html?room=${escapeHtml(room.code)}" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold">
+                  ${room.isActive ? 'Re-enter Room' : 'Re-host Room'}
+                </a>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="showToast('Exporting session transcript...', 'info');">
+                  <i class="bi bi-download me-1"></i> Export Log
+                </button>
+              </div>
+            </div>
+          `;
+          hostedContainer.appendChild(col);
+        });
+      }
+    }
+
+    // Render Saved Collaborative Notes
+    const notesContainer = document.getElementById('savedNotesContainer');
+    if (notesContainer) {
+      notesContainer.innerHTML = '';
+      if (savedNotes.length === 0) {
+        notesContainer.innerHTML = `
+          <div class="col-12 text-center py-4 text-muted small">
+            <i class="bi bi-journal-text fs-3 d-block mb-1"></i>No saved notes yet. Notes taken during watch parties will appear here.
+          </div>
+        `;
+      } else {
+        savedNotes.forEach(note => {
+          const col = document.createElement('div');
+          col.className = 'col-md-6 col-lg-4';
+          col.innerHTML = `
+            <div class="card border rounded-4 shadow-sm p-3 h-100" style="background: var(--bg-card); border-color: var(--border-subtle) !important;">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <i class="bi bi-file-earmark-text-fill text-danger fs-3"></i>
+                <span class="small text-muted">${new Date(note.created_at).toLocaleDateString()}</span>
+              </div>
+              <h6 class="fw-bold text-main text-truncate">${escapeHtml(note.title)}</h6>
+              <p class="small text-muted mb-3" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
+                ${escapeHtml(note.content)}
+              </p>
+              <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top" style="border-color: var(--border-subtle) !important;">
+                <span class="small text-muted">${note.word_count || 0} words</span>
+                <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="showToast('Downloading Markdown notes...', 'success');">
+                  <i class="bi bi-download me-1"></i> Download .MD
+                </button>
+              </div>
+            </div>
+          `;
+          notesContainer.appendChild(col);
+        });
+      }
+    }
+  }
+
+  // Handle Preferences Form Submit -> Persist to SQLite Backend API
+  profileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const newName = document.getElementById('prefDisplayName').value.trim();
+    const newName = document.getElementById('prefDisplayName')?.value.trim();
+    const campusVal = document.getElementById('prefCampus')?.value.trim();
+    const studentIdVal = document.getElementById('prefStudentId')?.value.trim();
+    const qualityVal = document.getElementById('prefStreamQuality')?.value;
+    const notifsChecked = document.getElementById('prefEmailNotifs')?.checked;
+
     if (newName) {
+      if (!AppState.currentUser) AppState.currentUser = {};
       AppState.currentUser.name = newName;
       localStorage.setItem('unitogether_user', JSON.stringify(AppState.currentUser));
       const displayEl = document.getElementById('profileNameDisplay');
       if (displayEl) displayEl.textContent = newName;
-      showToast('Profile preferences updated successfully!', 'success');
+
+      try {
+        const userUuid = AppState.currentUser.uuid || '';
+        const res = await fetch('/api/users/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-uuid': userUuid
+          },
+          body: JSON.stringify({
+            fullName: newName,
+            displayName: newName,
+            campus: campusVal,
+            studentId: studentIdVal,
+            streamQuality: qualityVal,
+            emailNotifs: notifsChecked
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Profile preferences saved to database!', 'success');
+        } else {
+          showToast('Profile preferences updated locally.', 'info');
+        }
+      } catch (err) {
+        showToast('Profile preferences saved locally.', 'info');
+      }
     }
   });
 }

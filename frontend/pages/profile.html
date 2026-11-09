@@ -1,975 +1,215 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Edit Student Profile — UniTogether</title>
+  <title>Student Profile & Session History - UniTogether</title>
+  <meta name="description" content="Manage your UniTogether student profile, view past hosted watch parties, and download saved collaborative study notes.">
+  
   <link rel="icon" type="image/png" href="../assets/images/Web site mainLogo.png">
-
-  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Bootstrap 5.3 CSS & Bootstrap Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5.3.3 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons 1.11.3 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-
-  <!-- Custom Stylesheet -->
+  <!-- Font Awesome 6.5.1 -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <!-- UniTogether Design System Stylesheet -->
   <link rel="stylesheet" href="../css/style.css">
-
-  <!-- Core App Scripts (Loaded first so ApiClient and AppState are always ready) -->
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="../js/api.js?v=2.6"></script>
-  <script src="../js/app.js?v=2.6"></script>
-
-  <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #f8fafc;
-      color: #1e293b;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ========================================================
-       TOP NAVBAR - EXACT MATCH TO HOME / MANAGE ROOMS
-       ======================================================== */
-    .uni-navbar {
-      height: 54px;
-      min-height: 54px;
-      background-color: #dc2626;
-      border-bottom: 1px solid #b91c1c;
-      position: sticky;
-      top: 0;
-      z-index: 1030;
-      padding: 0 28px;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-    }
-
-    .brand-title {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 800;
-      font-size: 1.35rem;
-      text-decoration: none;
-      letter-spacing: -0.02em;
-    }
-
-    .uni-part { color: #ffffff; }
-    .together-part { color: #facc15; }
-
-    .nav-center-links a {
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      color: #ffffff;
-      transition: opacity 0.15s;
-    }
-
-    .nav-center-links a.active {
-      color: #facc15;
-    }
-
-    .nav-center-links a:hover {
-      opacity: 0.85;
-    }
-
-    .nav-auth-container {
-      display: flex !important;
-      align-items: center !important;
-      position: relative;
-    }
-
-    .user-dropdown-wrapper {
-      position: relative;
-      display: inline-block;
-    }
-
-    .user-custom-dropdown {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      min-width: 220px;
-      background-color: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      overflow: hidden;
-      z-index: 99999;
-    }
-
-    .user-custom-dropdown .dropdown-item {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      padding: 8px 16px;
-      clear: both;
-      font-weight: 500;
-      font-size: 13px;
-      color: #1f2937;
-      text-decoration: none;
-      background-color: transparent;
-      border: 0;
-      cursor: pointer;
-      transition: background-color 0.15s, color 0.15s;
-    }
-
-    .user-custom-dropdown .dropdown-item:hover {
-      background-color: #f3f4f6;
-      color: #111827;
-    }
-
-    .user-custom-dropdown .dropdown-item:active {
-      background-color: #e5e7eb;
-    }
-
-    .btn-sign-in {
-      background-color: #facc15;
-      color: #450a0a !important;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      padding: 6px 18px;
-      border-radius: 9999px;
-      border: none;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .btn-user-badge {
-      background-color: #facc15;
-      color: #111827;
-      font-size: 12.5px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      padding: 6px 16px;
-      border-radius: 9999px;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .btn-user-badge:hover {
-      background-color: #fde047;
-      transform: translateY(-1px);
-    }
-
-    /* ========================================================
-       EDIT PROFILE MAIN CONTAINER & CARD
-       ======================================================== */
-    .profile-page-wrapper {
-      max-width: 1040px;
-      margin: 0 auto;
-      padding: 36px 20px 60px 20px;
-      flex-grow: 1;
-    }
-
-    .profile-breadcrumbs {
-      font-size: 12.5px;
-      font-weight: 500;
-      color: #64748b;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .profile-breadcrumbs .crumb-active {
-      color: #dc2626;
-      font-weight: 600;
-    }
-
-    .profile-page-title {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 28px;
-      font-weight: 800;
-      color: #0f172a;
-      letter-spacing: -0.02em;
-      margin-bottom: 24px;
-    }
-
-    .profile-card {
-      background: #ffffff;
-      border-radius: 20px;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
-      padding: 36px;
-    }
-
-    @media (max-width: 768px) {
-      .profile-card {
-        padding: 24px 18px;
-      }
-    }
-
-    .section-eyebrow {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #64748b;
-    }
-
-    .badge-interactive {
-      background-color: #fee2e2;
-      color: #dc2626;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 9999px;
-    }
-
-    .badge-synced {
-      background-color: #fef3c7;
-      color: #b45309;
-      font-size: 11.5px;
-      font-weight: 600;
-      padding: 4px 12px;
-      border-radius: 9999px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .badge-synced-dot {
-      width: 7px;
-      height: 7px;
-      background-color: #f59e0b;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    /* Left Avatar Column */
-    .avatar-display-container {
-      position: relative;
-      width: 130px;
-      height: 130px;
-      margin: 0 auto 16px auto;
-    }
-
-    .avatar-main-img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      background-color: #0d9488;
-      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
-      border: 3px solid #ffffff;
-      transition: transform 0.2s;
-    }
-
-    .avatar-camera-btn {
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 36px;
-      height: 36px;
-      background-color: #dc2626;
-      color: #ffffff;
-      border-radius: 50%;
-      border: 3px solid #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-      cursor: pointer;
-      transition: background-color 0.15s, transform 0.15s;
-    }
-
-    .avatar-camera-btn:hover {
-      background-color: #b91c1c;
-      transform: scale(1.08);
-    }
-
-    .pill-verified {
-      background-color: #fef3c7;
-      color: #b45309;
-      font-size: 11.5px;
-      font-weight: 600;
-      padding: 5px 12px;
-      border-radius: 9999px;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .pill-room-host {
-      background-color: #fee2e2;
-      color: #dc2626;
-      font-size: 11.5px;
-      font-weight: 600;
-      padding: 5px 12px;
-      border-radius: 9999px;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    /* Preset Avatars Row */
-    .preset-avatars-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .preset-avatar-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      background-color: #f1f5f9;
-      cursor: pointer;
-      padding: 2px;
-      transition: all 0.15s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .preset-avatar-btn img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .preset-avatar-btn:hover {
-      transform: scale(1.1);
-      border-color: #cbd5e1;
-    }
-
-    .preset-avatar-btn.active {
-      border-color: #dc2626;
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
-      transform: scale(1.05);
-    }
-
-    .btn-upload-photo {
-      border: 1px solid #cbd5e1;
-      background-color: #ffffff;
-      color: #334155;
-      font-size: 13px;
-      font-weight: 600;
-      border-radius: 10px;
-      padding: 8px 16px;
-      width: 100%;
-      transition: all 0.15s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn-upload-photo:hover {
-      background-color: #f8fafc;
-      border-color: #94a3b8;
-      color: #0f172a;
-    }
-
-    /* Right Form Column */
-    .profile-form-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #475569;
-      margin-bottom: 6px;
-    }
-
-    .profile-input-custom {
-      height: 44px;
-      border-radius: 10px;
-      border: 1px solid #e2e8f0;
-      font-size: 13.5px;
-      color: #0f172a;
-      background-color: #ffffff;
-      padding: 0 14px;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-
-    .profile-input-custom:focus {
-      border-color: #dc2626;
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
-      outline: none;
-    }
-
-    .profile-input-custom:disabled, .profile-input-custom[readonly] {
-      background-color: #f8fafc;
-      color: #64748b;
-      cursor: not-allowed;
-    }
-
-    .profile-textarea-custom {
-      border-radius: 10px;
-      border: 1px solid #e2e8f0;
-      font-size: 13.5px;
-      color: #0f172a;
-      background-color: #ffffff;
-      padding: 12px 14px;
-      resize: vertical;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-
-    .profile-textarea-custom:focus {
-      border-color: #dc2626;
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
-      outline: none;
-    }
-
-    .btn-save-profile {
-      background-color: #dc2626;
-      color: #ffffff;
-      font-size: 13.5px;
-      font-weight: 700;
-      border-radius: 10px;
-      padding: 10px 24px;
-      border: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
-      transition: all 0.15s ease;
-      cursor: pointer;
-    }
-
-    .btn-save-profile:hover {
-      background-color: #b91c1c;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
-    }
-
-    .btn-cancel-profile {
-      background-color: #ffffff;
-      color: #475569;
-      border: 1px solid #e2e8f0;
-      font-size: 13.5px;
-      font-weight: 600;
-      border-radius: 10px;
-      padding: 10px 20px;
-      text-decoration: none;
-      transition: all 0.15s ease;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .btn-cancel-profile:hover {
-      background-color: #f8fafc;
-      color: #0f172a;
-      border-color: #cbd5e1;
-    }
-
-    .account-support-link {
-      font-size: 12px;
-      color: #64748b;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: color 0.15s;
-    }
-
-    .account-support-link:hover {
-      color: #dc2626;
-    }
-  </style>
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100 bg-body">
 
-  <!-- ========================================================
-       1. TOP NAVBAR (EXACT REPLICA OF HOME / ROOMS PAGE)
-       ======================================================== -->
-  <header class="uni-navbar d-flex align-items-center justify-content-between">
-    <a href="../index.html" class="brand-title d-flex align-items-center">
-      <span class="uni-part">Uni</span><span class="together-part">Together</span>
-    </a>
+  <!-- Top Global Header Navbar -->
+  <header class="uni-navbar d-flex align-items-center justify-content-between px-3 px-md-4 sticky-top">
+    <div class="d-flex align-items-center gap-3">
+      <a href="../index.html" class="brand-wrapper" title="UniTogether Home">
+        <div class="brand-logo-badge">
+          <img src="../assets/images/Web site mainLogo.png" alt="UniTogether Logo">
+        </div>
+        <div class="brand-title">
+          <span class="uni-txt">Uni</span><span class="together-txt">Together</span>
+        </div>
+      </a>
 
-    <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
-      <a href="../index.html">Home</a>
-      <a href="rooms.html">Manage Rooms</a>
-      <a href="profile.html" class="active">Profile</a>
-      <a href="contact.html">Contact Us</a>
-      <a href="../index.html#features">Features</a>
-    </nav>
+      <nav class="d-none d-md-flex align-items-center gap-1 ms-3">
+        <a href="rooms.html" class="nav-link-custom">
+          <i class="bi bi-compass"></i> Explore Hub
+        </a>
+        <a href="room.html" class="nav-link-custom">
+          <i class="bi bi-broadcast"></i> Live Watch Room
+        </a>
+        <a href="profile.html" class="nav-link-custom active">
+          <i class="bi bi-person-circle"></i> Student Profile
+        </a>
+      </nav>
+    </div>
 
-    <!-- Dynamic Auth Container -->
-    <div class="nav-auth-container" id="navAuthContainer">
-      <a href="login.html" class="btn-sign-in">SIGN IN</a>
+    <!-- Right Header Actions -->
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn-theme-toggle" id="themeToggleBtn" title="Toggle Light/Dark Mode" aria-label="Toggle Theme">
+        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+      </button>
+
+      <a href="room.html" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-sm d-flex align-items-center gap-1 btn-instant-room">
+        <i class="bi bi-play-circle-fill"></i> <span class="d-none d-sm-inline">Jump into Room</span>
+      </a>
+
+      <a href="../index.html" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold ms-2" title="Log Out">
+        <i class="bi bi-box-arrow-right me-1"></i> <span class="d-none d-sm-inline">Log out</span>
+      </a>
     </div>
   </header>
 
-  <!-- ========================================================
-       2. EDIT STUDENT PROFILE MAIN SECTION
-       Matches Screenshot media_1794218963128_93eb4e0c.png Exactly
-       ======================================================== -->
-  <main class="profile-page-wrapper">
-    
-    <!-- Breadcrumbs -->
-    <div class="profile-breadcrumbs">
-      <span>Student Profile</span>
-      <i class="bi bi-chevron-right" style="font-size: 10px;"></i>
-      <span class="crumb-active">Edit Profile</span>
-    </div>
+  <!-- Profile Main Content -->
+  <main class="container-xl py-4 flex-grow-1">
 
-    <!-- Page Title -->
-    <h1 class="profile-page-title">Edit Student Profile</h1>
-
-    <!-- Main Card -->
-    <div class="profile-card">
-      <form id="editProfileForm" onsubmit="handleProfileSubmit(event)">
-        <div class="row g-4 g-lg-5">
+    <!-- Profile Hero Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" style="background: var(--bg-card); border: 1px solid var(--border-subtle) !important;">
+      <div style="height: 120px; background: var(--uni-crimson-gradient);"></div>
+      <div class="card-body p-4 pt-0 position-relative">
+        <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3" style="margin-top: -50px;">
           
-          <!-- LEFT COLUMN: PROFILE AVATAR -->
-          <div class="col-lg-4 col-md-5 text-center border-end-lg pe-lg-4">
-            <div class="d-flex align-items-center justify-content-between mb-4">
-              <span class="section-eyebrow">PROFILE AVATAR</span>
-              <span class="badge-interactive">Interactive</span>
-            </div>
-
-            <!-- Avatar Preview with Camera Button -->
-            <div class="avatar-display-container">
-              <img 
-                id="previewAvatarImg" 
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=YasaruStyle1&eyebrows=default&eyes=default&mouth=smile" 
-                alt="Profile Avatar" 
-                class="avatar-main-img"
-              >
-              <button 
-                type="button" 
-                class="avatar-camera-btn" 
-                title="Upload custom photo" 
-                onclick="document.getElementById('fileAvatarUpload').click()"
-              >
-                <i class="bi bi-camera-fill" style="font-size: 14px;"></i>
+          <!-- Avatar + Student Details -->
+          <div class="d-flex align-items-end gap-3 flex-wrap">
+            <div class="position-relative">
+              <img id="profileAvatarImg" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="Avatar" class="rounded-circle border border-4 border-white shadow" style="width: 100px; height: 100px; object-fit: cover;">
+              <button class="btn btn-sm btn-danger rounded-circle position-absolute bottom-0 end-0 p-1 shadow-sm d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;" title="Upload new photo">
+                <i class="bi bi-camera-fill" style="font-size: 0.75rem;"></i>
               </button>
             </div>
-
-            <h4 class="fw-bold mb-1 text-dark" id="displayProfileName">Yasaru Bandara</h4>
-            <div class="text-muted small mb-3" id="displayProfileDegree" style="font-size: 12.5px;">BSc (Hons) Computer Science</div>
-
-            <!-- Badges -->
-            <div class="d-flex align-items-center justify-content-center gap-2 mb-4 flex-wrap">
-              <span class="pill-verified">
-                <i class="bi bi-check-circle-fill text-warning"></i> Verified Student
-              </span>
-              <span class="pill-room-host">
-                <i class="bi bi-broadcast"></i> Room Host
-              </span>
+            <div>
+              <h2 class="fw-bold mb-1 text-main" id="profileNameDisplay">Student Profile</h2>
+              <p class="text-muted small mb-2" id="profileEmailFaculty">
+                <i class="bi bi-envelope me-1"></i> <span id="profileEmailText">student@university.ac.lk</span> &bull; <i class="bi bi-mortarboard me-1"></i> <span id="profileFacultyText">Faculty of Computing &amp; IT</span>
+              </p>
+              <div class="d-flex gap-2 flex-wrap">
+                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill fw-bold px-3 py-1">🎓 Verified Student</span>
+                <span class="badge bg-warning bg-opacity-25 text-warning-emphasis rounded-pill fw-bold px-3 py-1">👑 Room Host</span>
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill fw-bold px-3 py-1">🟢 Online Now</span>
+              </div>
             </div>
-
-            <!-- Select Avatar Preset -->
-            <div class="d-flex align-items-center justify-content-between mb-2 px-1">
-              <span class="fw-semibold text-secondary" style="font-size: 12px;">Select Avatar Preset</span>
-              <span class="text-muted small" style="font-size: 11px;">5 styles</span>
-            </div>
-
-            <div class="preset-avatars-row">
-              <button 
-                type="button" 
-                class="preset-avatar-btn active" 
-                data-avatar-url="https://api.dicebear.com/7.x/avataaars/svg?seed=YasaruStyle1&eyebrows=default&eyes=default&mouth=smile"
-                onclick="selectAvatarPreset(this)"
-              >
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=YasaruStyle1&eyebrows=default&eyes=default&mouth=smile" alt="Preset 1">
-              </button>
-              <button 
-                type="button" 
-                class="preset-avatar-btn" 
-                data-avatar-url="https://api.dicebear.com/7.x/avataaars/svg?seed=UdithStyle2&eyebrows=defaultNatural&eyes=happy&mouth=smile"
-                onclick="selectAvatarPreset(this)"
-              >
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=UdithStyle2&eyebrows=defaultNatural&eyes=happy&mouth=smile" alt="Preset 2">
-              </button>
-              <button 
-                type="button" 
-                class="preset-avatar-btn" 
-                data-avatar-url="https://api.dicebear.com/7.x/avataaars/svg?seed=RameshStyle3&eyebrows=default&eyes=wink&mouth=smile"
-                onclick="selectAvatarPreset(this)"
-              >
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=RameshStyle3&eyebrows=default&eyes=wink&mouth=smile" alt="Preset 3">
-              </button>
-              <button 
-                type="button" 
-                class="preset-avatar-btn" 
-                data-avatar-url="https://api.dicebear.com/7.x/avataaars/svg?seed=KavindiStyle4&hair=bun&eyebrows=default&eyes=happy&mouth=smile"
-                onclick="selectAvatarPreset(this)"
-              >
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=KavindiStyle4&hair=bun&eyebrows=default&eyes=happy&mouth=smile" alt="Preset 4">
-              </button>
-              <button 
-                type="button" 
-                class="preset-avatar-btn" 
-                data-avatar-url="https://api.dicebear.com/7.x/avataaars/svg?seed=NimaliStyle5&hair=long&eyebrows=default&eyes=default&mouth=smile"
-                onclick="selectAvatarPreset(this)"
-              >
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=NimaliStyle5&hair=long&eyebrows=default&eyes=default&mouth=smile" alt="Preset 5">
-              </button>
-            </div>
-
-            <!-- Upload Custom Photo -->
-            <button 
-              type="button" 
-              class="btn-upload-photo" 
-              onclick="document.getElementById('fileAvatarUpload').click()"
-            >
-              <i class="bi bi-camera"></i> Upload Custom Photo
-            </button>
-            <input 
-              type="file" 
-              id="fileAvatarUpload" 
-              accept="image/*" 
-              style="display: none;" 
-              onchange="handleAvatarFileSelect(event)"
-            >
-            <input type="hidden" id="currentAvatarValue" value="">
           </div>
 
-          <!-- RIGHT COLUMN: ACADEMIC CREDENTIALS & CONTACT -->
-          <div class="col-lg-8 col-md-7 ps-lg-3">
-            <div class="d-flex align-items-center justify-content-between mb-4">
-              <span class="section-eyebrow">ACADEMIC CREDENTIALS & CONTACT</span>
-              <span class="badge-synced">
-                <span class="badge-synced-dot"></span> Profile Synced
-              </span>
+          <!-- Quick Statistics Counter -->
+          <div class="d-flex gap-3 text-center">
+            <div class="px-3 py-2 rounded-3 border" style="background: var(--bg-card-subtle); border-color: var(--border-subtle) !important;">
+              <div class="fs-4 fw-extrabold text-danger" id="statRoomsHosted">0</div>
+              <div class="text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">ROOMS HOSTED</div>
             </div>
-
-            <div class="row g-3">
-              <!-- Full Name -->
-              <div class="col-sm-6">
-                <label for="profileFullName" class="profile-form-label">Full Name</label>
-                <input 
-                  type="text" 
-                  class="form-control profile-input-custom" 
-                  id="profileFullName" 
-                  placeholder="e.g. Yasaru Bandara" 
-                  required
-                  oninput="syncPreviewName(this.value)"
-                >
-              </div>
-
-              <!-- Preferred Display Name -->
-              <div class="col-sm-6">
-                <label for="profileDisplayName" class="profile-form-label">Preferred Display Name</label>
-                <input 
-                  type="text" 
-                  class="form-control profile-input-custom" 
-                  id="profileDisplayName" 
-                  placeholder="e.g. Yasaru"
-                >
-              </div>
-
-              <!-- University Institution -->
-              <div class="col-sm-6">
-                <label for="profileInstitution" class="profile-form-label">University Institution</label>
-                <select class="form-select profile-input-custom" id="profileInstitution">
-                  <option value="University of Sri Jayewardenepura" selected>University of Sri Jayewardenepura</option>
-                  <option value="University of Colombo">University of Colombo</option>
-                  <option value="University of Moratuwa">University of Moratuwa</option>
-                  <option value="University of Peradeniya">University of Peradeniya</option>
-                  <option value="University of Kelaniya">University of Kelaniya</option>
-                  <option value="SLIIT">Sri Lanka Institute of Information Technology (SLIIT)</option>
-                  <option value="IIT Sri Lanka">Informatics Institute of Technology (IIT)</option>
-                  <option value="NSBM Green University">NSBM Green University</option>
-                  <option value="General Sir John Kotelawala Defence University">KDU</option>
-                  <option value="Other Institution">Other University / College</option>
-                </select>
-              </div>
-
-              <!-- Faculty / Department -->
-              <div class="col-sm-6">
-                <label for="profileFaculty" class="profile-form-label">Faculty / Department</label>
-                <input 
-                  type="text" 
-                  class="form-control profile-input-custom" 
-                  id="profileFaculty" 
-                  placeholder="e.g. Faculty of Applied Sciences"
-                >
-              </div>
-
-              <!-- Student Email Address (Locked) -->
-              <div class="col-sm-6">
-                <div class="d-flex align-items-center justify-content-between mb-1">
-                  <label for="profileEmail" class="profile-form-label mb-0">Student Email Address</label>
-                  <span class="text-muted" style="font-size: 11px;"><i class="bi bi-lock-fill"></i> Locked</span>
-                </div>
-                <input 
-                  type="email" 
-                  class="form-control profile-input-custom" 
-                  id="profileEmail" 
-                  readonly 
-                  tabindex="-1"
-                >
-              </div>
-
-              <!-- Phone Number -->
-              <div class="col-sm-6">
-                <label for="profilePhone" class="profile-form-label">Phone Number</label>
-                <input 
-                  type="tel" 
-                  class="form-control profile-input-custom" 
-                  id="profilePhone" 
-                  placeholder="e.g. 0789049050"
-                >
-              </div>
-
-              <!-- Study Bio & Peer Pitch -->
-              <div class="col-12">
-                <div class="d-flex align-items-center justify-content-between mb-1">
-                  <label for="profileBio" class="profile-form-label mb-0">Study Bio & Peer Pitch</label>
-                  <span class="text-muted" style="font-size: 11px;" id="bioCharTracker">Max 160 characters</span>
-                </div>
-                <textarea 
-                  class="form-control profile-textarea-custom" 
-                  id="profileBio" 
-                  rows="3" 
-                  maxlength="160"
-                  placeholder="Undergraduate software engineering enthusiast & algorithms peer study host. Organizing weekly exam cram rooms."
-                  oninput="updateBioCount(this)"
-                ></textarea>
-              </div>
+            <div class="px-3 py-2 rounded-3 border" style="background: var(--bg-card-subtle); border-color: var(--border-subtle) !important;">
+              <div class="fs-4 fw-extrabold text-danger" id="statHoursStreamed">0</div>
+              <div class="text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">HOURS STREAMED</div>
             </div>
-
-            <!-- Footer Action Row -->
-            <div class="d-flex align-items-center justify-content-between pt-4 mt-4 border-top">
-              <a href="mailto:support@unitogether.edu" class="account-support-link">
-                <i class="bi bi-question-circle"></i> Institutional account support?
-              </a>
-              <div class="d-flex align-items-center gap-2">
-                <a href="rooms.html" class="btn-cancel-profile">Cancel</a>
-                <button type="submit" class="btn-save-profile" id="btnSaveProfile">
-                  <i class="bi bi-check2-circle"></i> Save Changes
-                </button>
-              </div>
+            <div class="px-3 py-2 rounded-3 border" style="background: var(--bg-card-subtle); border-color: var(--border-subtle) !important;">
+              <div class="fs-4 fw-extrabold text-danger" id="statSavedNotes">0</div>
+              <div class="text-muted fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;">SAVED NOTES</div>
             </div>
-
           </div>
-
         </div>
-      </form>
+      </div>
     </div>
 
+    <!-- Profile Nav Pills -->
+    <ul class="nav nav-pills mb-4 gap-2 flex-wrap" id="profileTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active rounded-pill px-4 fw-bold" id="tabHostedRoomsBtn" data-bs-toggle="pill" data-bs-target="#tabHostedRooms" type="button" role="tab" aria-selected="true">
+          <i class="bi bi-clock-history me-1"></i> Hosted Watch Parties
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-pill px-4 fw-bold" id="tabSavedNotesBtn" data-bs-toggle="pill" data-bs-target="#tabSavedNotes" type="button" role="tab" aria-selected="false">
+          <i class="bi bi-journal-text me-1"></i> Saved Study Notes (<span id="savedNotesTabCount">0</span>)
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-pill px-4 fw-bold" id="tabAccountSettingsBtn" data-bs-toggle="pill" data-bs-target="#tabAccountSettings" type="button" role="tab" aria-selected="false">
+          <i class="bi bi-gear-fill me-1"></i> Preferences & Security
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab Content Area -->
+    <div class="tab-content" id="profileTabsContent">
+      
+      <!-- Tab 1: Hosted Watch Parties History -->
+      <div class="tab-pane fade show active" id="tabHostedRooms" role="tabpanel" aria-labelledby="tabHostedRoomsBtn">
+        <div class="row g-3" id="hostedRoomsContainer">
+          <!-- Dynamically loaded from SQLite /api/users/profile -->
+          <div class="col-12 text-center py-4 text-muted small" id="hostedRoomsLoading">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>Loading hosted watch parties...
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Saved Collaborative Notes -->
+      <div class="tab-pane fade" id="tabSavedNotes" role="tabpanel" aria-labelledby="tabSavedNotesBtn">
+        <div class="row g-3" id="savedNotesContainer">
+          <!-- Dynamically loaded from SQLite /api/users/profile -->
+          <div class="col-12 text-center py-4 text-muted small" id="savedNotesLoading">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>Loading saved study notes...
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Account & Preferences -->
+      <div class="tab-pane fade" id="tabAccountSettings" role="tabpanel" aria-labelledby="tabAccountSettingsBtn">
+        <div class="card border rounded-4 shadow-sm p-4" style="background: var(--bg-card); border-color: var(--border-subtle) !important; max-width: 720px;">
+          <h5 class="fw-bold mb-3 text-main">Student Profile Settings</h5>
+          
+          <form id="profileUpdateForm">
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold text-main">Display Name</label>
+                <input type="text" class="form-control rounded-3" id="prefDisplayName" placeholder="Student Name" style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold text-main">Student ID / Registration No.</label>
+                <input type="text" class="form-control rounded-3" id="prefStudentId" placeholder="e.g. IT12345678" readonly style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-muted);">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-main">University / Campus</label>
+              <input type="text" class="form-control rounded-3" id="prefCampus" placeholder="Sri Lanka Institute of Information Technology (SLIIT)" readonly style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-muted);">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-main">Default Stream Quality</label>
+              <select class="form-select rounded-3" id="prefStreamQuality" style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+                <option value="1080" selected>1080p Full HD (Recommended)</option>
+                <option value="720">720p HD (Low Bandwidth Mode)</option>
+                <option value="480">480p SD</option>
+              </select>
+            </div>
+
+            <div class="form-check form-switch mb-4">
+              <input class="form-check-input" type="checkbox" id="prefEmailNotifs" checked>
+              <label class="form-check-label fw-bold text-main small" for="prefEmailNotifs">
+                Receive email reminders when classmates host study watch parties
+              </label>
+            </div>
+
+            <div class="pt-3 border-top d-flex justify-content-end gap-2" style="border-color: var(--border-subtle) !important;">
+              <button type="submit" class="btn btn-danger px-4 fw-bold rounded-pill shadow-sm">
+                Save Preferences
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
   </main>
 
-  <!-- App Toast Notification Container -->
+  <!-- Global App Toast Notification Container -->
   <div class="app-toast-container" id="appToastContainer"></div>
 
-  <!-- Bootstrap 5.3 JS Bundle -->
+  <!-- Bootstrap 5.3.3 Bundle JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Profile Management Script -->
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      // 1. Check user authentication
-      let user = AppState.currentUser;
-      if (!user || (!user.email && !user.name)) {
-        try {
-          const stored = localStorage.getItem('unitogether_user');
-          if (stored) {
-            user = JSON.parse(stored);
-            AppState.currentUser = user;
-          }
-        } catch (e) {}
-      }
-
-      // If not logged in, redirect to login
-      if (!user || (!user.email && !user.name)) {
-        window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
-        return;
-      }
-
-      // 2. Fetch fresh user details from server if token exists
-      try {
-        if (typeof ApiClient !== 'undefined' && ApiClient.getMe) {
-          const res = await ApiClient.getMe();
-          if (res && res.user) {
-            user = res.user;
-            AppState.currentUser = user;
-            localStorage.setItem('unitogether_user', JSON.stringify(user));
-          }
-        }
-      } catch (err) {
-        console.warn('Could not refresh user profile from server:', err);
-      }
-
-      // 3. Populate form fields
-      populateProfileFields(user);
-    });
-
-    function populateProfileFields(user) {
-      if (!user) return;
-
-      const fullName = user.name || 'Yasaru Bandara';
-      const displayName = user.display_name || user.displayName || (user.name ? user.name.split(' ')[0] : 'Yasaru');
-      const email = user.email || 'yasaru@university.ac.lk';
-      const institution = user.institution || 'University of Sri Jayewardenepura';
-      const faculty = user.faculty || 'Faculty of Applied Sciences';
-      const phone = user.phone || '0789049050';
-      const degree = user.degree || 'BSc (Hons) Computer Science';
-      const bio = user.bio || 'Undergraduate software engineering enthusiast & algorithms peer study host. Organizing weekly exam cram rooms.';
-      const avatar = user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=YasaruStyle1&eyebrows=default&eyes=default&mouth=smile';
-
-      document.getElementById('profileFullName').value = fullName;
-      document.getElementById('profileDisplayName').value = displayName;
-      document.getElementById('profileEmail').value = email;
-      document.getElementById('profileFaculty').value = faculty;
-      document.getElementById('profilePhone').value = phone;
-      document.getElementById('profileBio').value = bio;
-      document.getElementById('currentAvatarValue').value = avatar;
-
-      // Select institution in dropdown
-      const instSelect = document.getElementById('profileInstitution');
-      if (instSelect) {
-        let matched = false;
-        for (let i = 0; i < instSelect.options.length; i++) {
-          if (instSelect.options[i].value.toLowerCase() === institution.toLowerCase()) {
-            instSelect.selectedIndex = i;
-            matched = true;
-            break;
-          }
-        }
-        if (!matched && institution) {
-          const opt = new Option(institution, institution, true, true);
-          instSelect.add(opt);
-        }
-      }
-
-      // Left Column Display elements
-      document.getElementById('displayProfileName').textContent = fullName;
-      document.getElementById('displayProfileDegree').textContent = degree;
-      document.getElementById('previewAvatarImg').src = avatar;
-
-      // Active preset check
-      highlightActivePreset(avatar);
-      updateBioCount(document.getElementById('profileBio'));
-    }
-
-    function syncPreviewName(val) {
-      document.getElementById('displayProfileName').textContent = val.trim() || 'Student Name';
-    }
-
-    function updateBioCount(textarea) {
-      const remaining = 160 - textarea.value.length;
-      const tracker = document.getElementById('bioCharTracker');
-      if (tracker) {
-        tracker.textContent = `${textarea.value.length}/160 characters`;
-      }
-    }
-
-    function selectAvatarPreset(btn) {
-      document.querySelectorAll('.preset-avatar-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const avatarUrl = btn.getAttribute('data-avatar-url');
-      document.getElementById('previewAvatarImg').src = avatarUrl;
-      document.getElementById('currentAvatarValue').value = avatarUrl;
-    }
-
-    function highlightActivePreset(url) {
-      document.querySelectorAll('.preset-avatar-btn').forEach(btn => {
-        if (btn.getAttribute('data-avatar-url') === url) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
-    }
-
-    function handleAvatarFileSelect(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      if (!file.type.startsWith('image/')) {
-        showToast('Please select a valid image file (PNG, JPG, SVG).', 'warning');
-        return;
-      }
-
-      if (file.size > 8 * 1024 * 1024) {
-        showToast('Image size exceeds 8MB limit.', 'warning');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const base64Img = evt.target.result;
-        document.getElementById('previewAvatarImg').src = base64Img;
-        document.getElementById('currentAvatarValue').value = base64Img;
-        document.querySelectorAll('.preset-avatar-btn').forEach(b => b.classList.remove('active'));
-        showToast('Custom photo loaded! Click "Save Changes" to apply.', 'info');
-      };
-      reader.readAsDataURL(file);
-    }
-
-    async function handleProfileSubmit(e) {
-      e.preventDefault();
-      const saveBtn = document.getElementById('btnSaveProfile');
-      saveBtn.disabled = true;
-      saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
-
-      const fullName = document.getElementById('profileFullName').value.trim();
-      const displayName = document.getElementById('profileDisplayName').value.trim();
-      const email = document.getElementById('profileEmail').value.trim();
-      const institution = document.getElementById('profileInstitution').value;
-      const faculty = document.getElementById('profileFaculty').value.trim();
-      const phone = document.getElementById('profilePhone').value.trim();
-      const bio = document.getElementById('profileBio').value.trim();
-      const avatar = document.getElementById('currentAvatarValue').value || document.getElementById('previewAvatarImg').src;
-
-      const profilePayload = {
-        name: fullName,
-        displayName: displayName || fullName.split(' ')[0],
-        email: email,
-        institution: institution,
-        faculty: faculty,
-        phone: phone,
-        bio: bio,
-        avatar: avatar
-      };
-
-      try {
-        let updatedUser = null;
-        if (typeof ApiClient !== 'undefined' && ApiClient.updateProfile) {
-          const res = await ApiClient.updateProfile(profilePayload);
-          if (res && res.user) {
-            updatedUser = res.user;
-          }
-        }
-
-        if (!updatedUser) {
-          // Local fallback
-          updatedUser = {
-            ...AppState.currentUser,
-            ...profilePayload
-          };
-        }
-
-        AppState.currentUser = updatedUser;
-        localStorage.setItem('unitogether_user', JSON.stringify(updatedUser));
-        updateNavbarAuth();
-
-        showToast('Student profile updated successfully!', 'success');
-        setTimeout(() => {
-          window.location.href = 'rooms.html';
-        }, 800);
-      } catch (err) {
-        console.error('Profile update failed:', err);
-        showToast('Failed to update profile: ' + (err.message || 'Server error'), 'danger');
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Save Changes';
-      }
-    }
-  </script>
+  <!-- UniTogether Client App Logic -->
+  <script src="../js/app.js"></script>
 </body>
 </html>
