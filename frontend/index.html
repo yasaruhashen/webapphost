@@ -1,515 +1,1450 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UniTogether - University Watch Party & Real-Time Sync Platform</title>
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>UniTogether — Watch Together, Study Together</title>
   <link rel="icon" type="image/png" href="./assets/images/Web site mainLogo.png">
-
-  <!-- Google Fonts: Plus Jakarta Sans -->
+  
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Bootstrap 5.3.3 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
   
-  <!-- Bootstrap Icons 1.11.3 -->
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   
-  <!-- Font Awesome 6.5.1 -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  <!-- Custom Design System Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css">
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #ffffff;
+      color: #111827;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ========================================================
+       TOP GLOBAL HEADER BAR (RED)
+       ======================================================== */
+    .uni-navbar {
+      height: 54px;
+      min-height: 54px;
+      background-color: #dc2626;
+      border-bottom: 1px solid #b91c1c;
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      padding: 0 28px;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      box-sizing: border-box !important;
+      width: 100%;
+    }
+
+    .brand-title {
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-decoration: none;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    .brand-title .uni-part { color: #ffffff; }
+    .brand-title .together-part { color: #facc15; }
+
+    .nav-center-links {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 24px !important;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-center-links a {
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #ffffff;
+      transition: opacity 0.15s;
+    }
+
+    .nav-center-links a.active {
+      color: #facc15;
+    }
+
+    .nav-center-links a:hover {
+      opacity: 0.85;
+    }
+
+    .nav-auth-container {
+      display: flex !important;
+      align-items: center !important;
+      position: relative;
+    }
+
+    .user-dropdown-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .user-custom-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 220px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      z-index: 99999;
+    }
+
+    .user-custom-dropdown .dropdown-item {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 8px 16px;
+      clear: both;
+      font-weight: 500;
+      font-size: 13px;
+      color: #1f2937;
+      text-decoration: none;
+      background-color: transparent;
+      border: 0;
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .user-custom-dropdown .dropdown-item:hover {
+      background-color: #f3f4f6;
+      color: #111827;
+    }
+
+    .user-custom-dropdown .dropdown-item:active {
+      background-color: #e5e7eb;
+    }
+
+    .btn-sign-in {
+      background-color: #facc15;
+      color: #450a0a !important;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 6px 18px;
+      border-radius: 9999px;
+      border: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+
+    .btn-sign-in:hover {
+      background-color: #eab308;
+      color: #450a0a !important;
+      transform: translateY(-1px);
+    }
+
+    .btn-user-badge {
+      background-color: #facc15;
+      color: #450a0a !important;
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      border: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+
+    .btn-user-badge:hover, .btn-user-badge:focus {
+      background-color: #eab308;
+      color: #450a0a !important;
+      transform: translateY(-1px);
+    }
+
+    /* ========================================================
+       HERO SECTION 1: SPEND TIME TOGETHER (EXACT FIRST VIEWPORT)
+       ======================================================== */
+    .hero-section {
+      min-height: calc(100vh - 54px);
+      display: flex;
+      align-items: flex-start; /* Move closer to navbar */
+      justify-content: center;
+      padding: 50px 16px 40px; /* Reduced top gap from navbar */
+      text-align: center;
+      background-color: #ffffff;
+    }
+
+    .live-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #fecaca;
+      background-color: #fff5f5;
+      color: #dc2626;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 5px 18px;
+      border-radius: 9999px;
+      margin-bottom: 24px;
+      letter-spacing: 0.02em;
+    }
+
+    .live-red-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #dc2626;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .hero-main-title {
+      font-size: 72px; /* Prominently enlarged */
+      font-weight: 900;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      margin-bottom: 22px;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .title-spend {
+      color: #111827;
+    }
+
+    .title-time-wrapper {
+      position: relative;
+      display: inline-block;
+      color: #dc2626;
+    }
+
+    .title-time-underline {
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      right: 0;
+      height: 8px;
+      background-color: #facc15;
+      border-radius: 4px;
+      z-index: -1;
+    }
+
+    .title-divider {
+      color: #fca5a5;
+      font-weight: 300;
+      margin: 0 4px;
+    }
+
+    .title-together {
+      color: #eab308; /* Golden Amber */
+      min-width: 250px;
+      display: inline-block;
+      text-align: left;
+    }
+
+    .typing-cursor {
+      display: inline-block;
+      color: #eab308;
+      font-weight: 300;
+      animation: blinkCursor 0.75s infinite;
+      margin-left: 2px;
+    }
+
+    @keyframes blinkCursor {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .hero-subtitle {
+      font-size: 18.5px; /* Scaled up readable size */
+      color: #4b5563;
+      max-width: 740px;
+      margin: 0 auto 34px;
+      line-height: 1.6;
+    }
+
+    .btn-create-room-hero {
+      background-color: #facc15;
+      color: #450a0a;
+      font-size: 17px; /* Enlarged button */
+      font-weight: 800;
+      padding: 15px 38px;
+      border-radius: 14px;
+      border: none;
+      box-shadow: 0 10px 28px rgba(250, 204, 21, 0.45);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
+    }
+
+    .btn-create-room-hero:hover {
+      background-color: #eab308;
+      color: #450a0a;
+      transform: translateY(-2px);
+      box-shadow: 0 14px 32px rgba(250, 204, 21, 0.55);
+    }
+
+    .btn-create-room-hero i {
+      font-size: 20px;
+      color: #dc2626;
+      background: #ffffff;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .no-account-notice {
+      display: block;
+      margin-top: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: #dc2626;
+      text-transform: uppercase;
+    }
+
+    /* Paste link bar */
+    .hero-paste-bar-container {
+      max-width: 660px; /* Wider and more prominent */
+      margin: 36px auto 0;
+      padding: 8px 10px 8px 16px;
+      border: 1.5px solid #fca5a5;
+      border-radius: 16px;
+      background-color: #ffffff;
+      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.07);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .paste-link-icon {
+      color: #ef4444;
+      font-size: 19px;
+    }
+
+    .paste-link-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14.5px;
+      color: #111827;
+      background: transparent;
+    }
+
+    .paste-link-input::placeholder {
+      color: #9ca3af;
+    }
+
+    .btn-play-now {
+      background-color: #dc2626;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .btn-play-now:hover {
+      background-color: #b91c1c;
+    }
+
+    /* ========================================================
+       SECTION 2: A VIRTUAL CINEMA (MOCKUP WINDOW)
+       ======================================================== */
+    .cinema-section {
+      min-height: calc(100vh - 54px); /* Fullscreen single section */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 16px 20px 24px; /* Minimal top/bottom spacing */
+      background-color: #fffafa;
+      text-align: center;
+      border-top: 1px solid #fee2e2;
+      border-bottom: 1px solid #fee2e2;
+    }
+
+    .section-title {
+      font-size: 27px; /* Compact & proportional */
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .section-desc {
+      font-size: 13px;
+      color: #6b7280;
+      max-width: 620px;
+      margin: 0 auto 14px; /* Very tight spacing before mockup */
+      line-height: 1.45;
+    }
+
+    /* Mockup Browser Window Frame */
+    .browser-mockup-frame {
+      max-width: 1040px;
+      margin: 0 auto;
+      border-radius: 14px;
+      border: 1px solid #fecaca;
+      background-color: #fff5f5;
+      box-shadow: 0 16px 36px -8px rgba(220, 38, 38, 0.08), 0 0 0 1px rgba(220, 38, 38, 0.05);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .browser-header-dots {
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(254, 202, 202, 0.8);
+      background-color: #fef2f2;
+    }
+
+    .dots-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .browser-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+    }
+    .browser-dot.red { background-color: #ef4444; }
+    .browser-dot.yellow { background-color: #facc15; }
+    .browser-dot.green { background-color: #22c55e; }
+
+    .browser-url-pill {
+      font-size: 11px;
+      font-family: 'Liberation Mono', monospace, sans-serif;
+      color: #7f1d1d;
+    }
+
+    .browser-meta-sync {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #4b5563;
+    }
+
+    .sync-live-tag {
+      background-color: #ffffff;
+      border: 1px solid #fca5a5;
+      color: #dc2626;
+      border-radius: 9999px;
+      padding: 1px 7px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mockup-inner-grid {
+      display: flex;
+      min-height: 350px; /* Reduced compact height */
+      max-height: 48vh;
+      background-color: #ffffff;
+    }
+
+    /* Inner Mockup Video Stage with Real YouTube Embed */
+    .mockup-video-stage {
+      flex: 1.7;
+      background-color: #000000;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .mockup-yt-iframe {
+      width: 100%;
+      height: 100%;
+      min-height: 350px;
+      max-height: 48vh;
+      border: none;
+      display: block;
+    }
+
+    .mockup-video-element {
+      width: 100%;
+      height: 100%;
+      min-height: 350px;
+      max-height: 48vh;
+      object-fit: cover;
+      display: block;
+      background-color: #000000;
+    }
+
+    .mockup-video-top-tag {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      background: rgba(17, 24, 39, 0.88);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .mockup-video-top-tag .live-dot {
+      width: 7px;
+      height: 7px;
+      background-color: #ef4444;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 6px #ef4444;
+    }
+
+    .mockup-player-switcher {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      display: flex;
+      gap: 6px;
+      z-index: 15;
+    }
+
+    .player-switch-btn {
+      background: rgba(17, 24, 39, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #e5e7eb;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .player-switch-btn:hover {
+      background: #374151;
+      color: #ffffff;
+    }
+
+    .player-switch-btn.active {
+      background-color: #dc2626;
+      border-color: #dc2626;
+      color: #ffffff;
+    }
+
+    /* Floating Webcams PiP Overlay on Video */
+    .mockup-pip-webcams {
+      position: absolute;
+      bottom: 24px;
+      right: 18px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .pip-cam-card {
+      width: 68px;
+      height: 50px;
+      background-color: #1f2937;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 4px;
+      font-size: 9px;
+      font-weight: 600;
+      color: #ffffff;
+      position: relative;
+    }
+    .pip-cam-card.host { border: 1.5px solid #facc15; }
+    .pip-cam-card.member { border: 1.5px solid #ef4444; }
+
+    .pip-dot-status {
+      width: 5px;
+      height: 5px;
+      background-color: #facc15;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 5px;
+      left: 5px;
+    }
+
+    .pip-cam-name {
+      margin-left: 10px;
+    }
+
+    /* Mockup Player Bar */
+    .mockup-player-bar {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-top: 10px;
+    }
+
+    .mockup-bar-line {
+      flex: 1;
+      height: 4px;
+      background-color: rgba(255,255,255,0.2);
+      border-radius: 9999px;
+      position: relative;
+    }
+
+    .mockup-bar-fill {
+      width: 38%;
+      height: 100%;
+      background-color: #eab308;
+      border-radius: 9999px;
+    }
+
+    .mockup-bar-time {
+      font-size: 10px;
+      color: #d1d5db;
+      font-family: monospace;
+    }
+
+    /* Inner Mockup Chat Sidebar */
+    .mockup-chat-sidebar {
+      flex: 1;
+      border-left: 1px solid #fee2e2;
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mockup-tabs-header {
+      display: flex;
+      border-bottom: 1px solid #fee2e2;
+    }
+
+    .mockup-tab-title {
+      flex: 1;
+      padding: 10px 0;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-align: center;
+      color: #6b7280;
+      cursor: pointer;
+    }
+    .mockup-tab-title.active {
+      color: #b91c1c;
+      border-bottom: 2px solid #ef4444;
+      background-color: #fef2f2;
+    }
+
+    .mockup-messages-body {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 11px;
+      flex: 1;
+    }
+
+    .mockup-msg-line {
+      line-height: 1.45;
+    }
+
+    .sender-red { color: #b91c1c; font-weight: 700; }
+    .sender-amber { color: #d97706; font-weight: 700; }
+
+    .mockup-alert-banner {
+      background-color: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 10.5px;
+    }
+
+    .mockup-chat-input-bar {
+      margin-top: auto;
+      border-top: 1px solid #fee2e2;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mockup-input-box {
+      flex: 1;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 11px;
+      color: #9ca3af;
+      background: #fafafa;
+    }
+
+    .mockup-send-icon {
+      width: 24px;
+      height: 24px;
+      background-color: #dc2626;
+      color: #ffffff;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    /* ========================================================
+       SECTION 3: 3 EASY STEPS (RESPONSIVE FULL-SCREEN VIEWPORT)
+       ======================================================== */
+    .steps-section {
+      min-height: calc(100vh - 54px);
+      display: flex;
+      flex-direction: column;
+      padding: 30px 16px;
+      background-color: #ffffff;
+      text-align: center;
+      border-bottom: 1px solid #f3f4f6;
+      box-sizing: border-box;
+    }
+
+    .steps-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+    }
+
+    .steps-top-header {
+      margin-bottom: 14px;
+    }
+
+    .pill-step-tag {
+      display: inline-block;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      padding: 3px 12px;
+      border-radius: 9999px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .steps-section .section-title {
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .steps-section-desc {
+      font-size: 14px;
+      color: #6b7280;
+      max-width: 640px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .steps-cards-row {
+      margin: auto 0;
+    }
+
+    .step-card {
+      border: 1px solid #f1f5f9;
+      border-radius: 16px;
+      padding: 24px 18px;
+      background-color: #ffffff;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .step-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    }
+
+    .step-num-box {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .step-num-box.yellow { background-color: #facc15; color: #78350f; }
+    .step-num-box.red { background-color: #dc2626; color: #ffffff; }
+
+    .step-card-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+
+    .step-card-desc {
+      font-size: 12.5px;
+      color: #6b7280;
+      line-height: 1.45;
+      margin-bottom: 0;
+    }
+
+    /* Red Action Callout Banner */
+    .red-action-banner {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      border-radius: 16px;
+      padding: 22px 24px;
+      color: #ffffff;
+      text-align: center;
+      box-shadow: 0 12px 28px rgba(220, 38, 38, 0.22);
+      margin-top: 16px;
+    }
+
+    .banner-heading {
+      font-size: 23px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .banner-sub {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 14px;
+    }
+
+    .btn-create-banner {
+      background-color: #facc15;
+      color: #450a0a;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 9px 28px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+      transition: background-color 0.15s, transform 0.15s;
+    }
+
+    .btn-create-banner:hover {
+      background-color: #eab308;
+      color: #450a0a;
+      transform: translateY(-1px);
+    }
+
+    @media (min-height: 520px) and (min-width: 768px) {
+      .steps-section {
+        height: calc(100vh - 54px);
+        max-height: calc(100vh - 54px);
+        padding: 24px 20px 28px;
+      }
+      .steps-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .steps-cards-row {
+        margin: auto 0;
+      }
+      .red-action-banner {
+        margin-top: 0;
+      }
+    }
+
+    /* ========================================================
+       SECTION 4: MEDIA FORMATS / STREAMS CARDS
+       ======================================================== */
+    .formats-section {
+      padding: 55px 16px 70px;
+      background: linear-gradient(180deg, #fffcf5 0%, #fff6f6 100%);
+      text-align: center;
+      border-top: 1px solid rgba(254, 243, 199, 0.6);
+    }
+
+    .formats-header-tag {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #b91c1c;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .format-feature-card {
+      border: 1px solid #fde68a;
+      background-color: #fffdf5;
+      border-radius: 14px;
+      padding: 22px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 0.15s;
+      height: 100%;
+    }
+
+    .format-feature-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .format-icon {
+      font-size: 24px;
+    }
+    .format-icon.red { color: #dc2626; }
+    .format-icon.yellow { color: #f59e0b; }
+    .format-icon.gray { color: #4b5563; }
+
+    .format-card-label {
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #1f2937;
+      text-transform: uppercase;
+    }
+
+    /* ========================================================
+       FOOTER (RED)
+       ======================================================== */
+    .uni-footer {
+      background-color: #b91c1c;
+      color: #ffffff;
+      padding: 40px 28px 24px;
+    }
+
+    .footer-brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .footer-brand-title .uni-part { color: #ffffff; }
+    .footer-brand-title .together-part { color: #facc15; }
+
+    .footer-desc {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.82);
+      line-height: 1.6;
+      max-width: 320px;
+    }
+
+    .footer-col-heading {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #ffffff;
+      margin-bottom: 12px;
+    }
+
+    .footer-links-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .footer-links-list a {
+      color: rgba(255, 255, 255, 0.85);
+      text-decoration: none;
+      font-size: 12px;
+      transition: color 0.15s;
+    }
+
+    .footer-links-list a:hover {
+      color: #facc15;
+    }
+
+    .footer-bottom-copy {
+      margin-top: 32px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.65);
+    }
+  </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body>
 
-  <!-- Top Global Navbar -->
+  <!-- ========================================================
+       1. TOP NAVBAR
+       ======================================================== -->
   <header class="uni-navbar d-flex align-items-center justify-content-between">
-    <a href="index.html" class="brand-wrapper" title="UniTogether Home">
-      <div class="brand-logo-badge">
-        <img src="./assets/images/Web site mainLogo.png" alt="UniTogether Logo">
-      </div>
-      <h1 class="brand-title">
-        <span class="uni-txt">Uni</span><span class="together-txt">Together</span>
-      </h1>
+    <a href="index.html" class="brand-title d-flex align-items-center">
+      <span class="uni-part">Uni</span><span class="together-part">Together</span>
     </a>
 
-    <!-- Quick Entry & Theme Actions -->
-    <div class="d-flex align-items-center gap-2">
-      <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#guestRoomModal">
-        <i class="bi bi-box-arrow-in-right me-1"></i> <span class="d-none d-sm-inline">Join as Guest</span>
-      </button>
-      <button type="button" class="btn btn-sm btn-warning text-dark fw-bold rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#instantRoomModal">
-        <i class="bi bi-lightning-charge-fill me-1"></i> <span class="d-none d-sm-inline">Quick Party</span>
-      </button>
-      <button class="btn-theme-toggle ms-1" id="themeToggleBtn" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
-        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
-      </button>
+    <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
+      <a href="index.html" class="active">Home</a>
+      <a href="pages/rooms.html">Manage Rooms</a>
+      <a href="pages/profile.html">Profile</a>
+      <a href="pages/contact.html">Contact Us</a>
+      <a href="#features">Features</a>
+    </nav>
+
+    <!-- Dynamic Auth Container: SIGN IN when logged out, or user name badge when logged in -->
+    <div class="nav-auth-container" id="navAuthContainer">
+      <a href="pages/login.html" class="btn-sign-in">SIGN IN</a>
     </div>
   </header>
 
-  <!-- Main Canvas Wrapper -->
-  <main class="auth-page-wrapper flex-grow-1">
-    <div class="auth-container-card">
-      <div class="row g-0">
+  <!-- ========================================================
+       2. HERO SECTION: SPEND TIME TOGETHER
+       ======================================================== -->
+  <section class="hero-section">
+    <div class="container">
+      
+      <!-- Live Status Pill -->
+      <div class="live-badge-pill">
+        <span class="live-red-dot"></span>
+        <span>Zero delay playback & HD Webcams live</span>
+      </div>
+
+      <!-- Main Catchy Title -->
+      <h1 class="hero-main-title">
+        <span class="title-spend">spend</span>
+        <span class="title-time-wrapper">
+          <span>time</span>
+          <span class="title-time-underline"></span>
+        </span>
+        <span class="title-divider">|</span>
+        <span class="title-together"><span id="typedWord"></span><span class="typing-cursor">|</span></span>
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="hero-subtitle">
+        Watch videos, listen to playlists, and share browser tabs in perfect synchronization. Zero lag, free forever, and no download required.
+      </p>
+
+      <!-- CTA Button -->
+      <div>
+        <a href="pages/rooms.html?action=new" class="btn-create-room-hero">
+          <i class="bi bi-play-fill"></i>
+          <span>Create your room</span>
+        </a>
+        <span class="no-account-notice">(NO USER ACCOUNT REQUIRED)</span>
+      </div>
+
+      <!-- Fast Stream Link Paste Bar -->
+      <form class="hero-paste-bar-container" onsubmit="event.preventDefault(); const v = this.querySelector('input').value.trim(); window.location.href='pages/rooms.html?action=new' + (v ? '&video=' + encodeURIComponent(v) : '');">
+        <i class="bi bi-link-45deg paste-link-icon"></i>
+        <input type="text" class="paste-link-input" placeholder="Paste YouTube, Vimeo, or video link...">
+        <button type="submit" class="btn-play-now">Play Now</button>
+      </form>
+
+    </div>
+  </section>
+
+  <!-- ========================================================
+       3. SECTION: A VIRTUAL CINEMA IN YOUR WEB BROWSER
+       ======================================================== -->
+  <section class="cinema-section" id="features">
+    <div class="container">
+      <h2 class="section-title">A Virtual Cinema in Your Web Browser</h2>
+      <p class="section-desc">
+        Experience ultra-smooth synced playback with integrated chat, room controls, and face-to-face camera reactions.
+      </p>
+
+      <!-- Browser Window Mockup Frame -->
+      <div class="browser-mockup-frame">
+        <div class="browser-header-dots">
+          <div class="dots-group">
+            <span class="browser-dot red"></span>
+            <span class="browser-dot yellow"></span>
+            <span class="browser-dot green"></span>
+          </div>
+          <div class="browser-url-pill">
+            unitogether.com/room/universityofsrijayewardenepure
+          </div>
+          <div class="browser-meta-sync">
+            <span class="sync-live-tag">
+              <span class="live-red-dot"></span> In Sync (0 ms delay)
+            </span>
+            <span>4 Friends Present</span>
+          </div>
+        </div>
+
+        <div class="mockup-inner-grid">
+          <!-- Left Mockup Video Stage with Auto-playing Embed Video -->
+          <div class="mockup-video-stage">
+            <!-- Top Mode & Sync Badges -->
+            <div class="mockup-video-top-tag">
+              <span class="live-dot"></span>
+              <span id="playerStatusTitle">CINEMA STREAM • Interstellar Sci-Fi Stage</span>
+            </div>
+
+            <!-- Player Switcher Pills -->
+            <div class="mockup-player-switcher">
+              <button type="button" class="player-switch-btn active" id="btnSwitchStream" onclick="setPlayerMode('stream')">
+                <i class="bi bi-play-circle-fill"></i> Cinema Stream
+              </button>
+              <button type="button" class="player-switch-btn" id="btnSwitchYt" onclick="setPlayerMode('youtube')">
+                <i class="bi bi-youtube"></i> YouTube Player
+              </button>
+            </div>
+
+            <!-- Direct HTML5 Video Player (Plays instantly on local file:// without YouTube Error 153) -->
+            <video id="mockupHtml5Video" class="mockup-video-element" autoplay muted loop playsinline controls>
+              <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+
+            <!-- YouTube Iframe Embed -->
+            <iframe id="mockupYtIframe"
+                    class="mockup-yt-iframe"
+                    src="https://www.youtube-nocookie.com/embed/MsRSKLbz3ss?autoplay=1&mute=1&loop=1&playlist=MsRSKLbz3ss&controls=1&rel=0"
+                    title="Synchronized Media Stage Video"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    style="display: none;"
+                    allowfullscreen>
+            </iframe>
+          </div>
+
+          <!-- Right Mockup Chat Sidebar -->
+          <div class="mockup-chat-sidebar">
+            <div class="mockup-tabs-header">
+              <div class="mockup-tab-title active">Chat Room</div>
+              <div class="mockup-tab-title">Playlist Queue (3)</div>
+            </div>
+
+            <div class="mockup-messages-body">
+              <div class="mockup-msg-line">
+                <span class="sender-red">Udith:</span> Volume is perfect! Can everyone hear the soundtrack?
+              </div>
+              <div class="mockup-msg-line">
+                <span class="sender-amber">Mandira:</span> Yup! The sync is completely seamless here 🍿
+              </div>
+              <div class="mockup-msg-line">
+                <span class="sender-red">Yasaru:</span> Awesome, ready for the next clip!
+              </div>
+            </div>
+
+            <div class="mockup-chat-input-bar">
+              <div class="mockup-input-box">Send a message...</div>
+              <div class="mockup-send-icon">
+                <i class="bi bi-send-fill"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================
+       4. SECTION: 3 EASY STEPS
+       ======================================================== -->
+  <section class="steps-section" id="how-it-works">
+    <div class="container steps-container" style="max-width: 1060px;">
+      
+      <!-- Top Steps Header -->
+      <div class="steps-top-header">
+        <span class="pill-step-tag">3 EASY STEPS</span>
+        <h2 class="section-title">Start a Watch Party in Seconds</h2>
+        <p class="steps-section-desc">No software downloads or complex setups needed. Jump straight into synchronized streaming with friends in three simple clicks.</p>
+      </div>
+
+      <!-- Middle Cards Row -->
+      <div class="row g-3 g-md-4 steps-cards-row">
+        <!-- Step 1 -->
+        <div class="col-12 col-md-4">
+          <div class="step-card">
+            <div class="step-num-box yellow">1</div>
+            <h3 class="step-card-title">Create a Room</h3>
+            <p class="step-card-desc">
+              Click the "Create your room" button. Your personalized private cinema room is ready immediately.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="col-12 col-md-4">
+          <div class="step-card">
+            <div class="step-num-box red">2</div>
+            <h3 class="step-card-title">Share the Link</h3>
+            <p class="step-card-desc">
+              Copy your private room URL and send it to your friends over Discord, WhatsApp, or email.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="col-12 col-md-4">
+          <div class="step-card">
+            <div class="step-num-box yellow">3</div>
+            <h3 class="step-card-title">Watch Together</h3>
+            <p class="step-card-desc">
+              Search or paste your favorite media links, turn on your webcam, and enjoy synchronized streaming.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Red Action Banner -->
+      <div class="red-action-banner">
+        <h3 class="banner-heading">Ready to hang out with friends online?</h3>
+        <p class="banner-sub">Create your room right now. Completely free, no registration required.</p>
+        <a href="pages/rooms.html?action=new" class="btn-create-banner">Create your room now</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================
+       5. SECTION: MEDIA FORMATS AND STREAMS
+       ======================================================== -->
+  <section class="formats-section">
+    <div class="container">
+      <div class="formats-header-tag">
+        SYNCHRONIZE SEAMLESSLY ACROSS ALL MAJOR MEDIA FORMATS & STREAMS
+      </div>
+
+      <div class="row g-3">
+        <!-- VBrowser -->
+        <div class="col-6 col-md">
+          <div class="format-feature-card">
+            <i class="bi bi-window-sidebar format-icon gray"></i>
+            <span class="format-card-label">VBROWSER</span>
+          </div>
+        </div>
+
+        <!-- YouTube -->
+        <div class="col-6 col-md">
+          <div class="format-feature-card">
+            <i class="bi bi-youtube format-icon red"></i>
+            <span class="format-card-label">YOUTUBE</span>
+          </div>
+        </div>
+
+        <!-- Screensharing -->
+        <div class="col-6 col-md">
+          <div class="format-feature-card">
+            <i class="bi bi-display format-icon yellow"></i>
+            <span class="format-card-label">SCREENSHARING</span>
+          </div>
+        </div>
+
+        <!-- Local File -->
+        <div class="col-6 col-md">
+          <div class="format-feature-card">
+            <i class="bi bi-file-earmark-play format-icon gray"></i>
+            <span class="format-card-label">LOCAL FILE</span>
+          </div>
+        </div>
+
+        <!-- Custom URL / HLS -->
+        <div class="col-6 col-md">
+          <div class="format-feature-card">
+            <i class="bi bi-link-45deg format-icon red"></i>
+            <span class="format-card-label">CUSTOM URL / HLS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       6. FOOTER (RED)
+       ======================================================== -->
+  <footer class="uni-footer">
+    <div class="container">
+      <div class="row g-4 justify-content-between">
         
-        <!-- Left Hero Showcase Column -->
-        <div class="col-lg-5 auth-hero-banner">
-          <div>
-            <div class="hero-pill-badge">
-              <i class="bi bi-mortarboard-fill"></i> UNIVERSITY WATCH PARTY
-            </div>
-            <h2 class="display-6 fw-extrabold text-white mb-2">
-              UniTogether
-            </h2>
-            <h3 class="h4 fw-bold text-white-50 mb-3">
-              Watch Anything, Together in Real-Time.
-            </h3>
-            <p class="small text-white-50 mb-4 lh-base">
-              Synchronized YouTube, direct stream, and local video playback with sub-second precision, encrypted chat, and WebRTC face-cams for university students.
-            </p>
-
-            <!-- Feature Pills -->
-            <div class="d-flex flex-column gap-2 mb-4">
-              <div class="hero-feature-item">
-                <div class="hero-feature-icon"><i class="bi bi-broadcast"></i></div>
-                <div>
-                  <div class="fw-bold small text-white">Authoritative NTP Clock Sync</div>
-                  <div class="text-white-50" style="font-size:0.75rem;">Precision play/pause/seek synchronization across all viewers.</div>
-                </div>
-              </div>
-              <div class="hero-feature-item">
-                <div class="hero-feature-icon"><i class="bi bi-shield-lock-fill"></i></div>
-                <div>
-                  <div class="fw-bold small text-white">AES-GCM 256-Bit Encrypted Chat</div>
-                  <div class="text-white-50" style="font-size:0.75rem;">Private, server-forwarded room messages with SQLite persistence.</div>
-                </div>
-              </div>
-              <div class="hero-feature-item">
-                <div class="hero-feature-icon"><i class="bi bi-folder-symlink-fill"></i></div>
-                <div>
-                  <div class="fw-bold small text-white">Local File Sync (0 Bandwidth)</div>
-                  <div class="text-white-50" style="font-size:0.75rem;">Sync your own local video files with peers without uploading to server.</div>
-                </div>
-              </div>
-            </div>
+        <!-- Brand Info -->
+        <div class="col-12 col-md-4">
+          <div class="footer-brand-title d-flex align-items-center">
+            <span class="uni-part">Uni</span><span class="together-part">Together</span>
           </div>
-
-          <!-- Bottom Student Attribution -->
-          <div class="pt-3 border-top border-white border-opacity-10 d-flex justify-content-between align-items-center">
-            <span class="small text-white-50">© 2026 UniTogether Hub</span>
-            <a href="#" class="small text-warning text-decoration-none fw-bold" data-bs-toggle="modal" data-bs-target="#featuresModal">
-              Platform Details <i class="bi bi-arrow-right"></i>
-            </a>
-          </div>
+          <p class="footer-desc">
+            Watch videos with friends together online in real-time sync. YouTube, Vimeo, Twitch, and local video playback with audio and video chat.
+          </p>
         </div>
 
-        <!-- Right Interactive Form Column -->
-        <div class="col-lg-7 p-4 p-md-5 d-flex flex-column justify-content-center">
-          <div>
-            <!-- Header Titles -->
-            <h3 class="fw-bold text-main mb-1" id="authTitle">
-              Welcome back to <span style="color:var(--uni-crimson);">UniTogether</span>
-            </h3>
-            <p class="text-muted small mb-4" id="authSubtitle">
-              Log in to continue your watch party or create a new synchronized room.
-            </p>
+        <!-- Product Links -->
+        <div class="col-6 col-md-2">
+          <div class="footer-col-heading">PRODUCT</div>
+          <ul class="footer-links-list">
+            <li><a href="pages/room.html">Create Room</a></li>
+            <li><a href="pages/rooms.html">UniTogether Builder</a></li>
+          </ul>
+        </div>
 
-            <!-- Tab Pills: [Log in] [Sign up] -->
-            <div class="auth-nav-tabs" role="tablist">
-              <button class="auth-tab-btn active" id="tabLoginBtn" type="button" role="tab" aria-selected="true">
-                Log in
-              </button>
-              <button class="auth-tab-btn" id="tabSignupBtn" type="button" role="tab" aria-selected="false">
-                Sign up
-              </button>
-            </div>
+        <!-- Supported Formats -->
+        <div class="col-6 col-md-3">
+          <div class="footer-col-heading">SUPPORTED</div>
+          <ul class="footer-links-list">
+            <li><a href="#">YouTube Sync</a></li>
+            <li><a href="#">Virtual Browser</a></li>
+            <li><a href="#">Vimeo & Twitch</a></li>
+            <li><a href="#">Screen Sharing</a></li>
+          </ul>
+        </div>
 
-            <!-- SSO Providers Row -->
-            <div class="d-flex gap-2 mb-3 sso-buttons-row">
-              <!-- Google -->
-              <button type="button" class="btn-sso btn-sso-disabled" id="btnGoogleSso" title="Google Student SSO login is coming soon">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span>Google</span>
-                <span class="sso-badge-soon">Soon</span>
-              </button>
-
-              <!-- Facebook -->
-              <button type="button" class="btn-sso btn-sso-disabled" id="btnFacebookSso" title="Facebook SSO login is coming soon">
-                <i class="fa-brands fa-facebook text-primary"></i>
-                <span>Facebook</span>
-                <span class="sso-badge-soon">Soon</span>
-              </button>
-
-              <!-- LEARN -->
-              <button type="button" class="btn-sso btn-sso-disabled" id="btnLearnSso" title="University LEARN LMS SSO is coming soon">
-                <img src="./assets/images/LEARN LOGO.jpeg" alt="LEARN" style="width:16px;height:16px;object-fit:cover;border-radius:2px;">
-                <span class="fw-bold" style="color: #c4181d;">LEARN</span>
-                <span class="sso-badge-soon">Soon</span>
-              </button>
-            </div>
-
-            <div class="auth-divider">
-              <span>OR SIGN IN WITH EMAIL</span>
-            </div>
-
-            <!-- Login Form Pane -->
-            <form id="loginForm" novalidate>
-              <!-- Email -->
-              <div class="mb-3">
-                <label for="loginEmail" class="form-label small fw-bold text-muted mb-1">Student Email Address</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent text-muted"><i class="bi bi-envelope"></i></span>
-                  <input type="email" class="form-control" id="loginEmail" placeholder="student@university.ac.lk" required>
-                </div>
-              </div>
-
-              <!-- Password -->
-              <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label for="loginPassword" class="form-label small fw-bold text-muted mb-0">Password</label>
-                  <a href="#" class="small text-danger text-decoration-none fw-semibold" id="btnForgotPwdModalTrigger" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
-                    Forgot password?
-                  </a>
-                </div>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent text-muted"><i class="bi bi-lock"></i></span>
-                  <input type="password" class="form-control" id="loginPassword" placeholder="••••••••••••" required>
-                  <button class="btn btn-outline-secondary" type="button" id="toggleLoginPasswordBtn">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Remember Me Checkbox -->
-              <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="rememberMe" checked>
-                <label class="form-check-label small text-muted" for="rememberMe">
-                  Remember me on this device
-                </label>
-              </div>
-
-              <!-- Submit -->
-              <button type="submit" class="btn btn-danger w-100 py-2 fw-bold rounded-3 shadow-sm" id="loginSubmitBtn" style="background: var(--uni-crimson-gradient); border: none;">
-                <span>Log in to Hub</span>
-                <i class="bi bi-arrow-right ms-2"></i>
-              </button>
-            </form>
-
-            <!-- Sign Up Form Pane (Hidden by Default) -->
-            <form id="signupForm" style="display: none;" novalidate>
-              <div class="row g-2 mb-2">
-                <div class="col-sm-6">
-                  <label for="signupFullName" class="form-label small fw-bold text-muted mb-1">Full Name</label>
-                  <div class="input-group">
-                    <span class="input-group-text bg-transparent text-muted"><i class="bi bi-person"></i></span>
-                    <input type="text" class="form-control" id="signupFullName" placeholder="Yasaru Bandara" required>
-                  </div>
-                </div>
-                <div class="col-sm-6">
-                  <label for="signupEmail" class="form-label small fw-bold text-muted mb-1">University Email</label>
-                  <div class="input-group">
-                    <span class="input-group-text bg-transparent text-muted"><i class="bi bi-mortarboard"></i></span>
-                    <input type="email" class="form-control" id="signupEmail" placeholder="student@university.ac.lk" required>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row g-2 mb-2">
-                <div class="col-sm-6">
-                  <label for="signupFaculty" class="form-label small fw-bold text-muted mb-1">Faculty / Discipline</label>
-                  <select class="form-select" id="signupFaculty" required>
-                    <option value="Computing & IT" selected>Computing & IT</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Business Management">Business & Management</option>
-                    <option value="Medicine & Health">Medicine & Health</option>
-                    <option value="Science & Math">Science & Math</option>
-                    <option value="Arts & Design">Arts & Humanities</option>
-                  </select>
-                </div>
-                <div class="col-sm-6">
-                  <label for="signupPassword" class="form-label small fw-bold text-muted mb-1">Password</label>
-                  <div class="input-group">
-                    <span class="input-group-text bg-transparent text-muted"><i class="bi bi-shield-lock"></i></span>
-                    <input type="password" class="form-control" id="signupPassword" placeholder="Min 6 chars" required>
-                    <button class="btn btn-outline-secondary" type="button" id="toggleSignupPasswordBtn">
-                      <i class="bi bi-eye"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="acceptTerms" required checked>
-                <label class="form-check-label small text-muted" for="acceptTerms">
-                  I agree to the <a href="#" class="text-danger text-decoration-none fw-semibold">Community Code of Conduct</a>
-                </label>
-              </div>
-
-              <button type="submit" class="btn btn-danger w-100 py-2 fw-bold rounded-3 shadow-sm" id="signupSubmitBtn" style="background: var(--uni-crimson-gradient); border: none;">
-                <span>Create Student Account</span>
-                <i class="bi bi-arrow-right ms-2"></i>
-              </button>
-            </form>
-
-            <!-- Guest Quick Link Footer -->
-            <div class="text-center mt-3 pt-3 border-top d-flex align-items-center justify-content-center gap-2">
-              <span class="small text-muted">Just attending a study session?</span>
-              <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill fw-semibold px-3" data-bs-toggle="modal" data-bs-target="#guestRoomModal">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Join as Guest
-              </button>
-            </div>
-          </div>
+        <!-- Support Links -->
+        <div class="col-12 col-md-3">
+          <div class="footer-col-heading">SUPPORT</div>
+          <ul class="footer-links-list">
+            <li><a href="#">Community Forum</a></li>
+            <li><a href="#">Help & FAQ</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
         </div>
 
       </div>
-    </div>
-  </main>
 
-  <!-- ══════════════════════════════════════════════════════════════════════════
-       MODALS
-       ══════════════════════════════════════════════════════════════════════════ -->
-
-  <!-- Modal 1: Instant Room Modal -->
-  <div class="modal fade" id="instantRoomModal" tabindex="-1" aria-labelledby="instantRoomModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content shadow-lg border-0 rounded-4">
-        <div class="modal-header border-bottom px-4 pt-4">
-          <h5 class="modal-title fw-bold" id="instantRoomModalLabel">
-            <i class="bi bi-lightning-charge-fill text-warning me-2"></i> Launch Instant Room
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body p-4">
-          <div class="alert alert-warning py-2 small mb-3 d-flex align-items-center" id="instantGuestNotice">
-            <i class="bi bi-shield-lock-fill me-2 fs-5 flex-shrink-0"></i>
-            <div>Hosting rooms requires a student account. Please <a href="#" onclick="bootstrap.Modal.getInstance(document.getElementById('instantRoomModal')).hide(); document.getElementById('tabSignupBtn').click();" class="alert-link">Sign up</a> or <a href="#" onclick="bootstrap.Modal.getInstance(document.getElementById('instantRoomModal')).hide(); document.getElementById('tabLoginBtn').click();" class="alert-link">Log in</a>.</div>
-          </div>
-          <form id="instantRoomForm">
-            <div class="mb-3">
-              <label for="instantRoomName" class="form-label small fw-bold text-muted">Room Topic / Name</label>
-              <input type="text" class="form-control" id="instantRoomName" placeholder="e.g. CS204 Algorithms & DS Review 🍿" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="instantMediaUrl" class="form-label small fw-bold text-muted">Initial Stream Source</label>
-              <div class="input-group">
-                <select class="form-select" id="instantMediaType" style="max-width: 140px;">
-                  <option value="youtube" selected>YouTube</option>
-                  <option value="direct">Direct MP4</option>
-                  <option value="hls">HLS .m3u8</option>
-                </select>
-                <input type="url" class="form-control" id="instantMediaUrl" placeholder="https://www.youtube.com/watch?v=...">
-              </div>
-            </div>
-
-            <div class="row g-2 mb-3">
-              <div class="col-sm-6">
-                <label class="form-label small fw-bold text-muted">Visibility</label>
-                <select class="form-select" id="instantVisibility">
-                  <option value="public" selected>Public (Show in Hub)</option>
-                  <option value="unlisted">Unlisted (Direct Link)</option>
-                  <option value="passcode">Passcode Protected (PIN Required)</option>
-                </select>
-              </div>
-              <div class="col-sm-6" id="passcodeFieldCol" style="display: none;">
-                <label class="form-label small fw-bold text-muted">Security PIN</label>
-                <input type="password" class="form-control" id="instantPasscode" placeholder="4-digit PIN">
-              </div>
-            </div>
-
-            <div class="form-check form-switch mb-2">
-              <input class="form-check-input" type="checkbox" id="instantHostSyncLock">
-              <label class="form-check-label small fw-bold" for="instantHostSyncLock">Host Sync Lock (Only host can pause/seek)</label>
-            </div>
-            <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="instantAllowGuests" checked>
-              <label class="form-check-label small fw-bold" for="instantAllowGuests">Allow Temporary Guests to Enter</label>
-            </div>
-
-            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-danger px-4 fw-bold shadow-sm" id="instantSubmitBtn" style="background:var(--uni-crimson-gradient); border:none;">
-                Launch Session <i class="bi bi-arrow-right ms-1"></i>
-              </button>
-            </div>
-          </form>
-        </div>
+      <div class="footer-bottom-copy">
+        © 2026 UniTogether. All rights reserved.
       </div>
     </div>
-  </div>
+  </footer>
 
-  <!-- Modal 2: Join Room as Guest Modal -->
-  <div class="modal fade" id="guestRoomModal" tabindex="-1" aria-labelledby="guestRoomModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content shadow-lg border-0 rounded-4">
-        <div class="modal-header border-bottom px-4 pt-4">
-          <h5 class="modal-title fw-bold" id="guestRoomModalLabel">
-            <i class="bi bi-person-badge-fill text-danger me-2"></i> Enter Room as Guest
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body p-4">
-          <form id="guestAccessForm">
-            <div class="alert alert-info py-2 small mb-3 d-flex align-items-center">
-              <i class="bi bi-info-circle-fill me-2 fs-5"></i>
-              <div>Guests can join active study parties! To host your own room, please <a href="#" id="guestGoToSignup" class="alert-link text-decoration-underline" data-bs-dismiss="modal">create an account</a>.</div>
-            </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Auto Typewriter Effect Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const words = ["together", "with friends", "in real-time", "anywhere"];
+      let wordIndex = 0;
+      let charIndex = 0;
+      let isDeleting = false;
+      const typedElement = document.getElementById("typedWord");
+      const typingSpeed = 120;
+      const deletingSpeed = 60;
+      const delayBetweenWords = 1800;
 
-            <div class="mb-3">
-              <label for="guestNickname" class="form-label small fw-bold text-muted">Temporary Display Nickname</label>
-              <div class="input-group">
-                <span class="input-group-text bg-transparent text-muted"><i class="bi bi-person"></i></span>
-                <input type="text" class="form-control" id="guestNickname" placeholder="CampusGeek99" required>
-              </div>
-            </div>
+      function typeEffect() {
+        const currentWord = words[wordIndex];
 
-            <div class="mb-3" id="guestJoinCodeGroup">
-              <label for="guestJoinCode" class="form-label small fw-bold text-muted">Room Code / ID to Join</label>
-              <div class="input-group">
-                <span class="input-group-text bg-transparent text-muted"><i class="bi bi-broadcast"></i></span>
-                <input type="text" class="form-control" id="guestJoinCode" placeholder="UNI-8842" required>
-              </div>
-            </div>
+        if (isDeleting) {
+          typedElement.textContent = currentWord.substring(0, charIndex - 1);
+          charIndex--;
+        } else {
+          typedElement.textContent = currentWord.substring(0, charIndex + 1);
+          charIndex++;
+        }
 
-            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-danger px-4 fw-bold shadow-sm" id="guestSubmitBtn" style="background:var(--uni-crimson-gradient); border:none;">
-                Enter Room Now <i class="bi bi-arrow-right ms-1"></i>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+        let nextSpeed = isDeleting ? deletingSpeed : typingSpeed;
 
-  <!-- Modal 3: Forgot Password Modal -->
-  <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content shadow-lg border-0 rounded-4">
-        <div class="modal-header border-bottom px-4 pt-4">
-          <h5 class="modal-title fw-bold" id="forgotPasswordModalLabel">
-            <i class="bi bi-key-fill text-danger me-2"></i> Reset Your Password
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body p-4">
-          <div id="forgotStep1">
-            <p class="text-muted small mb-3">
-              Enter your registered student email address. We will send a secure recovery token to restore your account.
-            </p>
-            <form id="forgotPasswordForm">
-              <div class="mb-3">
-                <label for="forgotEmail" class="form-label small fw-bold text-muted">Student Email Address</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent text-muted"><i class="bi bi-envelope"></i></span>
-                  <input type="email" class="form-control" id="forgotEmail" placeholder="student@university.ac.lk" required>
-                </div>
-              </div>
-              <button type="submit" class="btn btn-danger w-100 fw-bold py-2 shadow-sm" style="background:var(--uni-crimson-gradient); border:none;">
-                Send Recovery Code
-              </button>
-            </form>
-          </div>
+        if (!isDeleting && charIndex === currentWord.length) {
+          nextSpeed = delayBetweenWords;
+          isDeleting = true;
+        } else if (isDeleting && charIndex === 0) {
+          isDeleting = false;
+          wordIndex = (wordIndex + 1) % words.length;
+          nextSpeed = 300;
+        }
 
-          <div id="forgotStep2" style="display: none;">
-            <div class="alert alert-success d-flex align-items-center small py-2 mb-3">
-              <i class="bi bi-check-circle-fill me-2 fs-5"></i>
-              <div>A 6-digit recovery code was sent to your registered student email.</div>
-            </div>
-            <form id="resetConfirmForm">
-              <div class="mb-3">
-                <label for="resetTokenInput" class="form-label small fw-bold text-muted">Enter Recovery Token</label>
-                <input type="text" class="form-control" id="resetTokenInput" placeholder="Enter 6-digit code" required>
-              </div>
-              <div class="mb-3">
-                <label for="newPasswordInput" class="form-label small fw-bold text-muted">New Password</label>
-                <input type="password" class="form-control" id="newPasswordInput" placeholder="Minimum 6 characters" required>
-              </div>
-              <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm">
-                Confirm & Set New Password
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+        setTimeout(typeEffect, nextSpeed);
+      }
 
-  <!-- Modal 4: About / Features Info Modal -->
-  <div class="modal fade" id="featuresModal" tabindex="-1" aria-labelledby="featuresModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content shadow-lg border-0 rounded-4">
-        <div class="modal-header border-bottom px-4 pt-4">
-          <h5 class="modal-title fw-bold" id="featuresModalLabel">
-            <i class="bi bi-mortarboard-fill text-danger me-2"></i> About UniTogether Platform
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body p-4">
-          <div class="row g-4">
-            <div class="col-md-6">
-              <div class="d-flex gap-3">
-                <div class="fs-2 text-danger"><i class="bi bi-broadcast"></i></div>
-                <div>
-                  <h6 class="fw-bold mb-1">Sub-Second Video Sync</h6>
-                  <p class="small text-muted mb-0">High-precision NTP clock drift tracking keeps YouTube and media perfectly synchronized.</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="d-flex gap-3">
-                <div class="fs-2 text-warning"><i class="bi bi-camera-video"></i></div>
-                <div>
-                  <h6 class="fw-bold mb-1">WebRTC Face-Cams & Voice</h6>
-                  <p class="small text-muted mb-0">PeerJS mesh video and audio streams allow face-to-face interaction while studying.</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="d-flex gap-3">
-                <div class="fs-2 text-primary"><i class="bi bi-chat-heart"></i></div>
-                <div>
-                  <h6 class="fw-bold mb-1">Encrypted Live Chat</h6>
-                  <p class="small text-muted mb-0">End-to-end PBKDF2/AES-GCM encrypted chat messages forwarded through the server.</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="d-flex gap-3">
-                <div class="fs-2 text-success"><i class="bi bi-folder-symlink"></i></div>
-                <div>
-                  <h6 class="fw-bold mb-1">Zero-Bandwidth Local Sync</h6>
-                  <p class="small text-muted mb-0">Play matching local video files in sync without transferring video data across the server.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="text-center mt-4 pt-3 border-top">
-            <a href="pages/rooms.html" class="btn btn-danger px-4 fw-bold rounded-pill shadow-sm" style="background:var(--uni-crimson-gradient); border:none;">
-              Explore Active Rooms <i class="bi bi-arrow-right ms-1"></i>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+      typeEffect();
+    });
 
-  <!-- Toast Notification Container -->
+    // Mockup Cinema / YouTube Player Switcher
+    function setPlayerMode(mode) {
+      const ytIframe = document.getElementById('mockupYtIframe');
+      const html5Video = document.getElementById('mockupHtml5Video');
+      const btnStream = document.getElementById('btnSwitchStream');
+      const btnYoutube = document.getElementById('btnSwitchYt');
+      const statusTitle = document.getElementById('playerStatusTitle');
+
+      if (mode === 'stream') {
+        if (ytIframe) ytIframe.style.display = 'none';
+        if (html5Video) {
+          html5Video.style.display = 'block';
+          html5Video.play().catch(function() {});
+        }
+        if (btnStream) btnStream.classList.add('active');
+        if (btnYoutube) btnYoutube.classList.remove('active');
+        if (statusTitle) statusTitle.textContent = 'CINEMA STREAM • Interstellar Sci-Fi Stage';
+      } else {
+        if (html5Video) {
+          html5Video.pause();
+          html5Video.style.display = 'none';
+        }
+        if (ytIframe) ytIframe.style.display = 'block';
+        if (btnYoutube) btnYoutube.classList.add('active');
+        if (btnStream) btnStream.classList.remove('active');
+        if (statusTitle) statusTitle.textContent = 'YOUTUBE SYNC • Hans Zimmer Live Suite';
+      }
+    }
+
+    // Default mode: If opened via local file:// protocol, start with stream to prevent YouTube Error 153.
+    // If served over HTTP/HTTPS (e.g. Live Server or localhost), start with YouTube embed.
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        setPlayerMode('youtube');
+      } else {
+        setPlayerMode('stream');
+      }
+    });
+  </script>
+
+  <!-- App Toast Notification Container -->
   <div class="app-toast-container" id="appToastContainer"></div>
 
-  <!-- Bootstrap 5.3.3 Bundle JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Application Logic -->
-  <script src="./js/app.js"></script>
+  <!-- API Client -->
+  <script src="js/api.js?v=2.5"></script>
+  <!-- Application Logic & Navbar Auth State -->
+  <script src="js/app.js?v=2.5"></script>
 </body>
 </html>

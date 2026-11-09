@@ -1,232 +1,1390 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Watch Party Hub - UniTogether</title>
-  <meta name="description" content="Discover and join active university watch parties, study sessions, and live lecture syncs on UniTogether.">
-  
+  <title>Manage Rooms — UniTogether</title>
   <link rel="icon" type="image/png" href="../assets/images/Web site mainLogo.png">
+  
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
   
-  <!-- Bootstrap 5.3.3 CSS -->
+  <!-- Bootstrap 5.3 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons 1.11.3 -->
+  <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <!-- Font Awesome 6.5.1 -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <!-- UniTogether Design System Stylesheet -->
-  <link rel="stylesheet" href="../css/style.css">
+
+  <!-- Core App Scripts (Loaded first so ApiClient and Socket are always ready) -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="../js/api.js?v=2.6"></script>
+  <script src="../js/app.js?v=2.6"></script>
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ========================================================
+       TOP NAVBAR (FAITHFUL TO HOMEPAGE)
+       ======================================================== */
+    .uni-navbar {
+      height: 54px;
+      min-height: 54px;
+      background-color: #dc2626;
+      border-bottom: 1px solid #b91c1c;
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      padding: 0 28px;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      box-sizing: border-box !important;
+      width: 100%;
+    }
+
+    .brand-title {
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-decoration: none;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    .brand-title .uni-part { color: #ffffff; }
+    .brand-title .together-part { color: #facc15; }
+
+    .nav-center-links {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 24px !important;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-center-links a {
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #ffffff;
+      transition: opacity 0.15s;
+    }
+
+    .nav-center-links a.active {
+      color: #facc15;
+    }
+
+    .nav-center-links a:hover {
+      opacity: 0.85;
+    }
+
+    .nav-auth-container {
+      display: flex !important;
+      align-items: center !important;
+      position: relative;
+    }
+
+    .user-dropdown-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .user-custom-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 220px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      z-index: 99999;
+    }
+
+    .user-custom-dropdown .dropdown-item {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 8px 16px;
+      clear: both;
+      font-weight: 500;
+      font-size: 13px;
+      color: #1f2937;
+      text-decoration: none;
+      background-color: transparent;
+      border: 0;
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .user-custom-dropdown .dropdown-item:hover {
+      background-color: #f3f4f6;
+      color: #111827;
+    }
+
+    .user-custom-dropdown .dropdown-item:active {
+      background-color: #e5e7eb;
+    }
+
+    .btn-sign-in {
+      background-color: #facc15;
+      color: #450a0a !important;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 6px 18px;
+      border-radius: 9999px;
+      border: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+
+    .btn-sign-in:hover {
+      background-color: #eab308;
+      color: #450a0a !important;
+      transform: translateY(-1px);
+    }
+
+    .btn-user-badge {
+      background-color: #facc15;
+      color: #450a0a !important;
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      border: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+
+    .btn-user-badge:hover, .btn-user-badge:focus {
+      background-color: #eab308;
+      color: #450a0a !important;
+      transform: translateY(-1px);
+    }
+
+    /* ========================================================
+       MAIN MANAGE ROOMS CONTENT
+       ======================================================== */
+    .manage-rooms-main {
+      flex: 1;
+      padding: 44px 20px 60px;
+    }
+
+    .manage-container {
+      max-width: 1160px;
+      margin: 0 auto;
+    }
+
+    /* Page Header Row */
+    .manage-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .manage-title {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .manage-subtitle {
+      font-size: 14.5px;
+      color: #64748b;
+      margin: 0;
+    }
+
+    .btn-add-room {
+      background-color: #f59e0b;
+      color: #0f172a;
+      font-size: 13.5px;
+      font-weight: 800;
+      padding: 10px 22px;
+      border-radius: 10px;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+      transition: background-color 0.15s, transform 0.15s;
+    }
+
+    .btn-add-room:hover {
+      background-color: #d97706;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    /* Filter & Search Bar */
+    .filter-search-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tabs-pillbox {
+      background-color: #f1f5f9;
+      padding: 4px 5px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .filter-tab-btn {
+      border: none;
+      background: transparent;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .filter-tab-btn:hover {
+      color: #0f172a;
+    }
+
+    .filter-tab-btn.active {
+      background-color: #ffffff;
+      color: #0f172a;
+      font-weight: 700;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .search-input-field {
+      width: 100%;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 9999px;
+      padding: 8px 16px 8px 38px;
+      font-size: 13px;
+      color: #0f172a;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .search-input-field:focus {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
+    .search-input-field::placeholder {
+      color: #94a3b8;
+    }
+
+    /* Room Cards Grid */
+    .room-card-box {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 22px 20px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .room-card-box:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      border-color: #cbd5e1;
+    }
+
+    .room-card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    /* Badges */
+    .live-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: #fef2f2;
+      border: 1px solid #fee2e2;
+      color: #ef4444;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3.5px 10px;
+      border-radius: 9999px;
+    }
+
+    .live-pulse-dot {
+      width: 6.5px;
+      height: 6.5px;
+      background-color: #ef4444;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 6px #ef4444;
+    }
+
+    .upcoming-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: #fffbeb;
+      border: 1px solid #fef3c7;
+      color: #d97706;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3.5px 10px;
+      border-radius: 9999px;
+    }
+
+    .category-tag {
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .category-tag.yt { color: #dc2626; }
+    .category-tag.mit { color: #d97706; }
+    .category-tag.club { color: #d97706; }
+
+    /* Card Content */
+    .room-card-title {
+      font-size: 17.5px;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .room-card-meta {
+      font-size: 12.5px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 22px;
+    }
+
+    .room-card-meta i {
+      font-size: 13px;
+    }
+
+    /* Action Row */
+    .room-card-actions {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-join-red {
+      flex: 1;
+      background-color: #dc2626;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8.5px 16px;
+      border-radius: 8px;
+      border: none;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .btn-join-red:hover {
+      background-color: #b91c1c;
+      color: #ffffff;
+    }
+
+    .btn-start-yellow {
+      flex: 1;
+      background-color: #fef08a;
+      border: 1px solid #fde047;
+      color: #713f12;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8.5px 16px;
+      border-radius: 8px;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .btn-start-yellow:hover {
+      background-color: #fde047;
+      color: #713f12;
+    }
+
+    .btn-icon-action {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      background-color: #ffffff;
+      color: #64748b;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-icon-action:hover {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+
+    /* Bottom Host Callout Card */
+    .host-banner-card {
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 16px;
+      background-color: #ffffff;
+      padding: 22px 28px;
+      margin-top: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .host-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .host-banner-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background-color: #fef2f2;
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .host-banner-title {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+
+    .host-banner-desc {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0;
+    }
+
+    .btn-launch-dark {
+      background-color: #0f172a;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9.5px 22px;
+      border-radius: 8px;
+      border: none;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+
+    .btn-launch-dark:hover {
+      background-color: #1e293b;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    /* ========================================================
+       FOOTER (EXACT HOMEPAGE FOOTER)
+       ======================================================== */
+    .footer-section {
+      background-color: #b91c1c;
+      color: #ffffff;
+      padding: 50px 20px 24px;
+      margin-top: auto;
+    }
+
+    .footer-brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .footer-brand-title .uni-part { color: #ffffff; }
+    .footer-brand-title .together-part { color: #facc15; }
+
+    .footer-logo-badge {
+      width: 28px;
+      height: 28px;
+      background-color: #ffffff;
+      border-radius: 6px;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .footer-logo-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .footer-desc {
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.85);
+      line-height: 1.5;
+      max-width: 320px;
+    }
+
+    .footer-col-heading {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #ffffff;
+      margin-bottom: 12px;
+    }
+
+    .footer-links-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .footer-links-list a {
+      color: rgba(255, 255, 255, 0.85);
+      text-decoration: none;
+      font-size: 12.5px;
+      transition: color 0.15s;
+    }
+
+    .footer-links-list a:hover {
+      color: #facc15;
+    }
+
+    .footer-bottom-copy {
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      margin-top: 36px;
+      padding-top: 18px;
+      text-align: left;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+  </style>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-body">
+<body>
 
-  <!-- Top Global Header Navbar -->
-  <header class="uni-navbar d-flex align-items-center justify-content-between px-3 px-md-4 sticky-top">
-    <div class="d-flex align-items-center gap-3">
-      <a href="../index.html" class="brand-wrapper" title="UniTogether Home">
-        <div class="brand-logo-badge">
-          <img src="../assets/images/Web site mainLogo.png" alt="UniTogether Logo">
-        </div>
-        <div class="brand-title">
-          <span class="uni-txt">Uni</span><span class="together-txt">Together</span>
-        </div>
-      </a>
+  <!-- ========================================================
+       1. TOP NAVBAR
+       ======================================================== -->
+  <header class="uni-navbar d-flex align-items-center justify-content-between">
+    <a href="../index.html" class="brand-title d-flex align-items-center">
+      <span class="uni-part">Uni</span><span class="together-part">Together</span>
+    </a>
 
-      <nav class="d-none d-md-flex align-items-center gap-1 ms-3">
-        <a href="rooms.html" class="nav-link-custom active">
-          <i class="bi bi-compass"></i> Explore Hub
-        </a>
-        <a href="room.html" class="nav-link-custom">
-          <i class="bi bi-broadcast"></i> Live Watch Room
-        </a>
-        <a href="profile.html" class="nav-link-custom">
-          <i class="bi bi-person-circle"></i> Student Profile
-        </a>
-      </nav>
-    </div>
+    <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
+      <a href="../index.html">Home</a>
+      <a href="rooms.html" class="active">Manage Rooms</a>
+      <a href="profile.html">Profile</a>
+      <a href="contact.html">Contact Us</a>
+      <a href="../index.html#features">Features</a>
+    </nav>
 
-    <!-- Right Header Actions -->
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn-theme-toggle" id="themeToggleBtn" title="Toggle Light/Dark Mode" aria-label="Toggle Theme">
-        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
-      </button>
-
-      <button class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-sm d-flex align-items-center gap-2 btn-instant-room" data-bs-toggle="modal" data-bs-target="#createRoomModal">
-        <i class="bi bi-plus-circle-fill"></i>
-        <span class="d-none d-sm-inline">Create Watch Room</span>
-      </button>
-
-      <a href="profile.html" class="d-none d-sm-flex align-items-center gap-2 text-decoration-none text-white ms-2 px-2 py-1 bg-white bg-opacity-10 rounded-pill border border-white border-opacity-10">
-        <img id="navUserAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Avatar" class="rounded-circle" style="width: 28px; height: 28px; object-fit: cover;">
-        <span class="small fw-bold pe-2" id="navUserDisplayName">Student</span>
-      </a>
+    <!-- Dynamic Auth Container -->
+    <div class="nav-auth-container" id="navAuthContainer">
+      <a href="login.html" class="btn-sign-in">SIGN IN</a>
     </div>
   </header>
 
-  <!-- Main Content Wrapper -->
-  <main class="flex-grow-1">
-    
-    <!-- Hub Hero Banner Section -->
-    <section class="py-5" style="background: linear-gradient(180deg, rgba(217, 35, 42, 0.05) 0%, transparent 100%);">
-      <div class="container-xl">
-        <div class="row align-items-center g-4">
-          <div class="col-lg-7">
-            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 rounded-pill fw-bold mb-3 d-inline-flex align-items-center gap-1">
-              <i class="bi bi-lightning-charge-fill text-warning"></i> Live University Network
-            </span>
-            <h1 class="display-5 fw-extrabold text-main mb-3">
-              University Watch Party Hub
-            </h1>
-            <p class="text-muted fs-6 mb-4 lh-base" style="max-width: 620px;">
-              Join active study groups, review lectures together, stream videos with friends, or host your own synchronized session with sub-second precision and encrypted chat.
-            </p>
+  <!-- ========================================================
+       2. MANAGE ROOMS MAIN SECTION
+       ======================================================== -->
+  <main class="manage-rooms-main">
+    <div class="manage-container">
 
-            <!-- Room Code / Search Input Bar -->
-            <div class="card border-0 shadow-sm rounded-pill p-1 ps-3 d-flex flex-row align-items-center gap-2" style="background: var(--bg-card); border: 1px solid var(--border-subtle) !important; max-width: 620px;">
-              <i class="bi bi-search text-muted fs-5 ps-1"></i>
-              <input type="text" id="hubSearchInput" class="form-control border-0 bg-transparent shadow-none" placeholder="Search topic or enter room code (e.g. UNI-8842)...">
-              <button class="btn btn-danger px-4 rounded-pill fw-bold shadow-sm text-nowrap" id="hubJoinCodeBtn">
-                Join <i class="bi bi-arrow-right ms-1"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Featured Room Card (Bound to SQLite database) -->
-          <div class="col-lg-5 d-none d-lg-block">
-            <div class="card border-0 shadow-lg text-white rounded-4 overflow-hidden position-relative" id="featuredRoomCard" style="background: var(--uni-crimson-gradient);">
-              <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                  <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill">
-                    <i class="bi bi-star-fill me-1"></i> FEATURED NOW
-                  </span>
-                  <span class="badge bg-black bg-opacity-40 text-white rounded-pill px-3 py-1" id="featuredRoomViewersBadge">
-                    <span class="pulse-dot d-inline-block me-1"></span> <span id="featuredRoomViewers">24</span> Students Watching
-                  </span>
-                </div>
-                <h4 class="fw-bold mb-2" id="featuredRoomTitle">CS204: Algorithms & Data Structures Final Prep</h4>
-                <p class="small text-white-50 mb-4" id="featuredRoomSubtitle">Host: Yasaru (Faculty of Computing) &bull; Live NTP Sync Active</p>
-                <div class="d-flex gap-2">
-                  <a href="room.html?room=UNI-8842" id="featuredRoomHopInBtn" class="btn btn-light fw-bold text-danger px-4 rounded-pill shadow-sm">
-                    <i class="bi bi-play-fill me-1"></i> Hop In Room
-                  </a>
-                  <button class="btn btn-outline-light rounded-pill px-3" id="featuredRoomShareBtn" onclick="navigator.clipboard.writeText(window.location.origin + '/pages/room.html?room=UNI-8842'); showToast('Invite link copied!', 'success');">
-                    <i class="bi bi-share"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+      <!-- Header Row -->
+      <div class="manage-header-row">
+        <div>
+          <h1 class="manage-title">Manage Rooms</h1>
+          <p class="manage-subtitle">Your active watch parties and collaborative study sessions.</p>
         </div>
-      </div>
-    </section>
-
-    <!-- Rooms Feed Container -->
-    <section class="container-xl py-4 pb-5">
-      <!-- Filter Category Tabs & Sorting -->
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div class="d-flex flex-wrap gap-2" id="categoryFilterBar">
-          <button class="category-pill active" data-category="all">
-            <i class="bi bi-grid-fill me-1"></i> All Rooms <span id="catPillAll"></span>
-          </button>
-          <button class="category-pill" data-category="study">
-            <i class="bi bi-book-half me-1"></i> Study &amp; Lectures <span id="catPillStudy"></span>
-          </button>
-          <button class="category-pill" data-category="entertainment">
-            <i class="bi bi-film me-1"></i> Movies &amp; TV <span id="catPillEntertainment"></span>
-          </button>
-          <button class="category-pill" data-category="gaming">
-            <i class="bi bi-controller me-1"></i> Gaming &amp; Tech <span id="catPillGaming"></span>
-          </button>
-          <button class="category-pill" data-category="music">
-            <i class="bi bi-music-note-beamed me-1"></i> Lo-Fi &amp; Chill <span id="catPillMusic"></span>
-          </button>
-        </div>
-
         <div class="d-flex align-items-center gap-2">
-          <span class="small text-muted fw-bold text-nowrap">Sort by:</span>
-          <select class="form-select form-select-sm border rounded-pill shadow-none" id="sortRoomsSelect" style="width: 150px; background-color: var(--bg-card); color: var(--text-main);">
-            <option value="popular" selected>Most Viewers</option>
-            <option value="recent">Recently Created</option>
-          </select>
+          <button type="button" class="btn btn-outline-dark rounded-pill px-3 py-2 fw-bold text-nowrap" style="font-size: 13px;" data-bs-toggle="modal" data-bs-target="#joinByCodeModal">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Join by Code
+          </button>
+          <button type="button" class="btn-add-room" data-bs-toggle="modal" data-bs-target="#newRoomModal">
+            <i class="bi bi-plus-lg"></i> New Room
+          </button>
         </div>
       </div>
 
-      <!-- Rooms Grid Container -->
-      <div class="row g-4" id="roomsGridContainer">
-        <!-- Live rooms dynamically loaded from SQLite database -->
+      <!-- Filter & Search Toolbar -->
+      <div class="filter-search-toolbar">
+        <div class="filter-tabs-pillbox">
+          <button type="button" class="filter-tab-btn active" data-filter="my-rooms" id="tabMyRooms">
+            <i class="bi bi-person-workspace text-danger me-1"></i>My Rooms
+          </button>
+          <button type="button" class="filter-tab-btn" data-filter="live">Live Now</button>
+          <button type="button" class="filter-tab-btn" data-filter="explore" id="tabExplore">
+            <i class="bi bi-compass me-1"></i>Explore Community
+          </button>
+        </div>
+
+        <div class="search-input-wrapper">
+          <i class="bi bi-search search-icon"></i>
+          <input type="text" id="roomSearchInput" class="search-input-field" placeholder="Search sessions or topics...">
+        </div>
       </div>
 
-      <!-- Empty State Filter Notice -->
-      <div id="noRoomsNotice" class="text-center py-5" style="display: none;">
-        <i class="bi bi-search text-muted fs-1 mb-3 d-block"></i>
-        <h5 class="fw-bold text-main">No active watch parties match your filter</h5>
-        <p class="text-muted small">Try searching for another topic or create an instant room right now!</p>
-        <button class="btn btn-danger rounded-pill fw-bold px-4" data-bs-toggle="modal" data-bs-target="#createRoomModal">
-          <i class="bi bi-plus-circle me-1"></i> Launch This Room
+      <!-- Room Cards Grid -->
+      <div class="row g-4" id="roomsCardsGrid">
+        <div class="col-12 text-center py-5">
+          <div class="spinner-border text-danger" role="status">
+            <span class="visually-hidden">Loading study rooms...</span>
+          </div>
+          <p class="text-muted mt-2 small">Loading active synchronized rooms...</p>
+        </div>
+      </div>
+
+      <!-- Bottom Host Callout Banner -->
+      <div class="host-banner-card">
+        <div class="host-banner-left">
+          <div class="host-banner-icon">
+            <i class="bi bi-broadcast"></i>
+          </div>
+          <div>
+            <div class="host-banner-title">Host your own student room</div>
+            <p class="host-banner-desc">Stream synced videos, study playlists, or lectures with zero latency.</p>
+          </div>
+        </div>
+        <button type="button" class="btn-launch-dark" data-bs-toggle="modal" data-bs-target="#newRoomModal">
+          <i class="bi bi-plus-circle me-1"></i> Launch New Room
         </button>
       </div>
-    </section>
+
+    </div>
   </main>
 
-  <!-- Create Room Modal -->
-  <div class="modal fade" id="createRoomModal" tabindex="-1" aria-labelledby="createRoomModalLabel" aria-hidden="true">
+  <!-- ========================================================
+       3. MODAL: CREATE NEW ROOM
+       ======================================================== -->
+  <div class="modal fade" id="newRoomModal" tabindex="-1" aria-labelledby="newRoomModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: var(--bg-card);">
-        <div class="modal-header border-bottom px-4 py-3" style="border-color: var(--border-subtle) !important;">
-          <h5 class="modal-title fw-bold text-main" id="createRoomModalLabel">
-            <i class="bi bi-plus-circle-fill text-danger me-2"></i> Create Synchronized Watch Party
-          </h5>
-          <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="newRoomModalLabel">Create a New Room</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body p-4">
-          <form id="hubCreateRoomForm">
-            <div class="mb-3">
-              <label for="newRoomTitle" class="form-label small fw-bold text-main">Room Name / Topic</label>
-              <input type="text" class="form-control rounded-3" id="newRoomTitle" placeholder="e.g. Operating Systems Lab Preparation" required style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
-            </div>
-
-            <div class="mb-3">
-              <label for="newRoomCategory" class="form-label small fw-bold text-main">Category</label>
-              <select class="form-select rounded-3" id="newRoomCategory" style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
-                <option value="study" selected>Study & Lectures 📚</option>
-                <option value="entertainment">Movies & Series 🍿</option>
-                <option value="gaming">Gaming & Tech 🎮</option>
-                <option value="music">Lo-Fi & Chill 🎧</option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label for="newRoomMediaUrl" class="form-label small fw-bold text-main">Media Source (YouTube / Video URL)</label>
-              <input type="url" class="form-control rounded-3" id="newRoomMediaUrl" placeholder="https://www.youtube.com/watch?v=..." style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
-            </div>
-
-            <div class="form-check form-switch mb-4">
-              <input class="form-check-input" type="checkbox" id="newRoomHostSyncLock" checked>
-              <label class="form-check-label fw-bold text-main small" for="newRoomHostSyncLock">
-                Host Sync Lock (Restrict controls to host)
-              </label>
-            </div>
-
-            <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
-              <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-danger px-4 rounded-pill fw-bold">
-                Launch Room <i class="bi bi-arrow-right ms-1"></i>
-              </button>
-            </div>
-          </form>
+        <div class="modal-body pt-3">
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Room Name / Topic</label>
+            <input type="text" class="form-control rounded-3" placeholder="e.g. Physics 101 Study Group" id="newRoomName">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Category</label>
+            <select class="form-select rounded-3" id="newRoomCategory">
+              <option value="Study Group">Study Group</option>
+              <option value="Tech & Coding">Tech & Coding</option>
+              <option value="Anime & Movies">Anime & Movies</option>
+              <option value="Lectures & Talks">Lectures & Talks</option>
+              <option value="Music & Chill">Music & Chill</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Media Link (YouTube, Vimeo, etc.)</label>
+            <input type="url" class="form-control rounded-3" placeholder="https://www.youtube.com/watch?v=MsRSKLbz3ss" id="newRoomMedia">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Room Visibility</label>
+            <select class="form-select rounded-3" id="newRoomVis">
+              <option value="public">Public (Visible in Manage Rooms)</option>
+              <option value="private">Private (Invite Link Only)</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light rounded-3 px-3 fw-bold" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold" id="btnSubmitCreateRoom">Launch Room</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Global App Toast Notification Container -->
-  <div class="app-toast-container" id="appToastContainer"></div>
+  <!-- ========================================================
+       MODAL: JOIN ROOM BY CODE
+       ======================================================== -->
+  <div class="modal fade" id="joinByCodeModal" tabindex="-1" aria-labelledby="joinByCodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="joinByCodeModalLabel">Join Room by Code</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body pt-3">
+          <p class="text-muted small">Enter the unique Room Code (e.g. <code>UNI-8842</code>) to enter a classmate's watch party.</p>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Unique Room Code</label>
+            <input type="text" class="form-control rounded-3 text-uppercase fw-bold text-center fs-5" id="inputJoinByCode" placeholder="UNI-8842" maxlength="12">
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light rounded-3 px-3 fw-bold" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold" id="btnConfirmJoinByCode">Join Room</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <!-- Bootstrap 5.3.3 Bundle JS -->
+  <!-- ========================================================
+       MODAL: EDIT ROOM DETAILS
+       ======================================================== -->
+  <div class="modal fade" id="editRoomModal" tabindex="-1" aria-labelledby="editRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header border-0 pb-0">
+          <div>
+            <h5 class="modal-title fw-bold" id="editRoomModalLabel">Edit Room Details</h5>
+            <span class="badge bg-danger-subtle text-danger fw-bold" id="editRoomCodeBadge">UNI-8842</span>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body pt-3">
+          <input type="hidden" id="editRoomCodeInput">
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Room Name / Title</label>
+            <input type="text" class="form-control rounded-3" id="editRoomTitleInput" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Category</label>
+            <select class="form-select rounded-3" id="editRoomCategoryInput">
+              <option value="Study Group">Study Group</option>
+              <option value="Tech & Coding">Tech & Coding</option>
+              <option value="Anime & Movies">Anime & Movies</option>
+              <option value="Lectures & Talks">Lectures & Talks</option>
+              <option value="Music & Chill">Music & Chill</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Current Video / Media Link</label>
+            <input type="url" class="form-control rounded-3" id="editRoomMediaInput" placeholder="https://www.youtube.com/watch?v=...">
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-light rounded-3 px-3 fw-bold" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold" id="btnSubmitEditRoom">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       4. FOOTER (EXACT HOMEPAGE FOOTER)
+       ======================================================== -->
+  <footer class="footer-section">
+    <div class="container" style="max-width: 1140px;">
+      <div class="row g-4 justify-content-between">
+        
+        <!-- Brand Info -->
+        <div class="col-12 col-md-4">
+          <div class="footer-brand-title">
+            <div class="footer-logo-badge">
+              <img src="../assets/images/Web site mainLogo.png" alt="UniTogether Logo">
+            </div>
+            <span class="uni-part">Uni</span><span class="together-part">Together</span>
+          </div>
+          <p class="footer-desc">
+            Watch videos with friends together online in real-time sync. YouTube, Vimeo, Twitch, and local video playback with audio and video chat.
+          </p>
+        </div>
+
+        <!-- Product Links -->
+        <div class="col-6 col-md-2">
+          <div class="footer-col-heading">PRODUCT</div>
+          <ul class="footer-links-list">
+            <li><a href="room.html">Create Room</a></li>
+            <li><a href="rooms.html">UniTogether Builder</a></li>
+          </ul>
+        </div>
+
+        <!-- Supported Formats -->
+        <div class="col-6 col-md-3">
+          <div class="footer-col-heading">SUPPORTED</div>
+          <ul class="footer-links-list">
+            <li><a href="#">YouTube Sync</a></li>
+            <li><a href="#">Virtual Browser</a></li>
+            <li><a href="#">Vimeo & Twitch</a></li>
+            <li><a href="#">Screen Sharing</a></li>
+          </ul>
+        </div>
+
+        <!-- Support Links -->
+        <div class="col-12 col-md-3">
+          <div class="footer-col-heading">SUPPORT</div>
+          <ul class="footer-links-list">
+            <li><a href="#">Community Forum</a></li>
+            <li><a href="#">Help & FAQ</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom-copy">
+        © 2026 UniTogether. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap 5.3 JS Bundle -->
+  <!-- Bootstrap 5.3 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- UniTogether Client App Logic -->
-  <script src="../js/app.js"></script>
+
+  <!-- Interactive Dynamic Rooms Management Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Must be logged in to manage rooms
+      function getCurrentUser() {
+        try {
+          const raw = localStorage.getItem('unitogether_user');
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+        return;
+      }
+
+      const filterBtns = document.querySelectorAll('.filter-tab-btn');
+      const searchInput = document.getElementById('roomSearchInput');
+      const roomsGrid = document.getElementById('roomsCardsGrid');
+      let currentFilter = 'my-rooms';
+      let currentQuery = '';
+      let loadedRooms = [];
+
+      function getCategoryTagClass(cat) {
+        if (!cat) return 'yt';
+        const c = cat.toLowerCase();
+        if (c.includes('mit') || c.includes('cs') || c.includes('code') || c.includes('tech')) return 'mit';
+        if (c.includes('club') || c.includes('anime') || c.includes('movie')) return 'club';
+        return 'yt';
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function renderRoomsList(rooms) {
+        if (!roomsGrid) return;
+        const currentUser = getCurrentUser();
+        const userEmail = (currentUser && currentUser.email) ? currentUser.email.trim().toLowerCase() : '';
+
+        // If no rooms returned for current user on "my-rooms" tab
+        if (!rooms || rooms.length === 0) {
+          if (currentFilter === 'my-rooms') {
+            roomsGrid.innerHTML = `
+              <div class="col-12 text-center py-5">
+                <div style="width: 70px; height: 70px; background: #fff1f2; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+                  <i class="bi bi-door-closed text-danger" style="font-size: 34px;"></i>
+                </div>
+                <h4 class="fw-bold text-dark">No study rooms created yet</h4>
+                <p class="text-muted small mx-auto" style="max-width: 480px;">
+                  You are logged in as <strong>${escapeHtml(currentUser ? currentUser.name : 'Student')}</strong> (${escapeHtml(currentUser ? currentUser.email : 'Guest')}). Each account has unique rooms. You currently have no rooms created under this account.
+                </p>
+                <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
+                  <button class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#newRoomModal">
+                    <i class="bi bi-plus-lg me-1"></i> Launch My First Room
+                  </button>
+                  <button class="btn btn-outline-dark rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#joinByCodeModal">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Join Friend's Room
+                  </button>
+                </div>
+              </div>
+            `;
+          } else if (currentFilter === 'explore') {
+            roomsGrid.innerHTML = `
+              <div class="col-12 text-center py-5">
+                <i class="bi bi-compass text-muted" style="font-size: 42px;"></i>
+                <h5 class="fw-bold mt-3 text-secondary">No community rooms open</h5>
+                <p class="text-muted small">No other students are currently hosting public study sessions.</p>
+              </div>
+            `;
+          } else {
+            roomsGrid.innerHTML = `
+              <div class="col-12 text-center py-5">
+                <i class="bi bi-search text-muted" style="font-size: 42px;"></i>
+                <h5 class="fw-bold mt-3 text-secondary">No matching study rooms</h5>
+                <p class="text-muted small">Try adjusting your search query or filter.</p>
+              </div>
+            `;
+          }
+          return;
+        }
+
+        roomsGrid.innerHTML = rooms.map(r => {
+          const isLive = r.is_playing === 1 || r.is_playing === true;
+          const categorySlug = isLive ? 'live' : 'upcoming';
+          const tagClass = getCategoryTagClass(r.category);
+          const isMyRoom = userEmail && (r.host_email && r.host_email.trim().toLowerCase() === userEmail);
+
+          return `
+            <div class="col-12 col-md-6 col-lg-4 room-card-item" data-code="${r.code}" data-category="${categorySlug}" data-is-my-room="${isMyRoom ? 'true' : 'false'}">
+              <div class="room-card-box ${isMyRoom ? 'border-warning shadow-sm' : ''}">
+                <div class="room-card-top-row">
+                  <span class="${isLive ? 'live-status-pill' : 'upcoming-status-pill'}">
+                    <span class="${isLive ? 'live-pulse-dot' : ''}"></span>
+                    ${isLive ? 'Live • ' + (r.active_members || 1) + ' watching' : 'Study Room • ' + (r.active_members || 1) + ' online'}
+                  </span>
+                  <span class="category-tag ${tagClass}">
+                    ${escapeHtml(r.category || 'Study Group')}
+                  </span>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between mt-1 mb-1">
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold" style="font-size: 11px;">#${r.code}</span>
+                  ${isMyRoom ? `
+                    <span class="badge bg-warning text-dark fw-bold px-2 py-1" style="font-size: 10.5px; border-radius: 6px;">
+                      <i class="bi bi-star-fill text-dark me-1"></i>Host (You)
+                    </span>
+                  ` : `
+                    <span class="small text-muted" style="font-size: 11.5px;">
+                      <i class="bi bi-person-fill"></i> ${escapeHtml(r.host_name || 'Classmate')}
+                    </span>
+                  `}
+                </div>
+
+                <h3 class="room-card-title">${escapeHtml(r.title)}</h3>
+                <p class="room-card-meta">
+                  <i class="bi bi-play-circle-fill text-danger me-1"></i> ${escapeHtml(r.media_title || 'Synchronized Video Stream')}
+                </p>
+
+                <div class="room-card-actions">
+                  <a href="room.html?room=${encodeURIComponent(r.code)}" class="${isLive ? 'btn-join-red' : 'btn-start-yellow'}">${isLive ? 'Join Room' : 'Start Room'}</a>
+                  <button type="button" class="btn-icon-action" title="Copy Room Invite Link" onclick="copyRoomLink('${r.code}')">
+                    <i class="bi bi-share"></i>
+                  </button>
+                  ${isMyRoom ? `
+                    <button type="button" class="btn-icon-action" title="Edit Room Details" onclick="openEditRoomModal('${r.code}')">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn-icon-action btn-delete" title="Delete Room" onclick="confirmDeleteRoom('${r.code}', '${escapeHtml(r.title)}')">
+                      <i class="bi bi-trash3 text-danger"></i>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      async function loadRooms() {
+        const currentUser = getCurrentUser();
+        const hostEmail = (currentUser && currentUser.email) ? currentUser.email.trim().toLowerCase() : '';
+
+        // If user is not logged in and on 'my-rooms' tab, prompt them to sign in
+        if (!currentUser && currentFilter === 'my-rooms') {
+          if (roomsGrid) {
+            roomsGrid.innerHTML = `
+              <div class="col-12 text-center py-5">
+                <div style="width: 70px; height: 70px; background: #fef2f2; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+                  <i class="bi bi-shield-lock-fill text-danger" style="font-size: 32px;"></i>
+                </div>
+                <h4 class="fw-bold text-dark">Sign In to View Your Private Rooms</h4>
+                <p class="text-muted small mx-auto" style="max-width: 440px;">
+                  Each university account has its own unique, personal study rooms. Please sign in to view your rooms or launch a new study session.
+                </p>
+                <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
+                  <a href="login.html" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                  </a>
+                  <button class="btn btn-outline-dark rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#newRoomModal">
+                    <i class="bi bi-plus-lg me-1"></i> Quick Launch Room
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+          return;
+        }
+
+        if (typeof ApiClient !== 'undefined' && ApiClient.getRooms) {
+          try {
+            // Determine API scope:
+            // - 'explore': returns other students' public rooms (excludes current user's rooms)
+            // - 'my-rooms' (default): returns ONLY this account's rooms
+            const scope = (currentFilter === 'explore') ? 'public' : '';
+            const res = await ApiClient.getRooms('', currentQuery, hostEmail, scope);
+            if (res && Array.isArray(res.rooms)) {
+              loadedRooms = res.rooms;
+
+              // Filter by live if on Live tab
+              let displayRooms = loadedRooms;
+              if (currentFilter === 'live') {
+                displayRooms = loadedRooms.filter(r => r.is_playing === 1 || r.is_playing === true);
+              }
+              renderRoomsList(displayRooms);
+              return;
+            }
+          } catch (err) {
+            console.warn('[Rooms] Could not fetch rooms from API:', err.message);
+          }
+        }
+      }
+
+      // Filter Tabs Click
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          filterBtns.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          currentFilter = this.getAttribute('data-filter');
+          loadRooms();
+        });
+      });
+
+      // Search Input
+      if (searchInput) {
+        let searchTimeout = null;
+        searchInput.addEventListener('input', function() {
+          currentQuery = this.value.trim().toLowerCase();
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            loadRooms();
+          }, 250);
+        });
+      }
+
+      // Join by Code Modal Handler
+      const btnJoinByCode = document.getElementById('btnConfirmJoinByCode');
+      if (btnJoinByCode) {
+        btnJoinByCode.addEventListener('click', () => {
+          const input = document.getElementById('inputJoinByCode');
+          let code = input ? input.value.trim().toUpperCase() : '';
+          if (!code) {
+            alert('Please enter a room code (e.g. UNI-8842)');
+            return;
+          }
+          if (!code.startsWith('UNI-')) {
+            code = 'UNI-' + code.replace(/[^0-9]/g, '');
+          }
+          closeModal('joinByCodeModal');
+          window.location.href = `room.html?room=${encodeURIComponent(code)}`;
+        });
+      }
+
+      // Check URL parameters for auto action (e.g. ?action=new&video=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('action') === 'new') {
+        const mediaParam = urlParams.get('video');
+        if (mediaParam) {
+          const mediaInput = document.getElementById('newRoomMedia');
+          if (mediaInput) mediaInput.value = mediaParam;
+        }
+        const modalEl = document.getElementById('newRoomModal');
+        if (modalEl) {
+          setTimeout(() => {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+              const inst = bootstrap.Modal.getOrCreateInstance(modalEl);
+              inst.show();
+            } else {
+              modalEl.classList.add('show');
+              modalEl.style.display = 'block';
+            }
+          }, 350);
+        }
+      }
+
+      // Modal helper to work smoothly with or without Bootstrap JS
+      function closeModal(modalId) {
+        const modalEl = document.getElementById(modalId);
+        if (!modalEl) return;
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+          const inst = bootstrap.Modal.getInstance(modalEl);
+          if (inst) inst.hide();
+        }
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(b => b.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+      }
+
+      // Create Room Handler
+      const btnSubmitCreate = document.getElementById('btnSubmitCreateRoom');
+      if (btnSubmitCreate) {
+        btnSubmitCreate.addEventListener('click', async () => {
+          const nameInput = document.getElementById('newRoomName');
+          const categorySelect = document.getElementById('newRoomCategory');
+          const mediaInput = document.getElementById('newRoomMedia');
+          const visSelect = document.getElementById('newRoomVis');
+
+          const roomTitle = nameInput ? (nameInput.value.trim() || 'Student Study Room') : 'Student Study Room';
+          const category = categorySelect ? categorySelect.value : 'Study Group';
+          const mediaUrl = mediaInput ? mediaInput.value.trim() : '';
+          const isPrivate = visSelect ? (visSelect.value === 'private') : false;
+
+          let hostName = 'Student Host';
+          let hostEmail = 'guest@unitogether.edu';
+          try {
+            const u = JSON.parse(localStorage.getItem('unitogether_user'));
+            if (u && u.name) hostName = u.name;
+            if (u && u.email) hostEmail = u.email;
+          } catch(e) {}
+
+          let cleanMedia = mediaUrl ? mediaUrl.trim() : '';
+          if (!cleanMedia || (!cleanMedia.startsWith('http://') && !cleanMedia.startsWith('https://'))) {
+            cleanMedia = 'https://www.youtube.com/watch?v=MsRSKLbz3ss';
+          }
+
+          btnSubmitCreate.disabled = true;
+          btnSubmitCreate.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Launching...';
+
+          try {
+            let createdCode = null;
+            if (typeof ApiClient !== 'undefined' && ApiClient.createRoom) {
+              const res = await ApiClient.createRoom({
+                title: roomTitle,
+                category: category,
+                media_url: cleanMedia,
+                media_title: roomTitle,
+                host_name: hostName,
+                host_email: hostEmail,
+                is_private: isPrivate
+              });
+              if (res && res.room) {
+                createdCode = res.room.code;
+              }
+            }
+
+            closeModal('newRoomModal');
+            if (nameInput) nameInput.value = '';
+            if (mediaInput) mediaInput.value = '';
+
+            await loadRooms();
+            alert(`Room launched successfully! Unique Room Code: #${createdCode || 'UNI-NEW'}`);
+            if (createdCode) {
+              window.location.href = `room.html?room=${encodeURIComponent(createdCode)}`;
+            }
+          } catch (err) {
+            alert('Failed to create room: ' + err.message);
+          } finally {
+            btnSubmitCreate.disabled = false;
+            btnSubmitCreate.innerHTML = 'Launch Room';
+          }
+        });
+      }
+
+      // Edit Room Handler
+      const btnSubmitEdit = document.getElementById('btnSubmitEditRoom');
+      if (btnSubmitEdit) {
+        btnSubmitEdit.addEventListener('click', async () => {
+          const codeInput = document.getElementById('editRoomCodeInput');
+          const titleInput = document.getElementById('editRoomTitleInput');
+          const categorySelect = document.getElementById('editRoomCategoryInput');
+          const mediaInput = document.getElementById('editRoomMediaInput');
+
+          const code = codeInput ? codeInput.value : '';
+          const title = titleInput ? titleInput.value.trim() : '';
+          const category = categorySelect ? categorySelect.value : 'Study Group';
+          const mediaUrl = mediaInput ? mediaInput.value.trim() : '';
+
+          if (!code || !title) {
+            alert('Please provide a room title.');
+            return;
+          }
+
+          btnSubmitEdit.disabled = true;
+          btnSubmitEdit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+          try {
+            if (typeof ApiClient !== 'undefined' && ApiClient.updateRoom) {
+              await ApiClient.updateRoom(code, {
+                title: title,
+                category: category,
+                media_url: mediaUrl,
+                media_title: title
+              });
+            }
+            closeModal('editRoomModal');
+            await loadRooms();
+            alert(`Room ${code} details updated successfully!`);
+          } catch (err) {
+            alert('Failed to update room: ' + err.message);
+          } finally {
+            btnSubmitEdit.disabled = false;
+            btnSubmitEdit.innerHTML = 'Save Changes';
+          }
+        });
+      }
+
+      // Initial load
+      loadRooms();
+
+      // Listen for socket room updates if available
+      if (typeof io !== 'undefined') {
+        try {
+          const socket = io();
+          socket.on('rooms_updated', () => {
+            loadRooms();
+          });
+        } catch(e) {}
+      }
+    });
+
+    // Global Action Helpers for Room Cards
+    function copyRoomLink(roomCode) {
+      const inviteUrl = window.location.origin + '/pages/room.html?room=' + encodeURIComponent(roomCode);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(inviteUrl).then(() => {
+          alert(`Unique Room Invite Link Copied!\n\n${inviteUrl}\n\nShare this link with your classmates to watch and study together!`);
+        }).catch(() => {
+          prompt('Copy this room link to invite friends:', inviteUrl);
+        });
+      } else {
+        prompt('Copy this room link to invite friends:', inviteUrl);
+      }
+    }
+
+    async function openEditRoomModal(roomCode) {
+      try {
+        let roomData = null;
+        if (typeof ApiClient !== 'undefined' && ApiClient.getRoom) {
+          const res = await ApiClient.getRoom(roomCode);
+          if (res && res.room) roomData = res.room;
+        }
+
+        const codeBadge = document.getElementById('editRoomCodeBadge');
+        const codeInput = document.getElementById('editRoomCodeInput');
+        const titleInput = document.getElementById('editRoomTitleInput');
+        const categorySelect = document.getElementById('editRoomCategoryInput');
+        const mediaInput = document.getElementById('editRoomMediaInput');
+
+        if (codeBadge) codeBadge.textContent = roomCode;
+        if (codeInput) codeInput.value = roomCode;
+        if (titleInput) titleInput.value = roomData ? (roomData.title || '') : '';
+        if (categorySelect && roomData) categorySelect.value = roomData.category || 'Study Group';
+        if (mediaInput) mediaInput.value = roomData ? (roomData.media_url || '') : '';
+
+        const modalEl = document.getElementById('editRoomModal');
+        if (modalEl) {
+          if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const inst = bootstrap.Modal.getOrCreateInstance(modalEl);
+            inst.show();
+          } else {
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        alert('Could not load room details: ' + err.message);
+      }
+    }
+
+    async function confirmDeleteRoom(roomCode, roomTitle) {
+      const ok = confirm(`Are you sure you want to delete room "${roomTitle}" (#${roomCode})?\n\nThis will remove the room, its playlist queue, and chat history permanently.`);
+      if (!ok) return;
+
+      try {
+        if (typeof ApiClient !== 'undefined' && ApiClient.deleteRoom) {
+          await ApiClient.deleteRoom(roomCode);
+        }
+        alert(`Room #${roomCode} has been deleted.`);
+        window.location.reload();
+      } catch (err) {
+        alert('Failed to delete room: ' + err.message);
+      }
+    }
+  </script>
+
+  <!-- App Toast Notification Container -->
+  <div class="app-toast-container" id="appToastContainer"></div>
 </body>
 </html>

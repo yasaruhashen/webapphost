@@ -1,24 +1,20 @@
 {
   "name": "unitogether",
   "version": "1.0.0",
-  "description": "UniTogether - High-precision synchronized video watch party and collaborative study platform for university students.",
-  "main": "backend/server.js",
+  "description": "UniTogether - Collaborative University Watch Party & Study Cinema Platform",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node backend/server.js",
     "dev": "node backend/server.js",
-    "seed": "node backend/seed_sample_data.js",
-    "test": "node tests/adversarial-challenger-suite.js",
-    "test:all": "node backend/test_m2_sync_logic.js && node backend/test_m3_share_switching.js && node tests/m4-verification.js && node tests/test_user_reported_bugs_suite.js && node tests/test_tightened_corners.js && node tests/adversarial-challenger-suite.js && node tests/e2e-verification-suite.js"
+    "start": "node backend/server.js"
   },
-  "keywords": [
-    "watch-party",
-    "video-synchronization",
-    "webrtc",
-    "socketio",
-    "plyr",
-    "sqlite",
-    "study-together"
-  ],
-  "author": "UniTogether Team",
-  "license": "ISC"
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.12.0",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4"
+  }
 }
