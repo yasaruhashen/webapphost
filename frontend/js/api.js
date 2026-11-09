@@ -1,6 +1,6 @@
 /**
  * UniTogether - Frontend API Client
- * Seamless connection to SQLite Backend & Vercel Serverless API
+ * Seamless connection to Backend API & Render.com Services
  */
 
 const ApiClient = (function () {

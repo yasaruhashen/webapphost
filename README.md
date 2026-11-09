@@ -12,7 +12,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=flat&logo=express&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
-![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white)
+![Render](https://img.shields.io/badge/Render-46E3B7?style=flat&logo=render&logoColor=black)
 ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=flat&logo=socketdotio&logoColor=white)
 
 </div>
@@ -71,9 +71,9 @@
 | Layer      | Technology                                             |
 |------------|--------------------------------------------------------|
 | Frontend   | HTML5, CSS3, Bootstrap 5.3, Vanilla JavaScript (ES6+)  |
-| Backend    | Node.js, Express.js (REST API & Serverless Function)   |
+| Backend    | Node.js, Express.js (REST API & Real-Time Server)      |
 | Database   | MongoDB (via Mongoose, MongoDB Atlas & Local)          |
-| Deployment | Vercel Serverless (`api/index.js` + `vercel.json`)     |
+| Deployment | Render.com Web Service (`render.yaml`)                 |
 | Real-Time  | Socket.io (WebSockets) + REST Sync Fallback            |
 | Env Config | dotenv                                                 |
 | VCS        | Git & GitHub                                           |
@@ -85,14 +85,24 @@
 
 ```
 UniTogether/
-├── api/                        # Vercel Serverless Function entry point
-│   └── index.js
 ├── backend/                    # Node.js + Express backend
 │   ├── models/                 # Mongoose Data Models (User, Room, QueueItem, Message)
 │   ├── db/                     # MongoDB connection & schema setup
 │   │   └── database.js
 │   ├── routes/                 # REST API endpoints (auth, rooms)
 │   │   ├── auth.js
+│   │   └── rooms.js
+│   ├── data/                   # Persistent local fallback store
+│   └── server.js               # Express application & Socket.io server
+├── frontend/                   # Client-side files
+│   ├── pages/                  # HTML views (room, rooms, login, profile, contact)
+│   ├── css/                    # Custom styling & themes
+│   ├── js/                     # Client application logic (api.js, app.js)
+│   └── assest/                 # Static images, avatars & icons
+├── package.json                # Root package & start scripts for Render
+├── render.yaml                 # Render Blueprint deployment specification
+└── README.md
+```
 │   │   └── rooms.js
 │   ├── server.js               # Main Express app & Socket.io server
 │   └── package.json
@@ -107,8 +117,8 @@ UniTogether/
 │   ├── pages/                  # Subpages (login, rooms, room, profile)
 │   └── index.html              # Landing page
 │
-├── package.json                # Root package for Vercel deployment
-├── vercel.json                 # Vercel rewrites & routing configuration
+├── package.json                # Root package & start scripts for Render
+├── render.yaml                 # Render Blueprint deployment specification
 ├── .gitignore
 └── README.md
 ```
@@ -153,21 +163,23 @@ npx serve frontend
 
 ---
 
-## ☁️ Deployment to Vercel
+## ☁️ Deployment to Render.com
 
-The project is pre-configured for one-click deployment on **[Vercel](https://vercel.com/)**:
+The project is pre-configured for one-click deployment on **[Render.com](https://render.com/)**:
 
 1. **Push your code to GitHub**.
-2. **Import the repository into Vercel**:
-   - Framework Preset: **Other**
-   - Root Directory: `./` (leave default)
-3. **Deploy**:
-   - Vercel automatically runs `api/index.js` as serverless API routes (`/api/*`).
-   - All static pages and assets in `frontend/` are served automatically.
-4. *(Optional - Cloud SQLite via Turso)*:
-   - For persistent cloud database across serverless invocations, set the environment variable:
-     - `TURSO_DATABASE_URL`: `libsql://your-db.turso.io`
-     - `TURSO_AUTH_TOKEN`: `your-turso-auth-token`
+2. **Create a new Web Service on Render**:
+   - Connect your GitHub repository.
+   - **Runtime**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `node backend/server.js`
+   - **Region**: `Singapore` (or nearest region)
+3. **Set Environment Variables in Render Dashboard**:
+   - `NODE_ENV`: `production`
+   - `JWT_SECRET`: your secret key
+   - `MONGODB_URI`: your MongoDB Atlas connection string
+   - `GOOGLE_CLIENT_ID`: your Google Cloud Client ID
+   - `GOOGLE_CLIENT_SECRET`: your Google Cloud Client Secret
 
 ---
 
@@ -198,7 +210,7 @@ JWT_SECRET=unitogether_jwt_secret_key_2025
 |------|-----------|-----------------|
 | **Week 1** (Nov 3–9) | Foundation & Auth | Project setup, Login/Register UI & backend, SQLite schema, basic room creation |
 | **Week 2** (Nov 10–16) | Core Features | Video sync engine (Socket.io), screen sharing (WebRTC), room layout, member list |
-| **Week 3** (Nov 17–22) | Polish & Deployment | Admin controls, dark/light mode, final testing, bug fixes, Vercel deployment |
+| **Week 3** (Nov 17–22) | Polish & Deployment | Admin controls, dark/light mode, final testing, bug fixes, Render.com deployment |
 
 ---
 

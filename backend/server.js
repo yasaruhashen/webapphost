@@ -33,18 +33,24 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     project: 'UniTogether API',
+    host: 'Render.com',
     database: 'MongoDB (Mongoose)',
     mongoConnected: mongoose.connection.readyState === 1,
-    serverless: !!process.env.VERCEL,
+    socketActive: !!io,
     timestamp: new Date().toISOString()
   });
 });
 
-// Friendly route aliases
+// Friendly route aliases (with & without .html)
 app.get('/room.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'room.html')));
+app.get('/room', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'room.html')));
 app.get('/rooms.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'rooms.html')));
+app.get('/rooms', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'rooms.html')));
 app.get('/login.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'login.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'login.html')));
 app.get('/profile.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'profile.html')));
+app.get('/profile', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'profile.html')));
+app.get('/edit-profile', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'profile.html')));
 app.get('/contact.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'contact.html')));
 app.get('/contact', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'contact.html')));
 
@@ -53,21 +59,20 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(frontendDir, 'index.html'));
 });
 
-// Create HTTP server (for local execution & optional Socket.io support)
+// Create HTTP server (for Render & local persistent execution)
 const server = http.createServer(app);
 
-// Initialize Socket.io only when running as a persistent Node server (local)
+// Initialize Socket.io persistent WebSocket server
 let io;
-if (!process.env.VERCEL) {
-  try {
-    const { Server } = require('socket.io');
-    io = new Server(server, {
-      cors: {
-        origin: '*',
-        methods: ['GET', 'POST']
-      }
-    });
-    app.set('io', io);
+try {
+  const { Server } = require('socket.io');
+  io = new Server(server, {
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST']
+    }
+  });
+  app.set('io', io);
 
     // In-memory tracking of active participants per room: roomCode -> Map(socketId -> userInfo)
     const roomParticipants = new Map();
@@ -160,21 +165,19 @@ if (!process.env.VERCEL) {
   } catch (err) {
     console.warn('[Socket.io] Socket.io not initialized:', err.message);
   }
-}
 
-// Start standalone server when executed directly (node backend/server.js)
+// Start standalone server on Render.com & Local (binds to 0.0.0.0 for container networking)
 const PORT = process.env.PORT || 5000;
-if (require.main === module && !process.env.VERCEL) {
-  server.listen(PORT, () => {
-    console.log(`=======================================================`);
-    console.log(` UniTogether API Server running on port ${PORT}`);
-    console.log(` Health check: http://localhost:${PORT}/api/health`);
-    console.log(` Frontend URL: http://localhost:${PORT}/`);
-    console.log(` Database: MongoDB (Mongoose)`);
-    console.log(`=======================================================`);
-  });
-}
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`=======================================================`);
+  console.log(` UniTogether Server running on port ${PORT}`);
+  console.log(` Host: Render.com / Local`);
+  console.log(` Health check: http://0.0.0.0:${PORT}/api/health`);
+  console.log(` Frontend URL: http://0.0.0.0:${PORT}/`);
+  console.log(` Database: MongoDB (Mongoose)`);
+  console.log(` Socket.io WebSockets: Active (Real-Time Synchronized)`);
+  console.log(`=======================================================`);
+});
 
-// Export app for Vercel Serverless Function deployment
-module.exports = app;
+module.exports = { app, server };
 

@@ -325,7 +325,7 @@ async function connectDb() {
     return null;
   }
 
-  // Remote / Vercel MongoDB Atlas URI (mongodb+srv://)
+  // Remote / Production MongoDB Atlas URI (mongodb+srv://)
   if (!isConnecting) {
     isConnecting = true;
     console.log('[MongoDB] Connecting to remote MongoDB Atlas cluster...');

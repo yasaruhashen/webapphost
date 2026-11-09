@@ -624,7 +624,7 @@
       overflow: hidden;
       border: 2px solid #ef4444;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
-      z-index: 28;
+      z-index: 999;
       background: #09090b;
       display: flex;
       flex-direction: column;
@@ -1014,9 +1014,8 @@
             </video>
 
             <!-- YouTube Player Container -->
-            <div id="youtubePlayerWrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: none; background: #000;">
-              <div id="youtubePlayer" style="width: 100%; height: 100%;"></div>
-              <iframe id="youtubeIframeFallback" style="width: 100%; height: 100%; border: 0; display: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            <div id="youtubePlayerWrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; display: none; background: #000;">
+              <iframe id="mainYoutubePlayer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; display: block;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
 
             <!-- Hidden File Input for Video Uploads -->
@@ -1323,7 +1322,7 @@
     // ------------------------------------------------------------------------
     const video = document.getElementById('html5Video');
     const youtubePlayerWrapper = document.getElementById('youtubePlayerWrapper');
-    const youtubeIframeFallback = document.getElementById('youtubeIframeFallback');
+    const mainYoutubePlayer = document.getElementById('mainYoutubePlayer');
     const videoFileInput = document.getElementById('videoFileInput');
     const playerBottomBar = document.getElementById('playerBottomBar');
     const centerPlayBtn = document.getElementById('centerPlayBtn');
@@ -1381,9 +1380,39 @@
     let lastTrackedYtTime = 0;
     let lastTrackedYtState = -1;
 
+    function sendYtCommand(func, args = []) {
+      const el = document.getElementById('mainYoutubePlayer');
+      if (el && el.contentWindow) {
+        try {
+          el.contentWindow.postMessage(JSON.stringify({
+            event: 'command',
+            func: func,
+            args: args
+          }), '*');
+        } catch (e) {}
+      }
+    }
+
     window.onYouTubeIframeAPIReady = function() {
       console.log('[YouTube Iframe API] API Ready');
       isYtApiReady = true;
+      if (!ytPlayer && document.getElementById('mainYoutubePlayer')) {
+        try {
+          ytPlayer = new YT.Player('mainYoutubePlayer', {
+            events: {
+              onReady: (event) => {
+                console.log('[YouTube Player] Event: onReady attached');
+                if (pendingYtInit && pendingYtInit.autoplay) {
+                  try { event.target.playVideo(); } catch (e) {}
+                }
+              },
+              onStateChange: onYouTubePlayerStateChange
+            }
+          });
+        } catch (e) {
+          console.warn('[YouTube API] onReady attach error:', e);
+        }
+      }
       if (pendingYtInit) {
         initOrUpdateYouTube(pendingYtInit.videoId, pendingYtInit.startTime, pendingYtInit.autoplay);
         pendingYtInit = null;
@@ -1397,74 +1426,58 @@
       if (video) {
         video.pause();
         video.style.display = 'none';
+        video.style.zIndex = '1';
       }
       if (centerPlayBtn) centerPlayBtn.style.display = 'none';
       if (playerBottomBar) playerBottomBar.style.display = 'none';
 
-      const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&start=${Math.floor(startTime || 0)}&enablejsapi=1&playsinline=1&rel=0`;
+      const origin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : 'http://localhost:5000';
+      const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&start=${Math.floor(startTime || 0)}&enablejsapi=1&playsinline=1&rel=0&origin=${encodeURIComponent(origin)}`;
 
-      // Always load the fallback iframe immediately with correct security headers so video picture NEVER goes missing
-      if (youtubeIframeFallback) {
-        youtubeIframeFallback.src = iframeSrc;
-        youtubeIframeFallback.style.display = 'block';
-      }
-
-      if (!isYtApiReady || typeof YT === 'undefined' || !YT.Player) {
-        pendingYtInit = { videoId, startTime, autoplay };
-        return;
-      }
-
-      if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-        try {
-          ytPlayer.loadVideoById({
-            videoId: videoId,
-            startSeconds: Math.floor(startTime || 0)
-          });
-          if (autoplay) {
-            try { ytPlayer.playVideo(); } catch (e) {}
-          }
-          if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'none';
-        } catch (e) {
-          console.warn('[YouTube API] loadVideoById note:', e);
-          if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'block';
+      if (mainYoutubePlayer) {
+        const currentSrc = mainYoutubePlayer.getAttribute('src') || '';
+        if (!currentSrc.includes(videoId)) {
+          mainYoutubePlayer.src = iframeSrc;
+        } else {
+          sendYtCommand('seekTo', [Math.floor(startTime || 0), true]);
+          if (autoplay) sendYtCommand('playVideo');
         }
-      } else {
-        try {
-          const playerHost = document.getElementById('youtubePlayer');
-          if (playerHost) {
-            ytPlayer = new YT.Player('youtubePlayer', {
-              width: '100%',
-              height: '100%',
-              videoId: videoId,
-              playerVars: {
-                autoplay: autoplay ? 1 : 0,
-                start: Math.floor(startTime || 0),
-                enablejsapi: 1,
-                rel: 0,
-                modestbranding: 1,
-                playsinline: 1
-              },
+        mainYoutubePlayer.style.display = 'block';
+      }
+
+      if (isYtApiReady && typeof YT !== 'undefined' && YT.Player) {
+        if (!ytPlayer) {
+          try {
+            ytPlayer = new YT.Player('mainYoutubePlayer', {
               events: {
                 onReady: (event) => {
-                  console.log('[YouTube Player] Event: onReady');
+                  console.log('[YouTube Player] Event: onReady attached');
                   if (startTime > 0) event.target.seekTo(startTime, true);
-                  if (autoplay) event.target.playVideo();
-                  // Hide fallback once YT player is actively rendering
-                  if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'none';
+                  if (autoplay) {
+                    try { event.target.playVideo(); } catch (e) {}
+                  }
                 },
-                onStateChange: onYouTubePlayerStateChange,
-                onError: (errEvent) => {
-                  console.warn('[YouTube Player] Error:', errEvent.data);
-                  // On any player/origin restriction, keep fallback iframe visible
-                  if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'block';
-                }
+                onStateChange: onYouTubePlayerStateChange
               }
             });
+          } catch (e) {
+            console.warn('[YouTube API] Attach error:', e);
           }
-        } catch (err) {
-          console.error('[YouTube API] YT.Player error:', err);
-          if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'block';
+        } else if (typeof ytPlayer.loadVideoById === 'function') {
+          try {
+            ytPlayer.loadVideoById({
+              videoId: videoId,
+              startSeconds: Math.floor(startTime || 0)
+            });
+            if (autoplay) {
+              try { ytPlayer.playVideo(); } catch (e) {}
+            }
+          } catch (e) {
+            console.warn('[YouTube API] loadVideoById error:', e);
+          }
         }
+      } else {
+        pendingYtInit = { videoId, startTime, autoplay };
       }
     }
 
@@ -1584,7 +1597,10 @@
       else if (sourceType === 'upload' || sourceType === 'stream') {
         // Stop & Hide YouTube
         if (youtubePlayerWrapper) youtubePlayerWrapper.style.display = 'none';
-        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo();
+        sendYtCommand('pauseVideo');
+        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+          try { ytPlayer.pauseVideo(); } catch (e) {}
+        }
 
         video.srcObject = null;
         video.src = mediaUrl;
@@ -1635,23 +1651,38 @@
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({
           video: { cursor: 'always' },
-          audio: true
+          audio: false
         });
 
         activeScreenshareStream = stream;
         currentMode = 'screenshare';
 
-        // Hide YouTube Player & Pause
+        // 1. Hide YouTube Player & Pause
         if (youtubePlayerWrapper) youtubePlayerWrapper.style.display = 'none';
-        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo();
+        sendYtCommand('pauseVideo');
+        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+          try { ytPlayer.pauseVideo(); } catch (e) {}
+        }
 
-        // Pipe Screen Stream to HTML5 Video Element
-        video.src = '';
+        // 2. Pipe Screen Stream to HTML5 Video Element
+        video.pause();
+        video.removeAttribute('src');
         video.srcObject = stream;
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute('muted', '');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('autoplay', '');
+        video.style.zIndex = '12';
         video.style.display = 'block';
-        video.play().catch(() => {});
 
-        // UI Updates
+        try {
+          await video.play();
+        } catch (playErr) {
+          console.warn('Screenshare play note:', playErr);
+        }
+
+        // 3. UI Updates
         document.querySelectorAll('.btn-source-pill').forEach(b => b.classList.remove('active'));
         if (btnSourceScreen) btnSourceScreen.classList.add('active');
 
@@ -1664,6 +1695,7 @@
         }
 
         centerPlayBtn.style.display = 'none';
+        if (playerBottomBar) playerBottomBar.style.display = 'none';
         timestampDisplay.textContent = 'LIVE SCREEN';
         timelineProgress.style.width = '100%';
 
@@ -1688,9 +1720,15 @@
         activeScreenshareStream.getTracks().forEach(t => t.stop());
         activeScreenshareStream = null;
       }
+      if (video) {
+        video.pause();
+        video.srcObject = null;
+        video.style.display = 'none';
+        video.style.zIndex = '1';
+      }
       showToast('Screenshare ended.', 'info');
       // Revert to YouTube default demo video
-      playMedia('youtube', 'https://www.youtube.com/watch?v=1FhXG01tW28', 'Hans Zimmer Live Suite');
+      playMedia('youtube', currentLoadedMediaUrl && currentLoadedMediaUrl.includes('youtube') ? currentLoadedMediaUrl : 'https://www.youtube.com/watch?v=1FhXG01tW28', 'Synchronized Video');
     }
 
     if (btnSourceScreen) {
@@ -1796,7 +1834,16 @@
     // ------------------------------------------------------------------------
     function toggleVideoPlay() {
       if (currentMode === 'youtube') {
-        showToast('Use YouTube player controls on screen to play or pause.', 'info');
+        if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+          const s = ytPlayer.getPlayerState();
+          if (s === YT.PlayerState.PLAYING) {
+            ytPlayer.pauseVideo();
+          } else {
+            ytPlayer.playVideo();
+          }
+        } else {
+          sendYtCommand('playVideo');
+        }
         return;
       }
       if (video.paused) {
@@ -2057,11 +2104,21 @@
         isCamActive = true;
 
         if (userWebcamVideo) {
+          userWebcamVideo.muted = true;
+          userWebcamVideo.playsInline = true;
+          userWebcamVideo.setAttribute('muted', '');
+          userWebcamVideo.setAttribute('playsinline', '');
+          userWebcamVideo.setAttribute('autoplay', '');
           userWebcamVideo.srcObject = stream;
-          userWebcamVideo.play().catch(() => {});
+          try {
+            await userWebcamVideo.play();
+          } catch (e) {
+            console.warn('Webcam play warning:', e);
+          }
         }
         if (webcamOverlayCard) {
           webcamOverlayCard.style.display = 'flex';
+          webcamOverlayCard.style.zIndex = '999';
         }
         if (btnToggleCam) {
           btnToggleCam.classList.add('active-av');
@@ -2602,6 +2659,7 @@
 
     function handleIncomingSync(data) {
       if (!data || data.senderId === myPeerId) return;
+      if (currentMode === 'screenshare') return; // Protect active screenshare stream
 
       isSyncingFromRemote = true;
 
@@ -2904,6 +2962,7 @@
         // Poll room media sync
         try {
           if (typeof ApiClient !== 'undefined' && ApiClient.getRoom && !isSyncingFromRemote) {
+            if (currentMode === 'screenshare') return; // Do not overwrite active screenshare!
             const res = await ApiClient.getRoom(currentRoomCode);
             if (res && res.room) {
               const r = res.room;

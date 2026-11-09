@@ -305,7 +305,7 @@ function initAuthPage() {
 
       let authedUser = null;
 
-      // Try Backend SQLite / Vercel API
+      // Try Backend API
       if (typeof ApiClient !== 'undefined' && ApiClient.login) {
         try {
           const res = await ApiClient.login(email, pwd);
@@ -372,7 +372,7 @@ function initAuthPage() {
 
       let authedUser = null;
 
-      // Try Backend SQLite / Vercel API
+      // Try Backend API
       if (typeof ApiClient !== 'undefined' && ApiClient.register) {
         try {
           const res = await ApiClient.register(name, email, pwd, faculty);
