@@ -14,22 +14,40 @@ async function generateUniqueRoomCode() {
 }
 
 // ----------------------------------------------------------------------------
-// GET /api/rooms - List all watch rooms (with category & search filtering)
+// GET /api/rooms - List watch rooms with strict user account isolation
 // ----------------------------------------------------------------------------
 router.get('/', async (req, res) => {
   try {
-    const { category, search } = req.query;
-    let query = 'SELECT * FROM rooms WHERE is_private = 0';
+    const { category, search, host_email, scope } = req.query;
+    let query = 'SELECT * FROM rooms WHERE 1=1';
     const params = [];
 
-    if (category && category !== 'All' && category !== 'all') {
+    const cleanHostEmail = (host_email && typeof host_email === 'string') ? host_email.trim().toLowerCase() : '';
+
+    // If scope is explicitly 'public' or 'community', return public rooms created by other students
+    if (scope === 'public' || scope === 'community') {
+      query += ' AND is_private = 0';
+      if (cleanHostEmail) {
+        query += ' AND LOWER(host_email) != ?';
+        params.push(cleanHostEmail);
+      }
+    } else if (cleanHostEmail) {
+      // By default, when a user is signed in, return ONLY rooms belonging to this account!
+      query += ' AND LOWER(host_email) = ?';
+      params.push(cleanHostEmail);
+    } else {
+      // Unauthenticated / guest: show public rooms
+      query += ' AND is_private = 0';
+    }
+
+    if (category && category !== 'All' && category !== 'all' && category !== 'my-rooms') {
       query += ' AND category = ?';
       params.push(category);
     }
 
     if (search && search.trim() !== '') {
-      query += ' AND (title LIKE ? OR host_name LIKE ? OR code LIKE ?)';
-      const term = `%${search.trim()}%`;
+      query += ' AND (LOWER(title) LIKE ? OR LOWER(host_name) LIKE ? OR LOWER(code) LIKE ?)';
+      const term = `%${search.trim().toLowerCase()}%`;
       params.push(term, term, term);
     }
 
@@ -47,7 +65,7 @@ router.get('/', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------------
-// POST /api/rooms - Create a new room with a unique code
+// POST /api/rooms - Create a new room with a unique code linked to account
 // ----------------------------------------------------------------------------
 router.post('/', async (req, res) => {
   try {
@@ -68,23 +86,40 @@ router.post('/', async (req, res) => {
       code = await generateUniqueRoomCode();
     }
 
-    const hostName = host_name ? host_name.trim() : 'Yasaru (Host)';
-    const defaultMedia = media_url || 'https://www.youtube.com/watch?v=zSWdZVtXT7E';
+    const cleanHostEmail = (host_email && typeof host_email === 'string') ? host_email.trim().toLowerCase() : 'guest@unitogether.edu';
+    let hostName = host_name ? host_name.trim() : 'Student Host';
+
+    // Look up user in database to retrieve user_id and verified name
+    let userId = null;
+    const userRow = await db.get('SELECT id, name FROM users WHERE LOWER(email) = ?', [cleanHostEmail]);
+    if (userRow) {
+      userId = userRow.id;
+      if (!host_name || host_name === 'Guest Host' || host_name === 'Yasaru') {
+        hostName = userRow.name;
+      }
+    }
+
+    let cleanMedia = (media_url && typeof media_url === 'string') ? media_url.trim() : '';
+    if (!cleanMedia.startsWith('http://') && !cleanMedia.startsWith('https://')) {
+      cleanMedia = 'https://www.youtube.com/watch?v=MsRSKLbz3ss';
+    }
+
     const defaultTitle = media_title || title.trim();
     const defaultSource = media_source || 'YouTube (HD 1080p)';
 
     await db.execute({
-      sql: `INSERT INTO rooms (code, title, category, host_name, host_email, is_private, passcode, media_url, media_title, media_source, active_members)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      sql: `INSERT INTO rooms (code, title, category, host_name, host_email, user_id, is_private, passcode, media_url, media_title, media_source, active_members)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       args: [
         code,
         title.trim(),
         category || 'Study Group',
         hostName,
-        host_email || 'student@unitogether.edu',
+        cleanHostEmail,
+        userId,
         is_private ? 1 : 0,
         passcode || null,
-        defaultMedia,
+        cleanMedia,
         defaultTitle,
         defaultSource
       ]
@@ -108,16 +143,23 @@ router.post('/', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------------
-// PUT /api/rooms/:code - Update room details
+// PUT /api/rooms/:code - Update room details (with host verification)
 // ----------------------------------------------------------------------------
 router.put('/:code', async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    const { title, category, media_url, media_title, media_source, is_private, active_members } = req.body;
+    const { title, category, media_url, media_title, media_source, is_private, active_members, host_email } = req.body;
 
     const existing = await db.get('SELECT * FROM rooms WHERE code = ?', [code]);
     if (!existing) {
       return res.status(404).json({ error: 'Room not found.' });
+    }
+
+    // If host_email provided, verify that the requester is the owner of this room
+    if (host_email && existing.host_email) {
+      if (existing.host_email.trim().toLowerCase() !== host_email.trim().toLowerCase()) {
+        return res.status(403).json({ error: 'You are not authorized to modify this room.' });
+      }
     }
 
     await db.execute({
@@ -161,14 +203,23 @@ router.put('/:code', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------------
-// DELETE /api/rooms/:code - Remove / delete a room
+// DELETE /api/rooms/:code - Remove / delete a room (with host verification)
 // ----------------------------------------------------------------------------
 router.delete('/:code', async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    const existing = await db.get('SELECT id, title FROM rooms WHERE code = ?', [code]);
+    const hostEmail = (req.query.host_email || (req.body && req.body.host_email) || '').trim().toLowerCase();
+
+    const existing = await db.get('SELECT id, title, host_email FROM rooms WHERE code = ?', [code]);
     if (!existing) {
       return res.status(404).json({ error: 'Room not found.' });
+    }
+
+    // Verify ownership
+    if (hostEmail && existing.host_email) {
+      if (existing.host_email.trim().toLowerCase() !== hostEmail) {
+        return res.status(403).json({ error: 'You are not authorized to delete this room.' });
+      }
     }
 
     await db.execute('DELETE FROM messages WHERE room_code = ?', [code]);

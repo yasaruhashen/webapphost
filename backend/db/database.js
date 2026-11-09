@@ -89,9 +89,10 @@ async function initDb() {
         category TEXT DEFAULT 'Study Group',
         host_name TEXT NOT NULL,
         host_email TEXT NOT NULL,
+        user_id INTEGER,
         is_private INTEGER DEFAULT 0,
         passcode TEXT,
-        media_url TEXT DEFAULT 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        media_url TEXT DEFAULT 'https://www.youtube.com/watch?v=MsRSKLbz3ss',
         media_title TEXT DEFAULT 'Data Structures & Algorithms - Dynamic Programming',
         media_source TEXT DEFAULT 'YouTube (HD 1080p)',
         current_time REAL DEFAULT 0,
@@ -100,6 +101,27 @@ async function initDb() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Ensure extra profile columns exist in users table
+    const extraUserCols = [
+      'display_name TEXT',
+      'institution TEXT DEFAULT \'University of Sri Jayewardenepura\'',
+      'phone TEXT',
+      'bio TEXT',
+      'degree TEXT DEFAULT \'BSc (Hons) Computer Science\''
+    ];
+    for (const col of extraUserCols) {
+      try {
+        await db.execute(`ALTER TABLE users ADD COLUMN ${col}`);
+      } catch (e) {}
+    }
+
+    // Ensure user_id column exists if table was created in an older migration
+    try {
+      await db.execute(`ALTER TABLE rooms ADD COLUMN user_id INTEGER`);
+    } catch (e) {
+      // Column already exists
+    }
 
     // 3. Playlist Queue Table
     await db.execute(`
@@ -152,16 +174,17 @@ async function initDb() {
     const existingRoom = await db.get('SELECT id FROM rooms WHERE code = ?', ['UNI-8842']);
     if (!existingRoom) {
       await db.execute({
-        sql: `INSERT INTO rooms (code, title, category, host_name, host_email, is_private, media_url, media_title, media_source, active_members)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO rooms (code, title, category, host_name, host_email, user_id, is_private, media_url, media_title, media_source, active_members)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           'UNI-8842',
           'CS204: Algorithms & Data Structures - Final Exam Review 🍿',
           'Study Group',
           'Yasaru Bandara',
           'yasaru@university.ac.lk',
+          1,
           0,
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          'https://www.youtube.com/watch?v=MsRSKLbz3ss',
           'Interstellar — Official Trailer',
           'YouTube (HD 1080p)',
           4
@@ -176,7 +199,7 @@ async function initDb() {
               (?, ?, ?, ?, ?, 2),
               (?, ?, ?, ?, ?, 3)`,
         args: [
-          'UNI-8842', 'Interstellar — Official Trailer', 'https://www.youtube.com/watch?v=zSWdZVtXT7E', '02:34', 'Alex',
+          'UNI-8842', 'Interstellar — Official Trailer', 'https://www.youtube.com/watch?v=MsRSKLbz3ss', '02:34', 'Alex',
           'UNI-8842', 'Hans Zimmer Live Suite', 'https://www.youtube.com/watch?v=1FhXG01tW28', '04:12', 'Yasaru',
           'UNI-8842', 'Hubble 3D Cosmic Journey', 'https://www.youtube.com/watch?v=2rUtS5qL3lM', '05:45', 'Ramesh'
         ]
@@ -198,6 +221,15 @@ async function initDb() {
 
       console.log('[Database] Seeded demo room UNI-8842 with queue & chat messages');
     }
+
+    // Backfill user_id on rooms if null
+    try {
+      await db.execute(`
+        UPDATE rooms 
+        SET user_id = (SELECT users.id FROM users WHERE LOWER(users.email) = LOWER(rooms.host_email))
+        WHERE user_id IS NULL AND host_email IS NOT NULL
+      `);
+    } catch(e) {}
 
     console.log('[Database] SQLite Schema initialization complete.');
   } catch (error) {

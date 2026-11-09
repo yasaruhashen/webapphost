@@ -14,6 +14,15 @@
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   
+  <!-- YouTube IFrame Player API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <!-- Socket.io Client -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- API Client -->
+  <script src="../js/api.js?v=2.5"></script>
+  <!-- Application Logic & Global Utilities -->
+  <script src="../js/app.js?v=2.5"></script>
+  
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -271,19 +280,9 @@
       z-index: 1;
     }
 
-    /* Top Video Overlay */
+    /* Top Video Overlay - Hidden as requested to keep player completely clean */
     .video-top-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 65%, transparent 100%);
-      z-index: 10;
-      pointer-events: none;
+      display: none !important;
     }
 
     .badge-yt {
@@ -985,6 +984,8 @@
     <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
       <a href="../index.html">Home</a>
       <a href="rooms.html">Manage Rooms</a>
+      <a href="profile.html">Profile</a>
+      <a href="contact.html">Contact Us</a>
       <a href="../index.html#features">Features</a>
       <a href="../index.html#how-it-works">How It Works</a>
     </nav>
@@ -1010,27 +1011,23 @@
         <div class="video-player-frame" id="videoCanvas">
           <div class="video-ratio-box">
             <!-- Native HTML5 Video & Screenshare Element -->
-            <video id="html5Video" preload="metadata" playsinline>
-              <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+            <video id="html5Video" preload="metadata" playsinline style="display: none;">
             </video>
 
-            <!-- YouTube Iframe Embed Element -->
-            <iframe id="youtubeIframe" 
-                    src="" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowfullscreen 
-                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: none; background: #000;">
-            </iframe>
+            <!-- YouTube Player Container -->
+            <div id="youtubePlayerWrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: none; background: #000;">
+              <div id="youtubePlayer" style="width: 100%; height: 100%;"></div>
+              <iframe id="youtubeIframeFallback" style="width: 100%; height: 100%; border: 0; display: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
 
             <!-- Hidden File Input for Video Uploads -->
             <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" style="display: none;">
 
-            <!-- Top Overlay: Source badge + Title + Room Code -->
-            <div class="video-top-overlay">
+            <!-- Top Overlay: Hidden as requested so player text doesn't cover video -->
+            <div class="video-top-overlay" style="display: none !important;">
               <span class="badge-yt" id="currentSourceBadge">YOUTUBE</span>
-              <span class="video-overlay-title" id="currentVideoTitle">University of Sri Jayewardhenepure FOT</span>
-              <span class="badge bg-warning text-dark ms-auto fw-bold px-2 py-1" id="overlayRoomCode" style="font-size: 10.5px; border-radius: 5px;">ROOM: UNI-8842</span>
+              <span class="video-overlay-title" id="currentVideoTitle"></span>
+              <span class="badge bg-warning text-dark ms-auto fw-bold px-2 py-1" id="overlayRoomCode" style="font-size: 10.5px; border-radius: 5px; pointer-events: auto; cursor: pointer;"></span>
             </div>
 
             <!-- Central Clickable Play Indicator -->
@@ -1152,7 +1149,7 @@
             </button>
             <button class="tab-btn" id="tabPeopleBtn">
               <i class="bi bi-people"></i>
-              <span>People (4)</span>
+              <span id="tabPeopleLabel">People (1)</span>
             </button>
           </div>
         </div>
@@ -1167,49 +1164,10 @@
 
         <!-- 1. Chat Messages Stream -->
         <div class="messages-stream-container" id="chatStream">
-
-          <!-- Message 1: Yasaru -->
-          <div class="d-flex gap-2 align-items-start">
-            <img class="chat-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Yasaru">
-            <div class="flex-grow-1 d-flex flex-column gap-1">
-              <div class="d-flex align-items-baseline gap-1">
-                <span class="chat-sender-name">Yasaru</span>
-                <span class="chat-sender-time">10:32 AM</span>
-              </div>
-              <div class="chat-bubble-gray">
-                Welcome everyone! Sound is on, let me know if audio volume is too loud for anyone 🍿
-              </div>
-            </div>
+          <div class="text-center py-4 text-muted small" id="emptyChatNotice">
+            <i class="bi bi-chat-dots fs-3 d-block mb-1 text-secondary"></i>
+            <span>No messages yet. Send a message or attach a file to get started!</span>
           </div>
-
-          <!-- Message 2: Udith -->
-          <div class="d-flex gap-2 align-items-start">
-            <img class="chat-user-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" alt="Udith">
-            <div class="flex-grow-1 d-flex flex-column gap-1">
-              <div class="d-flex align-items-baseline gap-1">
-                <span class="chat-sender-name">Udith</span>
-                <span class="chat-sender-time">10:33 AM</span>
-              </div>
-              <div class="chat-bubble-yellow-tint">
-                Sound is crystal clear! Hans Zimmer's soundtrack always gives chills 🙌
-              </div>
-            </div>
-          </div>
-
-          <!-- Message 3: Ramesh -->
-          <div class="d-flex gap-2 align-items-start">
-            <img class="chat-user-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80" alt="Ramesh">
-            <div class="flex-grow-1 d-flex flex-column gap-1">
-              <div class="d-flex align-items-baseline gap-1">
-                <span class="chat-sender-name">Ramesh</span>
-                <span class="chat-sender-time">10:35 AM</span>
-              </div>
-              <div class="chat-bubble-gray">
-                I added the Hubble telescope 3D video to the queue right after this one!
-              </div>
-            </div>
-          </div>
-
         </div>
 
         <!-- 2. Playlist Queue Tab Panel (Moved to Right Side) -->
@@ -1229,7 +1187,7 @@
           </div>
 
           <!-- A. Now Playing Card -->
-          <div class="queue-item-card p-2 rounded-3 border" id="nowPlayingCard" style="background: #fffbeb; border-color: #fde68a !important; cursor: pointer;" data-url="https://www.youtube.com/watch?v=zSWdZVtXT7E" data-title="Interstellar — Official Trailer">
+          <div class="queue-item-card p-2 rounded-3 border" id="nowPlayingCard" style="background: #fffbeb; border-color: #fde68a !important; cursor: pointer;" data-url="https://www.youtube.com/watch?v=MsRSKLbz3ss" data-title="Study Stream">
             <div class="d-flex align-items-center gap-2">
               <div class="position-relative flex-shrink-0">
                 <img class="rounded-2" id="nowPlayingThumb" src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=120&q=80" alt="Now Playing Thumbnail" style="width: 58px; height: 38px; object-fit: cover;">
@@ -1298,35 +1256,11 @@
 
         </div>
 
-        <!-- 3. People (Connected Members Stream) -->
+        <!-- 3. People (Connected Members Stream) - Dynamically populated with real connected members -->
         <div class="people-stream-container" id="peopleStream" style="display: none;">
-          <div class="d-flex align-items-center gap-2">
-            <img class="chat-user-avatar" id="myUserAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Yasaru">
-            <div>
-              <div class="chat-sender-name"><span id="myProfileName">Yasaru</span> <span style="color:#dc2626;font-size:10px;">(Host)</span></div>
-              <div class="chat-sender-time" id="myMicStatusText">Connected · Mic Muted</div>
-            </div>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <img class="chat-user-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" alt="Udith">
-            <div>
-              <div class="chat-sender-name">Udith</div>
-              <div class="chat-sender-time">Connected · Mic Off</div>
-            </div>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <img class="chat-user-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80" alt="Ramesh">
-            <div>
-              <div class="chat-sender-name">Ramesh</div>
-              <div class="chat-sender-time">Connected · Mic On</div>
-            </div>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <div class="chat-user-avatar d-flex align-items-center justify-content-center fw-bold text-dark" style="background:#fbbf24;font-size:11px;">A</div>
-            <div>
-              <div class="chat-sender-name">Alex</div>
-              <div class="chat-sender-time">Guest</div>
-            </div>
+          <div class="text-center py-4 text-muted small" id="peopleLoadingPlaceholder">
+            <div class="spinner-border spinner-border-sm text-danger mb-2" role="status"></div>
+            <div>Syncing active room members...</div>
           </div>
         </div>
 
@@ -1389,7 +1323,8 @@
     // Room & Player State Management
     // ------------------------------------------------------------------------
     const video = document.getElementById('html5Video');
-    const youtubeIframe = document.getElementById('youtubeIframe');
+    const youtubePlayerWrapper = document.getElementById('youtubePlayerWrapper');
+    const youtubeIframeFallback = document.getElementById('youtubeIframeFallback');
     const videoFileInput = document.getElementById('videoFileInput');
     const playerBottomBar = document.getElementById('playerBottomBar');
     const centerPlayBtn = document.getElementById('centerPlayBtn');
@@ -1438,6 +1373,121 @@
     let analyserNode = null;
     let audioAnimId = null;
 
+    // ------------------------------------------------------------------------
+    // YouTube IFrame Player API Engine
+    // ------------------------------------------------------------------------
+    let ytPlayer = null;
+    let isYtApiReady = false;
+    let pendingYtInit = null;
+    let lastTrackedYtTime = 0;
+    let lastTrackedYtState = -1;
+
+    window.onYouTubeIframeAPIReady = function() {
+      console.log('[YouTube Iframe API] API Ready');
+      isYtApiReady = true;
+      if (pendingYtInit) {
+        initOrUpdateYouTube(pendingYtInit.videoId, pendingYtInit.startTime, pendingYtInit.autoplay);
+        pendingYtInit = null;
+      }
+    };
+
+    function initOrUpdateYouTube(videoId, startTime = 0, autoplay = true) {
+      if (youtubePlayerWrapper) youtubePlayerWrapper.style.display = 'block';
+      if (video) {
+        video.pause();
+        video.style.display = 'none';
+      }
+      if (centerPlayBtn) centerPlayBtn.style.display = 'none';
+      if (playerBottomBar) playerBottomBar.style.display = 'none';
+
+      if (!isYtApiReady || typeof YT === 'undefined' || !YT.Player) {
+        pendingYtInit = { videoId, startTime, autoplay };
+        if (youtubeIframeFallback) {
+          youtubeIframeFallback.src = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&start=${Math.floor(startTime)}&enablejsapi=1&playsinline=1&rel=0`;
+          youtubeIframeFallback.style.display = 'block';
+        }
+        return;
+      }
+
+      if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'none';
+
+      if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+        try {
+          ytPlayer.loadVideoById({
+            videoId: videoId,
+            startSeconds: Math.floor(startTime || 0)
+          });
+          if (!autoplay) {
+            setTimeout(() => {
+              if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+            }, 150);
+          }
+        } catch (e) {
+          console.warn('[YouTube API] loadVideoById note:', e);
+        }
+      } else {
+        try {
+          ytPlayer = new YT.Player('youtubePlayer', {
+            width: '100%',
+            height: '100%',
+            videoId: videoId,
+            playerVars: {
+              autoplay: autoplay ? 1 : 0,
+              start: Math.floor(startTime || 0),
+              enablejsapi: 1,
+              rel: 0,
+              modestbranding: 1,
+              playsinline: 1,
+              origin: window.location.origin
+            },
+            events: {
+              onReady: (event) => {
+                console.log('[YouTube Player] Event: onReady');
+                if (startTime > 0) event.target.seekTo(startTime, true);
+                if (autoplay) event.target.playVideo();
+                else event.target.pauseVideo();
+              },
+              onStateChange: onYouTubePlayerStateChange
+            }
+          });
+        } catch (err) {
+          console.error('[YouTube API] YT.Player error:', err);
+        }
+      }
+    }
+
+    function onYouTubePlayerStateChange(event) {
+      if (isSyncingFromRemote) return;
+      if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
+
+      const state = event.data;
+      const curTime = ytPlayer.getCurrentTime() || 0;
+
+      if (state === YT.PlayerState.PLAYING) {
+        broadcastPlaybackSync('play', curTime, true, currentLoadedMediaUrl, currentVideoTitle ? currentVideoTitle.textContent : '');
+      } else if (state === YT.PlayerState.PAUSED) {
+        broadcastPlaybackSync('pause', curTime, false, currentLoadedMediaUrl, currentVideoTitle ? currentVideoTitle.textContent : '');
+      }
+    }
+
+    // Scrub / Seek periodic detector for YouTube
+    setInterval(() => {
+      if (isSyncingFromRemote || !ytPlayer || typeof ytPlayer.getCurrentTime !== 'function' || typeof ytPlayer.getPlayerState !== 'function') {
+        return;
+      }
+      try {
+        const state = ytPlayer.getPlayerState();
+        const curTime = ytPlayer.getCurrentTime();
+        if (state === YT.PlayerState.PLAYING) {
+          if (lastTrackedYtState === YT.PlayerState.PLAYING && Math.abs(curTime - (lastTrackedYtTime + 0.8)) > 2.5) {
+            broadcastPlaybackSync('seek', curTime, true, currentLoadedMediaUrl, currentVideoTitle ? currentVideoTitle.textContent : '');
+          }
+          lastTrackedYtTime = curTime;
+        }
+        lastTrackedYtState = state;
+      } catch (e) {}
+    }, 800);
+
     // Helper: Format Seconds to MM:SS
     function formatTime(seconds) {
       if (isNaN(seconds) || seconds === Infinity || seconds < 0) return '00:00';
@@ -1464,7 +1514,7 @@
     // ------------------------------------------------------------------------
     // Core Engine: Universal Media Player Dispatcher
     // ------------------------------------------------------------------------
-    function playMedia(sourceType, mediaUrl, title) {
+    function playMedia(sourceType, mediaUrl, title, startTime = 0, autoplay = true) {
       // 1. Cleanup any previous active screenshare stream
       if (activeScreenshareStream && sourceType !== 'screenshare') {
         activeScreenshareStream.getTracks().forEach(t => t.stop());
@@ -1482,7 +1532,7 @@
 
       // Broadcast playback sync to room peers
       if (!isSyncingFromRemote && typeof broadcastPlaybackSync === 'function') {
-        broadcastPlaybackSync('change_media', 0, true, mediaUrl, title);
+        broadcastPlaybackSync('change_media', startTime, autoplay, mediaUrl, title);
       }
 
       // Update Media Source Buttons Active State
@@ -1500,11 +1550,6 @@
         // Hide HTML5 bottom player bar so YouTube's native player controls are clean without any fake yellow line
         if (playerBottomBar) playerBottomBar.style.display = 'none';
 
-        // Load & Show YouTube Iframe Embed
-        const embedUrl = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&enablejsapi=1&playsinline=1&rel=0`;
-        youtubeIframe.src = embedUrl;
-        youtubeIframe.style.display = 'block';
-
         if (currentSourceBadge) {
           currentSourceBadge.className = 'badge-yt';
           currentSourceBadge.textContent = 'YOUTUBE';
@@ -1520,16 +1565,20 @@
 
         // Update Now Playing card
         updateNowPlayingCard(title || 'YouTube Video', 'YouTube • Synchronized', `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`, mediaUrl);
+
+        // Load YouTube player
+        initOrUpdateYouTube(ytId, startTime, autoplay);
       } 
       else if (sourceType === 'upload' || sourceType === 'stream') {
-        // Stop & Hide YouTube Iframe
-        youtubeIframe.style.display = 'none';
-        youtubeIframe.src = '';
+        // Stop & Hide YouTube
+        if (youtubePlayerWrapper) youtubePlayerWrapper.style.display = 'none';
+        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo();
 
         video.srcObject = null;
         video.src = mediaUrl;
         video.style.display = 'block';
-        video.play().catch(e => console.log('Autoplay deferred:', e));
+        if (startTime > 0) video.currentTime = startTime;
+        if (autoplay) video.play().catch(e => console.log('Autoplay deferred:', e));
 
         // Show HTML5 bottom player bar for uploaded local video or custom stream
         if (playerBottomBar) playerBottomBar.style.display = 'flex';
@@ -1580,9 +1629,9 @@
         activeScreenshareStream = stream;
         currentMode = 'screenshare';
 
-        // Hide YouTube Iframe
-        youtubeIframe.style.display = 'none';
-        youtubeIframe.src = '';
+        // Hide YouTube Player & Pause
+        if (youtubePlayerWrapper) youtubePlayerWrapper.style.display = 'none';
+        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo();
 
         // Pipe Screen Stream to HTML5 Video Element
         video.src = '';
@@ -2106,24 +2155,6 @@
     initWebcamDraggable();
 
     // ------------------------------------------------------------------------
-    // Feature 8: Invite Button (Copy Room URL)
-    // ------------------------------------------------------------------------
-    if (btnInviteRoom) {
-      btnInviteRoom.addEventListener('click', () => {
-        const shareUrl = window.location.href;
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(shareUrl).then(() => {
-            showToast('Room invite link copied to clipboard! Share it with classmates.', 'success');
-          }).catch(() => {
-            prompt('Copy this room URL to invite classmates:', shareUrl);
-          });
-        } else {
-          prompt('Copy this room URL to invite classmates:', shareUrl);
-        }
-      });
-    }
-
-    // ------------------------------------------------------------------------
     // Feature 9: Sidebar Tab Switching (Chat vs Queue vs People)
     // ------------------------------------------------------------------------
     const tabChatBtn = document.getElementById('tabChatBtn');
@@ -2407,6 +2438,9 @@
           ${attachmentHtml}
         </div>
       `;
+      const emptyNotice = document.getElementById('emptyChatNotice');
+      if (emptyNotice) emptyNotice.remove();
+
       chatStream.appendChild(msgEl);
       chatStream.scrollTop = chatStream.scrollHeight;
     }
@@ -2416,10 +2450,18 @@
         try {
           const res = await ApiClient.getMessages(code);
           if (res && Array.isArray(res.messages)) {
-            if (res.messages.length > 0 && renderedMessageIds.size === 0) {
-              chatStream.innerHTML = '';
+            chatStream.innerHTML = '';
+            renderedMessageIds.clear();
+            if (res.messages.length === 0) {
+              chatStream.innerHTML = `
+                <div class="text-center py-4 text-muted small" id="emptyChatNotice">
+                  <i class="bi bi-chat-dots fs-3 d-block mb-1 text-secondary"></i>
+                  <span>No messages yet in room #${escapeHtml(code)}. Start chatting!</span>
+                </div>
+              `;
+            } else {
+              res.messages.forEach(m => renderChatMessage(m));
             }
-            res.messages.forEach(m => renderChatMessage(m));
           }
         } catch (err) {
           console.warn('[Chat] Could not load messages:', err.message);
@@ -2434,6 +2476,9 @@
       
       // If both text and attachment are empty, do nothing
       if (!text && !currentAttachment) return;
+
+      const emptyNotice = document.getElementById('emptyChatNotice');
+      if (emptyNotice) emptyNotice.remove();
 
       let senderName = 'Yasaru';
       let senderAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80';
@@ -2506,10 +2551,29 @@
     function broadcastPlaybackSync(action, time, isPlaying, mediaUrl, mediaTitle) {
       if (isSyncingFromRemote) return;
 
+      let currentTimeVal = 0;
+      let isPlayingVal = true;
+
+      if (time !== undefined) {
+        currentTimeVal = time;
+      } else if (currentMode === 'youtube' && ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+        currentTimeVal = ytPlayer.getCurrentTime();
+      } else if (video) {
+        currentTimeVal = video.currentTime;
+      }
+
+      if (isPlaying !== undefined) {
+        isPlayingVal = isPlaying;
+      } else if (currentMode === 'youtube' && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+        isPlayingVal = (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING);
+      } else if (video) {
+        isPlayingVal = !video.paused;
+      }
+
       const syncPayload = {
         roomCode: currentRoomCode,
-        current_time: time !== undefined ? time : (video ? video.currentTime : 0),
-        is_playing: isPlaying !== undefined ? isPlaying : (!video.paused),
+        current_time: currentTimeVal,
+        is_playing: isPlayingVal,
         media_url: mediaUrl || currentLoadedMediaUrl,
         media_title: mediaTitle || (currentVideoTitle ? currentVideoTitle.textContent : ''),
         senderId: myPeerId
@@ -2529,28 +2593,54 @@
 
       isSyncingFromRemote = true;
 
-      // Synchronize video change
-      if (data.media_url && data.media_url !== currentLoadedMediaUrl) {
-        const type = (data.media_url.includes('youtube') || data.media_url.includes('youtu.be')) ? 'youtube' : 'upload';
-        playMedia(type, data.media_url, data.media_title || 'Synchronized Video');
-        showToast(`Video synchronized: "${data.media_title || 'New Stream'}"`, 'info');
-      }
+      // 1. Synchronize video change
+      const incomingYtId = extractYouTubeId(data.media_url);
+      const currentYtId = extractYouTubeId(currentLoadedMediaUrl);
 
-      // Synchronize HTML5 video playback and position
-      if (currentMode !== 'youtube' && video) {
-        if (data.current_time !== undefined && Math.abs(video.currentTime - data.current_time) > 2.0) {
-          video.currentTime = data.current_time;
+      const isDifferentMedia = incomingYtId 
+        ? (incomingYtId !== currentYtId) 
+        : (data.media_url && data.media_url !== currentLoadedMediaUrl);
+
+      if (isDifferentMedia) {
+        const type = incomingYtId ? 'youtube' : 'upload';
+        currentLoadedMediaUrl = data.media_url;
+        playMedia(type, data.media_url, data.media_title || 'Synchronized Video', data.current_time || 0, data.is_playing);
+        if (typeof showToast === 'function') {
+          showToast(`Video synchronized: "${data.media_title || 'New Stream'}"`, 'info');
         }
-        if (data.is_playing === true && video.paused) {
-          video.play().catch(() => {});
-        } else if (data.is_playing === false && !video.paused) {
-          video.pause();
+      } else {
+        // 2. Synchronize playback state (play/pause/seek)
+        if (currentMode === 'youtube') {
+          if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+            const cur = ytPlayer.getCurrentTime() || 0;
+            if (data.current_time !== undefined && Math.abs(cur - data.current_time) > 2.0) {
+              ytPlayer.seekTo(data.current_time, true);
+            }
+            if (data.is_playing === true) {
+              if (ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                ytPlayer.playVideo();
+              }
+            } else if (data.is_playing === false) {
+              if (ytPlayer.getPlayerState() !== YT.PlayerState.PAUSED) {
+                ytPlayer.pauseVideo();
+              }
+            }
+          }
+        } else if (video) {
+          if (data.current_time !== undefined && Math.abs(video.currentTime - data.current_time) > 2.0) {
+            video.currentTime = data.current_time;
+          }
+          if (data.is_playing === true && video.paused) {
+            video.play().catch(() => {});
+          } else if (data.is_playing === false && !video.paused) {
+            video.pause();
+          }
         }
       }
 
       setTimeout(() => {
         isSyncingFromRemote = false;
-      }, 500);
+      }, 600);
     }
 
     // ------------------------------------------------------------------------
@@ -2558,14 +2648,46 @@
     // ------------------------------------------------------------------------
     function copyRoomInviteLink() {
       const inviteUrl = window.location.origin + '/pages/room.html?room=' + encodeURIComponent(currentRoomCode);
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(inviteUrl).then(() => {
-          showToast(`Room invite link copied to clipboard!\n${inviteUrl}\nShare it with friends to watch together.`, 'success');
-        }).catch(() => {
-          prompt('Copy this room URL to invite classmates:', inviteUrl);
+
+      function fallbackCopy(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {}
+        document.body.removeChild(textArea);
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(inviteUrl).catch(() => {
+          fallbackCopy(inviteUrl);
         });
       } else {
-        prompt('Copy this room URL to invite classmates:', inviteUrl);
+        fallbackCopy(inviteUrl);
+      }
+
+      // Visual feedback on the button
+      if (btnInviteRoom) {
+        const originalContent = btnInviteRoom.innerHTML;
+        btnInviteRoom.style.backgroundColor = '#16a34a';
+        btnInviteRoom.style.borderColor = '#16a34a';
+        btnInviteRoom.innerHTML = '<i class="bi bi-check-lg text-white"></i> <span class="text-white">Copied!</span>';
+        setTimeout(() => {
+          btnInviteRoom.style.backgroundColor = '';
+          btnInviteRoom.style.borderColor = '';
+          btnInviteRoom.innerHTML = originalContent;
+        }, 2200);
+      }
+
+      if (typeof showToast === 'function') {
+        showToast(`Room invite link copied to clipboard!\n${inviteUrl}`, 'success');
+      } else {
+        alert(`Room invite link copied to clipboard!\n${inviteUrl}`);
       }
     }
 
@@ -2582,20 +2704,113 @@
     }
 
     // ------------------------------------------------------------------------
+    // Feature 12.5: Render Real-Time Connected Room Participants (Zero Dummies)
+    // ------------------------------------------------------------------------
+    function renderConnectedPeople(users) {
+      const peopleStream = document.getElementById('peopleStream');
+      const tabPeopleLabel = document.getElementById('tabPeopleLabel');
+      if (!peopleStream) return;
+
+      const userList = Array.isArray(users) ? users : [];
+      if (tabPeopleLabel) {
+        tabPeopleLabel.textContent = `People (${Math.max(1, userList.length)})`;
+      }
+
+      let currentLoggedUser = null;
+      try {
+        currentLoggedUser = JSON.parse(localStorage.getItem('unitogether_user'));
+      } catch(e) {}
+
+      if (userList.length === 0) {
+        const myName = (currentLoggedUser && currentLoggedUser.name) ? currentLoggedUser.name : 'You (Student)';
+        const myAvatar = (currentLoggedUser && currentLoggedUser.avatar) ? currentLoggedUser.avatar : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(myName)}`;
+        peopleStream.innerHTML = `
+          <div class="d-flex align-items-center gap-2 py-2 px-2 rounded-3 bg-light border mb-2">
+            <img class="chat-user-avatar" src="${escapeHtml(myAvatar)}" alt="${escapeHtml(myName)}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%;">
+            <div class="flex-grow-1 min-w-0">
+              <div class="chat-sender-name text-truncate">
+                <span>${escapeHtml(myName)}</span>
+                <span class="badge bg-danger-subtle text-danger ms-1 fw-bold" style="font-size: 9.5px;">You</span>
+              </div>
+              <div class="chat-sender-time" style="font-size: 10px;">
+                <i class="bi bi-circle-fill text-success" style="font-size: 7px;"></i> Connected · Active
+              </div>
+            </div>
+          </div>
+          <div class="text-center py-4 text-muted small">
+            <i class="bi bi-people text-secondary fs-3 d-block mb-1"></i>
+            <span>You are the only member in this room.<br>Share the link to invite classmates!</span>
+          </div>
+        `;
+        return;
+      }
+
+      peopleStream.innerHTML = userList.map(u => {
+        const isMe = currentLoggedUser && currentLoggedUser.email && u.email && (currentLoggedUser.email.toLowerCase() === u.email.toLowerCase());
+        const isHost = u.isHost;
+        const micStatus = u.micMuted ? 'Mic Muted' : 'Connected · Active';
+        const avatarUrl = u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(u.name || 'Student')}`;
+
+        return `
+          <div class="d-flex align-items-center gap-2 py-1.5 px-2 rounded-3 mb-1.5" style="background: ${isMe ? '#fff1f2' : '#f8fafc'}; border: 1px solid ${isMe ? '#fecdd3' : '#e2e8f0'};">
+            <img class="chat-user-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(u.name)}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%;">
+            <div class="flex-grow-1 min-w-0">
+              <div class="chat-sender-name text-truncate d-flex align-items-center justify-content-between">
+                <span class="fw-bold text-dark" style="font-size: 12px;">${escapeHtml(u.name)}</span>
+                <div>
+                  ${isMe ? '<span class="badge bg-danger-subtle text-danger ms-1 fw-bold" style="font-size: 9px;">You</span>' : ''}
+                  ${isHost ? '<span class="badge bg-warning text-dark ms-1 fw-bold" style="font-size: 9px;">Host</span>' : ''}
+                </div>
+              </div>
+              <div class="chat-sender-time" style="font-size: 10.5px;">
+                <i class="bi bi-circle-fill text-success" style="font-size: 6.5px;"></i> ${micStatus}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ------------------------------------------------------------------------
     // Feature 13: Room Code Initialization, Socket Connection & Polling
     // ------------------------------------------------------------------------
     async function initRoomWorkspace() {
       const urlParams = new URLSearchParams(window.location.search);
       currentRoomCode = urlParams.get('room') || 'UNI-8842';
 
+      // Always ensure address bar has room code so copying URL matches exactly
+      if (!urlParams.get('room')) {
+        const newUrl = window.location.pathname + '?room=' + encodeURIComponent(currentRoomCode);
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+      }
+
       if (headerRoomCode) headerRoomCode.textContent = currentRoomCode;
       if (overlayRoomCode) overlayRoomCode.textContent = 'ROOM: ' + currentRoomCode;
 
-      // 1. Connect Socket.io for sub-50ms sync
+      // 1. Connect Socket.io for sub-50ms sync & active people tracking
+      let currentLoggedUser = null;
+      try {
+        currentLoggedUser = JSON.parse(localStorage.getItem('unitogether_user'));
+      } catch (e) {}
+
       if (typeof io !== 'undefined') {
         try {
           socket = io();
-          socket.emit('join_room', currentRoomCode);
+
+          // Send current user info along with room code so server tracks real connected participants
+          socket.emit('join_room', {
+            roomCode: currentRoomCode,
+            user: {
+              name: currentLoggedUser ? currentLoggedUser.name : 'Guest Participant',
+              email: currentLoggedUser ? currentLoggedUser.email : '',
+              avatar: (currentLoggedUser && currentLoggedUser.avatar) ? currentLoggedUser.avatar : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentLoggedUser ? currentLoggedUser.name : 'Guest')}`
+            }
+          });
+
+          // Listen for real-time connected participants list
+          socket.on('room_users', (usersList) => {
+            renderConnectedPeople(usersList);
+          });
 
           socket.on('receive_message', (msg) => {
             renderChatMessage(msg);
@@ -2615,9 +2830,14 @@
         }
       }
 
+      // Initial render of connected people with self
+      renderConnectedPeople([]);
+
       // 2. Fetch room details from SQLite backend
-      let initialMedia = 'https://www.youtube.com/watch?v=zSWdZVtXT7E';
-      let initialTitle = 'Interstellar — Official Trailer';
+      let initialMedia = 'https://www.youtube.com/watch?v=MsRSKLbz3ss';
+      let initialTitle = 'Study Video Stream';
+      let initialTime = 0;
+      let initialPlaying = true;
 
       if (typeof ApiClient !== 'undefined' && ApiClient.getRoom) {
         try {
@@ -2625,9 +2845,15 @@
           if (res && res.room) {
             const r = res.room;
             if (currentVideoTitle) currentVideoTitle.textContent = r.title || 'Study Room';
-            if (r.media_url) {
+            if (r.media_url && (r.media_url.startsWith('http://') || r.media_url.startsWith('https://'))) {
               initialMedia = r.media_url;
               initialTitle = r.media_title || r.title;
+            }
+            if (r.current_time !== undefined && r.current_time !== null) {
+              initialTime = Number(r.current_time);
+            }
+            if (r.is_playing !== undefined && r.is_playing !== null) {
+              initialPlaying = (r.is_playing === 1 || r.is_playing === true);
             }
           }
         } catch (err) {
@@ -2644,7 +2870,7 @@
 
       currentLoadedMediaUrl = initialMedia;
       const type = (initialMedia.includes('youtube') || initialMedia.includes('youtu.be')) ? 'youtube' : 'upload';
-      playMedia(type, initialMedia, initialTitle);
+      playMedia(type, initialMedia, initialTitle, initialTime, initialPlaying);
 
       // 3. Load chat history from SQLite
       await loadRoomChat(currentRoomCode);
@@ -2672,7 +2898,7 @@
               if (r.media_url && r.media_url !== currentLoadedMediaUrl && r.media_url !== '') {
                 currentLoadedMediaUrl = r.media_url;
                 const mType = (r.media_url.includes('youtube') || r.media_url.includes('youtu.be')) ? 'youtube' : 'upload';
-                playMedia(mType, r.media_url, r.media_title || r.title);
+                playMedia(mType, r.media_url, r.media_title || r.title, r.current_time || 0, r.is_playing === 1);
               }
             }
           }
@@ -2688,12 +2914,5 @@
 
   <!-- App Toast Notification Container -->
   <div class="app-toast-container" id="appToastContainer"></div>
-
-  <!-- Socket.io Client -->
-  <script src="/socket.io/socket.io.js"></script>
-  <!-- API Client -->
-  <script src="../js/api.js"></script>
-  <!-- Application Logic & Navbar Auth State -->
-  <script src="../js/app.js"></script>
 </body>
 </html>

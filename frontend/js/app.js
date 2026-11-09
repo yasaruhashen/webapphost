@@ -12,7 +12,7 @@ const AppState = {
   activeRoom: JSON.parse(localStorage.getItem('unitogether_active_room')) || {
     code: 'UNI-8842',
     title: 'CS204: Algorithms & Data Structures - Final Exam Review 🍿',
-    mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    mediaUrl: 'https://www.youtube.com/watch?v=MsRSKLbz3ss',
     mediaTitle: 'Data Structures & Algorithms - Dynamic Programming',
     mediaSource: 'YouTube (HD 1080p)',
     hostSyncLock: true,
@@ -81,6 +81,8 @@ function updateNavbarAuth() {
 
   const loginUrl = (inPages ? 'login.html' : 'pages/login.html') + redirectQuery;
   const roomsUrl = inPages ? 'rooms.html' : 'pages/rooms.html';
+  const profileUrl = inPages ? 'profile.html' : 'pages/profile.html';
+  const contactUrl = inPages ? 'contact.html' : 'pages/contact.html';
   const homeUrl = inPages ? '../index.html' : 'index.html';
 
   if (!user || (!user.name && !user.email)) {
@@ -113,6 +115,9 @@ function updateNavbarAuth() {
             <div class="text-muted small text-truncate" style="font-size: 11px;">${user.email || (isGuest ? 'Guest Session' : 'Student Account')}</div>
           </div>
           <div class="py-1">
+            <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-dark" href="${profileUrl}">
+              <i class="bi bi-person-gear text-primary"></i> Edit Profile
+            </a>
             <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 text-dark" href="${roomsUrl}">
               <i class="bi bi-grid-fill text-danger"></i> Manage Rooms
             </a>
@@ -418,23 +423,15 @@ function initAuthPage() {
       showToast(`Signing in with ${provider === 'google' ? 'Google' : 'Facebook'}...`, 'info');
 
       // Close open modals
-      const googleModal = document.getElementById('googleAuthModal');
-      const fbModal = document.getElementById('facebookAuthModal');
-      if (googleModal) {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-          const m = bootstrap.Modal.getInstance(googleModal);
-          if (m) m.hide();
-        }
-        googleModal.classList.remove('show');
-        googleModal.style.display = 'none';
+      const googleApiModal = document.getElementById('googleApiModal');
+      const fbApiModal = document.getElementById('facebookApiModal');
+      if (googleApiModal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        const m = bootstrap.Modal.getInstance(googleApiModal);
+        if (m) m.hide();
       }
-      if (fbModal) {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-          const m = bootstrap.Modal.getInstance(fbModal);
-          if (m) m.hide();
-        }
-        fbModal.classList.remove('show');
-        fbModal.style.display = 'none';
+      if (fbApiModal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        const m = bootstrap.Modal.getInstance(fbApiModal);
+        if (m) m.hide();
       }
       document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
       document.body.classList.remove('modal-open');
@@ -477,27 +474,134 @@ function initAuthPage() {
     }
   };
 
-  window.executeCustomOAuthLogin = function(provider) {
-    if (provider === 'google') {
-      const name = document.getElementById('customGoogleName')?.value.trim() || 'Google User';
-      const email = document.getElementById('customGoogleEmail')?.value.trim();
-      if (!email) {
-        showToast('Please enter your Google / Gmail email address.', 'warning');
+  // --------------------------------------------------------------------------
+  // Real Google & Facebook API SSO Handlers
+  // --------------------------------------------------------------------------
+  let _gsiTokenClient = null;
+  let _currentGoogleClientId = '';
+
+  window.handleGoogleSsoClick = async function() {
+    try {
+      let clientId = localStorage.getItem('unitogether_google_client_id') || window.UNITOGETHER_GOOGLE_CLIENT_ID;
+      if (!clientId && typeof ApiClient !== 'undefined' && ApiClient.getAuthConfig) {
+        try {
+          const cfg = await ApiClient.getAuthConfig();
+          if (cfg && cfg.googleClientId) {
+            clientId = cfg.googleClientId;
+            window.UNITOGETHER_GOOGLE_CLIENT_ID = clientId;
+          }
+        } catch (e) {
+          console.warn('[Google SSO] Could not fetch server config:', e);
+        }
+      }
+
+      if (!clientId) {
+        clientId = '1046397793542-76dogkonem1a8r1fid5ob9t0gcreffto.apps.googleusercontent.com';
+        window.UNITOGETHER_GOOGLE_CLIENT_ID = clientId;
+      }
+
+      // Ensure Google Identity Services SDK is ready
+      let attempts = 0;
+      while ((typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) && attempts < 10) {
+        await new Promise(r => setTimeout(r, 150));
+        attempts++;
+      }
+
+      if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+        showToast('Google Sign-In SDK is still loading or blocked. Please check your internet connection.', 'warning');
         return;
       }
-      window.executeOAuthLogin('google', name, email, 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80');
-    } else {
-      const name = document.getElementById('customFbName')?.value.trim() || 'Facebook User';
-      const email = document.getElementById('customFbEmail')?.value.trim();
-      if (!email) {
-        showToast('Please enter your Facebook email address.', 'warning');
-        return;
+
+      // Initialize and trigger Google live OAuth popup
+      if (!_gsiTokenClient || _currentGoogleClientId !== clientId) {
+        _currentGoogleClientId = clientId;
+        _gsiTokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: 'openid email profile',
+          callback: async (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              showToast('Google authentication successful! Verifying with UniTogether server...', 'info');
+              try {
+                const res = await ApiClient.loginGoogle({ access_token: tokenResponse.access_token });
+                if (res && res.user) {
+                  AppState.currentUser = res.user;
+                  updateNavbarAuth();
+                  showToast(`Welcome, ${res.user.name}! Signed in via Google.`, 'success');
+                  const returnUrl = getPostLoginRedirectUrl();
+                  setTimeout(() => { window.location.href = returnUrl; }, 600);
+                }
+              } catch (err) {
+                showToast('Google login error: ' + (err.message || 'Verification failed'), 'danger');
+              }
+            } else if (tokenResponse && tokenResponse.error) {
+              showToast('Google sign-in canceled: ' + tokenResponse.error, 'warning');
+            }
+          }
+        });
       }
-      window.executeOAuthLogin('facebook', name, email, 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&q=80');
+      _gsiTokenClient.requestAccessToken({ prompt: 'select_account' });
+    } catch (err) {
+      console.error('[Google SSO] Error:', err);
+      showToast('Google Sign-In failed: ' + (err.message || 'Unknown error'), 'danger');
     }
   };
 
+  window.handleFacebookSsoClick = async function() {
+    try {
+      let appId = localStorage.getItem('unitogether_fb_app_id') || window.UNITOGETHER_FB_APP_ID;
+      if (!appId && typeof ApiClient !== 'undefined' && ApiClient.getAuthConfig) {
+        try {
+          const cfg = await ApiClient.getAuthConfig();
+          if (cfg && cfg.facebookAppId) {
+            appId = cfg.facebookAppId;
+            window.UNITOGETHER_FB_APP_ID = appId;
+          }
+        } catch (e) {
+          console.warn('[FB SSO] Could not fetch server config:', e);
+        }
+      }
 
+      if (appId && typeof FB !== 'undefined') {
+        try {
+          FB.init({
+            appId: appId,
+            cookie: true,
+            xfbml: true,
+            version: 'v19.0'
+          });
+        } catch (e) {
+          console.warn('FB.init error:', e);
+        }
+
+        FB.login(function(response) {
+          if (response.authResponse && response.authResponse.accessToken) {
+            showToast('Facebook authorized! Verifying profile...', 'info');
+            ApiClient.loginFacebook({ access_token: response.authResponse.accessToken })
+              .then(res => {
+                if (res && res.user) {
+                  AppState.currentUser = res.user;
+                  updateNavbarAuth();
+                  showToast(`Welcome, ${res.user.name}! Signed in via Facebook.`, 'success');
+                  const returnUrl = getPostLoginRedirectUrl();
+                  setTimeout(() => { window.location.href = returnUrl; }, 600);
+                }
+              })
+              .catch(err => {
+                showToast('Facebook login failed: ' + (err.message || 'Verification failed'), 'danger');
+              });
+          } else {
+            showToast('Facebook login canceled.', 'warning');
+          }
+        }, { scope: 'public_profile,email' });
+        return;
+      }
+
+      showToast('Facebook App ID is not configured on the server.', 'warning');
+    } catch (err) {
+      console.error('[FB SSO] Error:', err);
+      showToast('Facebook login error: ' + (err.message || 'Unknown error'), 'danger');
+    }
+  };
 
   // Forgot Password Recovery Flow
   const forgotForm = document.getElementById('forgotPasswordForm');
@@ -591,7 +695,7 @@ function initAuthPage() {
       AppState.activeRoom = {
         code: newCode,
         title: topic,
-        mediaUrl: mediaUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        mediaUrl: mediaUrl || 'https://www.youtube.com/watch?v=MsRSKLbz3ss',
         mediaTitle: topic,
         mediaSource: 'YouTube (HD 1080p)',
         hostSyncLock: hostSyncLock,
@@ -698,7 +802,7 @@ function initHubPage() {
       AppState.activeRoom = {
         code: newCode,
         title: title,
-        mediaUrl: media || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        mediaUrl: media || 'https://www.youtube.com/watch?v=MsRSKLbz3ss',
         mediaTitle: title,
         mediaSource: 'YouTube (HD 1080p)',
         hostSyncLock: syncLock,

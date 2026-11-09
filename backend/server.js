@@ -9,16 +9,19 @@ const authRoutes = require('./routes/auth');
 const roomsRoutes = require('./routes/rooms');
 const db = require('./db/database');
 
+// BigInt JSON serialization safeguard
+BigInt.prototype.toJSON = function() { return Number(this); };
+
 const app = express();
 
-// Middleware
+// Middleware with 25MB body limit for image & file attachments
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
 // Serve frontend static files when running locally
 const frontendDir = path.join(__dirname, '..', 'frontend');
@@ -44,6 +47,8 @@ app.get('/room.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages',
 app.get('/rooms.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'rooms.html')));
 app.get('/login.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'login.html')));
 app.get('/profile.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'profile.html')));
+app.get('/contact.html', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'contact.html')));
+app.get('/contact', (req, res) => res.sendFile(path.join(frontendDir, 'pages', 'contact.html')));
 
 // Fallback for SPA routing if accessing root
 app.get('/', (req, res) => {
@@ -66,26 +71,92 @@ if (!process.env.VERCEL) {
     });
     app.set('io', io);
 
+    // In-memory tracking of active participants per room: roomCode -> Map(socketId -> userInfo)
+    const roomParticipants = new Map();
+
     io.on('connection', (socket) => {
       console.log(`[Socket.io] Client connected: ${socket.id}`);
+      let currentJoinedRoom = null;
 
-      socket.on('join_room', (roomCode) => {
+      socket.on('join_room', (payload) => {
+        let roomCode = payload;
+        let userData = null;
+
+        if (typeof payload === 'object' && payload !== null) {
+          roomCode = payload.roomCode || payload.room_code || payload.code;
+          userData = payload.user || payload;
+        }
+
+        if (!roomCode || typeof roomCode !== 'string') return;
+        roomCode = roomCode.toUpperCase().trim();
+        currentJoinedRoom = roomCode;
+
         socket.join(roomCode);
-        console.log(`[Socket.io] ${socket.id} joined room ${roomCode}`);
-        socket.to(roomCode).emit('user_joined', { socketId: socket.id });
+
+        if (!roomParticipants.has(roomCode)) {
+          roomParticipants.set(roomCode, new Map());
+        }
+
+        const participantsMap = roomParticipants.get(roomCode);
+        const name = (userData && userData.name) ? userData.name : 'Guest';
+        const avatar = (userData && userData.avatar) ? userData.avatar : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`;
+        const email = (userData && userData.email) ? userData.email : '';
+        const isHost = (userData && userData.isHost) ? true : false;
+
+        participantsMap.set(socket.id, {
+          socketId: socket.id,
+          name,
+          avatar,
+          email,
+          isHost,
+          micMuted: false,
+          joinedAt: new Date().toISOString()
+        });
+
+        console.log(`[Socket.io] ${name} (${socket.id}) joined room ${roomCode}. Total members: ${participantsMap.size}`);
+
+        // Broadcast active participants to all peers in this room
+        const activeUsersList = Array.from(participantsMap.values());
+        io.to(roomCode).emit('room_users', activeUsersList);
+        socket.to(roomCode).emit('user_joined', { socketId: socket.id, user: participantsMap.get(socket.id) });
+      });
+
+      socket.on('mic_status', (data) => {
+        if (!currentJoinedRoom || !roomParticipants.has(currentJoinedRoom)) return;
+        const participantsMap = roomParticipants.get(currentJoinedRoom);
+        if (participantsMap.has(socket.id)) {
+          const user = participantsMap.get(socket.id);
+          user.micMuted = !!data.micMuted;
+          io.to(currentJoinedRoom).emit('room_users', Array.from(participantsMap.values()));
+        }
       });
 
       socket.on('sync_playback', (data) => {
         // Broadcast play, pause, seek event to room peers
-        socket.to(data.roomCode).emit('peer_sync', data);
+        const targetRoom = data.roomCode || data.room_code;
+        if (targetRoom) {
+          socket.to(targetRoom).emit('peer_sync', data);
+        }
       });
 
       socket.on('new_chat_message', (data) => {
-        io.to(data.roomCode).emit('receive_message', data);
+        const targetRoom = data.roomCode || data.room_code;
+        if (targetRoom) {
+          io.to(targetRoom).emit('receive_message', data);
+        }
       });
 
       socket.on('disconnect', () => {
         console.log(`[Socket.io] Client disconnected: ${socket.id}`);
+        if (currentJoinedRoom && roomParticipants.has(currentJoinedRoom)) {
+          const participantsMap = roomParticipants.get(currentJoinedRoom);
+          participantsMap.delete(socket.id);
+          console.log(`[Socket.io] Left room ${currentJoinedRoom}. Remaining members: ${participantsMap.size}`);
+          io.to(currentJoinedRoom).emit('room_users', Array.from(participantsMap.values()));
+          if (participantsMap.size === 0) {
+            roomParticipants.delete(currentJoinedRoom);
+          }
+        }
       });
     });
   } catch (err) {

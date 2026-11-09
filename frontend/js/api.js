@@ -69,6 +69,51 @@ const ApiClient = (function () {
       return data;
     },
 
+    async getAuthConfig() {
+      return request('/auth/config', {
+        method: 'GET',
+        headers: getHeaders(false)
+      });
+    },
+
+    async saveAuthConfig(config) {
+      return request('/auth/config', {
+        method: 'POST',
+        headers: getHeaders(false),
+        body: JSON.stringify(config)
+      });
+    },
+
+    async loginGoogle(payload) {
+      const data = await request('/auth/google', {
+        method: 'POST',
+        headers: getHeaders(false),
+        body: JSON.stringify(payload)
+      });
+      if (data.token) {
+        localStorage.setItem('unitogether_token', data.token);
+      }
+      if (data.user) {
+        localStorage.setItem('unitogether_user', JSON.stringify(data.user));
+      }
+      return data;
+    },
+
+    async loginFacebook(payload) {
+      const data = await request('/auth/facebook', {
+        method: 'POST',
+        headers: getHeaders(false),
+        body: JSON.stringify(payload)
+      });
+      if (data.token) {
+        localStorage.setItem('unitogether_token', data.token);
+      }
+      if (data.user) {
+        localStorage.setItem('unitogether_user', JSON.stringify(data.user));
+      }
+      return data;
+    },
+
     async loginOAuth(provider, profileData) {
       const data = await request('/auth/oauth', {
         method: 'POST',
@@ -91,13 +136,27 @@ const ApiClient = (function () {
       });
     },
 
+    async updateProfile(profileData) {
+      const data = await request('/auth/profile', {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(profileData)
+      });
+      if (data && data.user) {
+        localStorage.setItem('unitogether_user', JSON.stringify(data.user));
+      }
+      return data;
+    },
+
     // ------------------------------------------------------------------------
     // Watch Rooms
     // ------------------------------------------------------------------------
-    async getRooms(category = '', search = '') {
+    async getRooms(category = '', search = '', hostEmail = '', scope = '') {
       const params = new URLSearchParams();
-      if (category && category !== 'All') params.append('category', category);
+      if (category && category !== 'All' && category !== 'all' && category !== 'my-rooms') params.append('category', category);
       if (search) params.append('search', search);
+      if (hostEmail) params.append('host_email', hostEmail);
+      if (scope) params.append('scope', scope);
       const queryStr = params.toString() ? `?${params.toString()}` : '';
       return request(`/rooms${queryStr}`);
     },
@@ -107,6 +166,14 @@ const ApiClient = (function () {
     },
 
     async createRoom(roomData) {
+      let user = null;
+      try { user = JSON.parse(localStorage.getItem('unitogether_user')); } catch(e) {}
+      if (user && user.email && !roomData.host_email) {
+        roomData.host_email = user.email;
+      }
+      if (user && user.name && (!roomData.host_name || roomData.host_name === 'Yasaru' || roomData.host_name === 'Guest Host')) {
+        roomData.host_name = user.name;
+      }
       return request('/rooms', {
         method: 'POST',
         headers: getHeaders(),
@@ -115,6 +182,9 @@ const ApiClient = (function () {
     },
 
     async updateRoom(code, roomData) {
+      let user = null;
+      try { user = JSON.parse(localStorage.getItem('unitogether_user')); } catch(e) {}
+      if (user && user.email) roomData.host_email = user.email;
       return request(`/rooms/${encodeURIComponent(code)}`, {
         method: 'PUT',
         headers: getHeaders(),
@@ -123,7 +193,10 @@ const ApiClient = (function () {
     },
 
     async deleteRoom(code) {
-      return request(`/rooms/${encodeURIComponent(code)}`, {
+      let user = null;
+      try { user = JSON.parse(localStorage.getItem('unitogether_user')); } catch(e) {}
+      const hostEmail = (user && user.email) ? user.email : '';
+      return request(`/rooms/${encodeURIComponent(code)}?host_email=${encodeURIComponent(hostEmail)}`, {
         method: 'DELETE',
         headers: getHeaders()
       });
