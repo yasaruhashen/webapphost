@@ -987,7 +987,6 @@
       <a href="profile.html">Profile</a>
       <a href="contact.html">Contact Us</a>
       <a href="../index.html#features">Features</a>
-      <a href="../index.html#how-it-works">How It Works</a>
     </nav>
 
     <!-- Dynamic Auth Container -->
@@ -1017,7 +1016,7 @@
             <!-- YouTube Player Container -->
             <div id="youtubePlayerWrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: none; background: #000;">
               <div id="youtubePlayer" style="width: 100%; height: 100%;"></div>
-              <iframe id="youtubeIframeFallback" style="width: 100%; height: 100%; border: 0; display: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+              <iframe id="youtubeIframeFallback" style="width: 100%; height: 100%; border: 0; display: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
 
             <!-- Hidden File Input for Video Uploads -->
@@ -1392,6 +1391,8 @@
     };
 
     function initOrUpdateYouTube(videoId, startTime = 0, autoplay = true) {
+      if (!videoId) return;
+
       if (youtubePlayerWrapper) youtubePlayerWrapper.style.display = 'block';
       if (video) {
         video.pause();
@@ -1400,16 +1401,18 @@
       if (centerPlayBtn) centerPlayBtn.style.display = 'none';
       if (playerBottomBar) playerBottomBar.style.display = 'none';
 
-      if (!isYtApiReady || typeof YT === 'undefined' || !YT.Player) {
-        pendingYtInit = { videoId, startTime, autoplay };
-        if (youtubeIframeFallback) {
-          youtubeIframeFallback.src = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&start=${Math.floor(startTime)}&enablejsapi=1&playsinline=1&rel=0`;
-          youtubeIframeFallback.style.display = 'block';
-        }
-        return;
+      const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&start=${Math.floor(startTime || 0)}&enablejsapi=1&playsinline=1&rel=0`;
+
+      // Always load the fallback iframe immediately with correct security headers so video picture NEVER goes missing
+      if (youtubeIframeFallback) {
+        youtubeIframeFallback.src = iframeSrc;
+        youtubeIframeFallback.style.display = 'block';
       }
 
-      if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'none';
+      if (!isYtApiReady || typeof YT === 'undefined' || !YT.Player) {
+        pendingYtInit = { videoId, startTime, autoplay };
+        return;
+      }
 
       if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
         try {
@@ -1417,41 +1420,50 @@
             videoId: videoId,
             startSeconds: Math.floor(startTime || 0)
           });
-          if (!autoplay) {
-            setTimeout(() => {
-              if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
-            }, 150);
+          if (autoplay) {
+            try { ytPlayer.playVideo(); } catch (e) {}
           }
+          if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'none';
         } catch (e) {
           console.warn('[YouTube API] loadVideoById note:', e);
+          if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'block';
         }
       } else {
         try {
-          ytPlayer = new YT.Player('youtubePlayer', {
-            width: '100%',
-            height: '100%',
-            videoId: videoId,
-            playerVars: {
-              autoplay: autoplay ? 1 : 0,
-              start: Math.floor(startTime || 0),
-              enablejsapi: 1,
-              rel: 0,
-              modestbranding: 1,
-              playsinline: 1,
-              origin: window.location.origin
-            },
-            events: {
-              onReady: (event) => {
-                console.log('[YouTube Player] Event: onReady');
-                if (startTime > 0) event.target.seekTo(startTime, true);
-                if (autoplay) event.target.playVideo();
-                else event.target.pauseVideo();
+          const playerHost = document.getElementById('youtubePlayer');
+          if (playerHost) {
+            ytPlayer = new YT.Player('youtubePlayer', {
+              width: '100%',
+              height: '100%',
+              videoId: videoId,
+              playerVars: {
+                autoplay: autoplay ? 1 : 0,
+                start: Math.floor(startTime || 0),
+                enablejsapi: 1,
+                rel: 0,
+                modestbranding: 1,
+                playsinline: 1
               },
-              onStateChange: onYouTubePlayerStateChange
-            }
-          });
+              events: {
+                onReady: (event) => {
+                  console.log('[YouTube Player] Event: onReady');
+                  if (startTime > 0) event.target.seekTo(startTime, true);
+                  if (autoplay) event.target.playVideo();
+                  // Hide fallback once YT player is actively rendering
+                  if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'none';
+                },
+                onStateChange: onYouTubePlayerStateChange,
+                onError: (errEvent) => {
+                  console.warn('[YouTube Player] Error:', errEvent.data);
+                  // On any player/origin restriction, keep fallback iframe visible
+                  if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'block';
+                }
+              }
+            });
+          }
         } catch (err) {
           console.error('[YouTube API] YT.Player error:', err);
+          if (youtubeIframeFallback) youtubeIframeFallback.style.display = 'block';
         }
       }
     }

@@ -1,0 +1,122 @@
+{
+  "users": [
+    {
+      "_id": "user_yasaru_demo_101",
+      "id": "user_yasaru_demo_101",
+      "name": "Yasaru Bandara",
+      "display_name": "Yasaru",
+      "email": "yasaru@university.ac.lk",
+      "password_hash": "$2b$10$33QzYhyVlCtOZEGYwi11X.RuCXUZFqAt9Kd03c2JQM7kSEQMWv72O",
+      "faculty": "Faculty of Computing & Technology",
+      "role": "host",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80",
+      "institution": "University of Sri Jayewardenepura",
+      "degree": "BSc (Hons) Computer Science",
+      "created_at": "2026-11-09T11:57:19.816Z"
+    }
+  ],
+  "rooms": [
+    {
+      "_id": "room_uni8842_demo_202",
+      "id": "room_uni8842_demo_202",
+      "code": "UNI-8842",
+      "title": "CS204: Algorithms & Data Structures - Final Exam Review 🍿",
+      "category": "Study Group",
+      "host_name": "Yasaru Bandara",
+      "host_email": "yasaru@university.ac.lk",
+      "user_id": "user_yasaru_demo_101",
+      "is_private": 0,
+      "passcode": null,
+      "media_url": "https://www.youtube.com/watch?v=MsRSKLbz3ss",
+      "media_title": "Interstellar — Official Trailer",
+      "media_source": "YouTube (HD 1080p)",
+      "current_time": 0,
+      "is_playing": 0,
+      "active_members": 4,
+      "created_at": "2026-11-09T11:57:19.817Z"
+    },
+    {
+      "code": "UNI-7375",
+      "title": "yasaru",
+      "category": "Study Group",
+      "host_name": "Yasaru Bandara",
+      "host_email": "yasaru@university.ac.lk",
+      "user_id": "user_yasaru_demo_101",
+      "is_private": 0,
+      "passcode": null,
+      "media_url": "https://www.youtube.com/watch?v=MsRSKLbz3ss",
+      "media_title": "yasaru",
+      "media_source": "YouTube (HD 1080p)",
+      "active_members": 1,
+      "created_at": "2026-11-09T12:00:11.192Z",
+      "_id": "id_kycnlidmw97lpyw",
+      "id": "id_kycnlidmw97lpyw",
+      "current_time": 14.125404,
+      "is_playing": 0
+    }
+  ],
+  "queue_items": [
+    {
+      "_id": "q1",
+      "id": "q1",
+      "room_code": "UNI-8842",
+      "title": "Interstellar — Official Trailer",
+      "media_url": "https://www.youtube.com/watch?v=MsRSKLbz3ss",
+      "duration": "02:34",
+      "added_by": "Alex",
+      "position": 1,
+      "created_at": "2026-11-09T11:57:19.817Z"
+    },
+    {
+      "_id": "q2",
+      "id": "q2",
+      "room_code": "UNI-8842",
+      "title": "Hans Zimmer Live Suite",
+      "media_url": "https://www.youtube.com/watch?v=1FhXG01tW28",
+      "duration": "04:12",
+      "added_by": "Yasaru",
+      "position": 2,
+      "created_at": "2026-11-09T11:57:19.817Z"
+    },
+    {
+      "_id": "q3",
+      "id": "q3",
+      "room_code": "UNI-8842",
+      "title": "Hubble 3D Cosmic Journey",
+      "media_url": "https://www.youtube.com/watch?v=2rUtS5qL3lM",
+      "duration": "05:45",
+      "added_by": "Ramesh",
+      "position": 3,
+      "created_at": "2026-11-09T11:57:19.817Z"
+    }
+  ],
+  "messages": [
+    {
+      "_id": "m1",
+      "id": "m1",
+      "room_code": "UNI-8842",
+      "user_name": "Yasaru",
+      "user_avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80",
+      "message": "Welcome everyone! Sound is on, let me know if audio volume is too loud for anyone 🍿",
+      "created_at": "2026-11-09T11:57:19.817Z"
+    },
+    {
+      "_id": "m2",
+      "id": "m2",
+      "room_code": "UNI-8842",
+      "user_name": "Udith",
+      "user_avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80",
+      "message": "Sound is crystal clear! Hans Zimmer soundtrack always gives chills 🙌",
+      "created_at": "2026-11-09T11:57:19.817Z"
+    },
+    {
+      "_id": "m3",
+      "id": "m3",
+      "room_code": "UNI-8842",
+      "user_name": "Ramesh",
+      "user_avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80",
+      "message": "I added the Hubble telescope 3D video to the queue right after this one!",
+      "created_at": "2026-11-09T11:57:19.817Z"
+    }
+  ]
+}

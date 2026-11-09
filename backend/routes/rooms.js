@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db/database');
+const { Room, User, QueueItem, Message } = require('../db/database');
 
 // Helper to generate a guaranteed unique room code like "UNI-8842"
 async function generateUniqueRoomCode() {
   for (let i = 0; i < 50; i++) {
     const num = Math.floor(1000 + Math.random() * 9000);
     const code = `UNI-${num}`;
-    const exists = await db.get('SELECT id FROM rooms WHERE code = ?', [code]);
+    const exists = await Room.findOne({ code });
     if (!exists) return code;
   }
   return `UNI-${Date.now().toString().slice(-4)}`;
@@ -19,41 +19,39 @@ async function generateUniqueRoomCode() {
 router.get('/', async (req, res) => {
   try {
     const { category, search, host_email, scope } = req.query;
-    let query = 'SELECT * FROM rooms WHERE 1=1';
-    const params = [];
-
     const cleanHostEmail = (host_email && typeof host_email === 'string') ? host_email.trim().toLowerCase() : '';
+
+    const filter = {};
 
     // If scope is explicitly 'public' or 'community', return public rooms created by other students
     if (scope === 'public' || scope === 'community') {
-      query += ' AND is_private = 0';
+      filter.is_private = 0;
       if (cleanHostEmail) {
-        query += ' AND LOWER(host_email) != ?';
-        params.push(cleanHostEmail);
+        filter.host_email = { $ne: cleanHostEmail };
       }
     } else if (cleanHostEmail) {
       // By default, when a user is signed in, return ONLY rooms belonging to this account!
-      query += ' AND LOWER(host_email) = ?';
-      params.push(cleanHostEmail);
+      filter.host_email = cleanHostEmail;
     } else {
       // Unauthenticated / guest: show public rooms
-      query += ' AND is_private = 0';
+      filter.is_private = 0;
     }
 
     if (category && category !== 'All' && category !== 'all' && category !== 'my-rooms') {
-      query += ' AND category = ?';
-      params.push(category);
+      filter.category = category;
     }
 
     if (search && search.trim() !== '') {
-      query += ' AND (LOWER(title) LIKE ? OR LOWER(host_name) LIKE ? OR LOWER(code) LIKE ?)';
-      const term = `%${search.trim().toLowerCase()}%`;
-      params.push(term, term, term);
+      const term = search.trim();
+      const regex = new RegExp(term, 'i');
+      filter.$or = [
+        { title: regex },
+        { host_name: regex },
+        { code: regex }
+      ];
     }
 
-    query += ' ORDER BY created_at DESC';
-
-    const rooms = await db.all(query, params);
+    const rooms = await Room.find(filter).sort({ created_at: -1 });
     res.json({
       rooms,
       total: rooms.length
@@ -75,10 +73,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Room title is required.' });
     }
 
-    // Determine unique code (if user requested a custom one, check availability)
     let code = (req.body.code && typeof req.body.code === 'string') ? req.body.code.trim().toUpperCase() : '';
     if (code) {
-      const existing = await db.get('SELECT id FROM rooms WHERE code = ?', [code]);
+      const existing = await Room.findOne({ code });
       if (existing) {
         code = await generateUniqueRoomCode();
       }
@@ -91,11 +88,11 @@ router.post('/', async (req, res) => {
 
     // Look up user in database to retrieve user_id and verified name
     let userId = null;
-    const userRow = await db.get('SELECT id, name FROM users WHERE LOWER(email) = ?', [cleanHostEmail]);
-    if (userRow) {
-      userId = userRow.id;
+    const user = await User.findOne({ email: cleanHostEmail });
+    if (user) {
+      userId = user.id;
       if (!host_name || host_name === 'Guest Host' || host_name === 'Yasaru') {
-        hostName = userRow.name;
+        hostName = user.display_name || user.name;
       }
     }
 
@@ -107,25 +104,20 @@ router.post('/', async (req, res) => {
     const defaultTitle = media_title || title.trim();
     const defaultSource = media_source || 'YouTube (HD 1080p)';
 
-    await db.execute({
-      sql: `INSERT INTO rooms (code, title, category, host_name, host_email, user_id, is_private, passcode, media_url, media_title, media_source, active_members)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      args: [
-        code,
-        title.trim(),
-        category || 'Study Group',
-        hostName,
-        cleanHostEmail,
-        userId,
-        is_private ? 1 : 0,
-        passcode || null,
-        cleanMedia,
-        defaultTitle,
-        defaultSource
-      ]
+    const newRoom = await Room.create({
+      code,
+      title: title.trim(),
+      category: category || 'Study Group',
+      host_name: hostName,
+      host_email: cleanHostEmail,
+      user_id: userId,
+      is_private: is_private ? 1 : 0,
+      passcode: passcode || null,
+      media_url: cleanMedia,
+      media_title: defaultTitle,
+      media_source: defaultSource,
+      active_members: 1
     });
-
-    const newRoom = await db.get('SELECT * FROM rooms WHERE code = ?', [code]);
 
     const io = req.app.get('io');
     if (io) {
@@ -150,51 +142,37 @@ router.put('/:code', async (req, res) => {
     const code = req.params.code.toUpperCase();
     const { title, category, media_url, media_title, media_source, is_private, active_members, host_email } = req.body;
 
-    const existing = await db.get('SELECT * FROM rooms WHERE code = ?', [code]);
+    const existing = await Room.findOne({ code });
     if (!existing) {
       return res.status(404).json({ error: 'Room not found.' });
     }
 
-    // If host_email provided, verify that the requester is the owner of this room
+    // Verify ownership
     if (host_email && existing.host_email) {
       if (existing.host_email.trim().toLowerCase() !== host_email.trim().toLowerCase()) {
         return res.status(403).json({ error: 'You are not authorized to modify this room.' });
       }
     }
 
-    await db.execute({
-      sql: `UPDATE rooms 
-            SET title = COALESCE(?, title),
-                category = COALESCE(?, category),
-                media_url = COALESCE(?, media_url),
-                media_title = COALESCE(?, media_title),
-                media_source = COALESCE(?, media_source),
-                is_private = COALESCE(?, is_private),
-                active_members = COALESCE(?, active_members)
-            WHERE code = ?`,
-      args: [
-        title ? title.trim() : null,
-        category || null,
-        media_url || null,
-        media_title || null,
-        media_source || null,
-        is_private !== undefined ? (is_private ? 1 : 0) : null,
-        active_members !== undefined ? active_members : null,
-        code
-      ]
-    });
+    if (title !== undefined) existing.title = title.trim();
+    if (category !== undefined) existing.category = category.trim();
+    if (media_url !== undefined) existing.media_url = media_url.trim();
+    if (media_title !== undefined) existing.media_title = media_title.trim();
+    if (media_source !== undefined) existing.media_source = media_source.trim();
+    if (is_private !== undefined) existing.is_private = is_private ? 1 : 0;
+    if (active_members !== undefined) existing.active_members = Number(active_members);
 
-    const updated = await db.get('SELECT * FROM rooms WHERE code = ?', [code]);
+    await existing.save();
 
     const io = req.app.get('io');
     if (io) {
-      io.to(code).emit('room_details_updated', updated);
+      io.to(code).emit('room_details_updated', existing);
       io.emit('rooms_updated');
     }
 
     res.json({
       message: 'Room details updated successfully!',
-      room: updated
+      room: existing
     });
   } catch (error) {
     console.error('[Rooms API] Update room error:', error);
@@ -210,7 +188,7 @@ router.delete('/:code', async (req, res) => {
     const code = req.params.code.toUpperCase();
     const hostEmail = (req.query.host_email || (req.body && req.body.host_email) || '').trim().toLowerCase();
 
-    const existing = await db.get('SELECT id, title, host_email FROM rooms WHERE code = ?', [code]);
+    const existing = await Room.findOne({ code });
     if (!existing) {
       return res.status(404).json({ error: 'Room not found.' });
     }
@@ -222,9 +200,9 @@ router.delete('/:code', async (req, res) => {
       }
     }
 
-    await db.execute('DELETE FROM messages WHERE room_code = ?', [code]);
-    await db.execute('DELETE FROM queue_items WHERE room_code = ?', [code]);
-    await db.execute('DELETE FROM rooms WHERE code = ?', [code]);
+    await Message.deleteMany({ room_code: code });
+    await QueueItem.deleteMany({ room_code: code });
+    await Room.deleteOne({ code });
 
     const io = req.app.get('io');
     if (io) {
@@ -248,14 +226,14 @@ router.delete('/:code', async (req, res) => {
 router.get('/:code', async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    const room = await db.get('SELECT * FROM rooms WHERE code = ?', [code]);
+    const room = await Room.findOne({ code });
 
     if (!room) {
       return res.status(404).json({ error: 'Watch party room not found.' });
     }
 
-    const queue = await db.all('SELECT * FROM queue_items WHERE room_code = ? ORDER BY position ASC', [code]);
-    const messages = await db.all('SELECT * FROM messages WHERE room_code = ? ORDER BY created_at ASC', [code]);
+    const queue = await QueueItem.find({ room_code: code }).sort({ position: 1 });
+    const messages = await Message.find({ room_code: code }).sort({ created_at: 1 });
 
     res.json({
       room,
@@ -276,41 +254,32 @@ router.post('/:code/sync', async (req, res) => {
     const code = req.params.code.toUpperCase();
     const { current_time, is_playing, media_url, media_title } = req.body;
 
-    const room = await db.get('SELECT id FROM rooms WHERE code = ?', [code]);
+    const room = await Room.findOne({ code });
     if (!room) {
       return res.status(404).json({ error: 'Room not found.' });
     }
 
-    await db.execute({
-      sql: `UPDATE rooms 
-            SET current_time = COALESCE(?, current_time),
-                is_playing = COALESCE(?, is_playing),
-                media_url = COALESCE(?, media_url),
-                media_title = COALESCE(?, media_title)
-            WHERE code = ?`,
-      args: [
-        current_time !== undefined ? current_time : null,
-        is_playing !== undefined ? (is_playing ? 1 : 0) : null,
-        media_url || null,
-        media_title || null,
-        code
-      ]
-    });
+    if (current_time !== undefined) room.current_time = Number(current_time);
+    if (is_playing !== undefined) room.is_playing = is_playing ? 1 : 0;
+    if (media_url !== undefined) room.media_url = media_url;
+    if (media_title !== undefined) room.media_title = media_title;
 
-    const updated = await db.get('SELECT code, current_time, is_playing, media_url, media_title FROM rooms WHERE code = ?', [code]);
+    await room.save();
+
     const io = req.app.get('io');
     if (io) {
       io.to(code).emit('peer_sync', {
         roomCode: code,
-        current_time: updated.current_time,
-        is_playing: updated.is_playing === 1,
-        media_url: updated.media_url,
-        media_title: updated.media_title
+        current_time: room.current_time,
+        is_playing: room.is_playing === 1,
+        media_url: room.media_url,
+        media_title: room.media_title
       });
     }
+
     res.json({
       message: 'Playback synchronized',
-      syncState: updated
+      syncState: room
     });
   } catch (error) {
     console.error('[Rooms API] Sync error:', error);
@@ -324,7 +293,7 @@ router.post('/:code/sync', async (req, res) => {
 router.get('/:code/queue', async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    const queue = await db.all('SELECT * FROM queue_items WHERE room_code = ? ORDER BY position ASC', [code]);
+    const queue = await QueueItem.find({ room_code: code }).sort({ position: 1 });
     res.json({ queue });
   } catch (error) {
     res.status(500).json({ error: 'Failed to retrieve playlist queue.' });
@@ -343,16 +312,18 @@ router.post('/:code/queue', async (req, res) => {
       return res.status(400).json({ error: 'Video title and URL are required.' });
     }
 
-    const countRes = await db.get('SELECT COUNT(*) as cnt FROM queue_items WHERE room_code = ?', [code]);
-    const nextPos = (countRes ? countRes.cnt : 0) + 1;
+    const count = await QueueItem.countDocuments({ room_code: code });
+    const nextPos = count + 1;
 
-    const runRes = await db.run(
-      `INSERT INTO queue_items (room_code, title, media_url, duration, added_by, position)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [code, title.trim(), media_url.trim(), duration || '03:30', added_by || 'Anonymous', nextPos]
-    );
+    const newItem = await QueueItem.create({
+      room_code: code,
+      title: title.trim(),
+      media_url: media_url.trim(),
+      duration: duration || '03:30',
+      added_by: added_by || 'Anonymous',
+      position: nextPos
+    });
 
-    const newItem = await db.get('SELECT * FROM queue_items WHERE id = ?', [runRes.lastInsertRowid]);
     res.status(201).json({
       message: 'Item added to queue',
       item: newItem
@@ -369,7 +340,7 @@ router.post('/:code/queue', async (req, res) => {
 router.delete('/:code/queue/:id', async (req, res) => {
   try {
     const { code, id } = req.params;
-    await db.execute('DELETE FROM queue_items WHERE room_code = ? AND id = ?', [code.toUpperCase(), id]);
+    await QueueItem.deleteOne({ room_code: code.toUpperCase(), _id: id });
     res.json({ message: 'Item removed from playlist queue.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete queue item.' });
@@ -382,7 +353,7 @@ router.delete('/:code/queue/:id', async (req, res) => {
 router.get('/:code/messages', async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    const messages = await db.all('SELECT * FROM messages WHERE room_code = ? ORDER BY created_at ASC', [code]);
+    const messages = await Message.find({ room_code: code }).sort({ created_at: 1 });
     res.json({ messages });
   } catch (error) {
     res.status(500).json({ error: 'Failed to retrieve messages.' });
@@ -401,22 +372,18 @@ router.post('/:code/messages', async (req, res) => {
       return res.status(400).json({ error: 'Message cannot be empty.' });
     }
 
-    const runRes = await db.run(
-      `INSERT INTO messages (room_code, user_name, user_avatar, message)
-       VALUES (?, ?, ?, ?)`,
-      [
-        code,
-        user_name || 'Guest',
-        user_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80',
-        message.trim()
-      ]
-    );
+    const newMsg = await Message.create({
+      room_code: code,
+      user_name: user_name || 'Guest',
+      user_avatar: user_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80',
+      message: message.trim()
+    });
 
-    const newMsg = await db.get('SELECT * FROM messages WHERE id = ?', [runRes.lastInsertRowid]);
     const io = req.app.get('io');
     if (io) {
       io.to(code).emit('receive_message', newMsg);
     }
+
     res.status(201).json({
       message: 'Message sent',
       chatMessage: newMsg
@@ -428,4 +395,3 @@ router.post('/:code/messages', async (req, res) => {
 });
 
 module.exports = router;
-

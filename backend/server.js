@@ -7,10 +7,7 @@ const path = require('path');
 // Route modules
 const authRoutes = require('./routes/auth');
 const roomsRoutes = require('./routes/rooms');
-const db = require('./db/database');
-
-// BigInt JSON serialization safeguard
-BigInt.prototype.toJSON = function() { return Number(this); };
+const { connectDb, mongoose } = require('./db/database');
 
 const app = express();
 
@@ -36,7 +33,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     project: 'UniTogether API',
-    database: 'SQLite (LibSQL)',
+    database: 'MongoDB (Mongoose)',
+    mongoConnected: mongoose.connection.readyState === 1,
     serverless: !!process.env.VERCEL,
     timestamp: new Date().toISOString()
   });
@@ -172,7 +170,7 @@ if (require.main === module && !process.env.VERCEL) {
     console.log(` UniTogether API Server running on port ${PORT}`);
     console.log(` Health check: http://localhost:${PORT}/api/health`);
     console.log(` Frontend URL: http://localhost:${PORT}/`);
-    console.log(` Database: SQLite (LibSQL)`);
+    console.log(` Database: MongoDB (Mongoose)`);
     console.log(`=======================================================`);
   });
 }

@@ -11,7 +11,7 @@
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=flat&logo=express&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=flat&logo=socketdotio&logoColor=white)
 
@@ -72,12 +72,12 @@
 |------------|--------------------------------------------------------|
 | Frontend   | HTML5, CSS3, Bootstrap 5.3, Vanilla JavaScript (ES6+)  |
 | Backend    | Node.js, Express.js (REST API & Serverless Function)   |
-| Database   | SQLite (Local `backend/data/unitogether.db` & Turso)   |
+| Database   | MongoDB (via Mongoose, MongoDB Atlas & Local)          |
 | Deployment | Vercel Serverless (`api/index.js` + `vercel.json`)     |
 | Real-Time  | Socket.io (WebSockets) + REST Sync Fallback            |
 | Env Config | dotenv                                                 |
 | VCS        | Git & GitHub                                           |
-| Dev Tools  | VS Code, Figma, SQLite Viewer                          |
+| Dev Tools  | VS Code, Figma, MongoDB Compass                        |
 
 ---
 
@@ -88,8 +88,8 @@ UniTogether/
 ├── api/                        # Vercel Serverless Function entry point
 │   └── index.js
 ├── backend/                    # Node.js + Express backend
-│   ├── data/                   # SQLite database file (unitogether.db)
-│   ├── db/                     # SQLite client & schema initialization
+│   ├── models/                 # Mongoose Data Models (User, Room, QueueItem, Message)
+│   ├── db/                     # MongoDB connection & schema setup
 │   │   └── database.js
 │   ├── routes/                 # REST API endpoints (auth, rooms)
 │   │   ├── auth.js

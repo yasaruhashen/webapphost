@@ -1,5 +1,16 @@
 {
   "version": 2,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -16,6 +27,18 @@
     {
       "source": "/login.html",
       "destination": "/frontend/pages/login.html"
+    },
+    {
+      "source": "/profile.html",
+      "destination": "/frontend/pages/profile.html"
+    },
+    {
+      "source": "/contact.html",
+      "destination": "/frontend/pages/contact.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/frontend/pages/contact.html"
     },
     {
       "source": "/pages/(.*)",
