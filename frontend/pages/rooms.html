@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Rooms UniTogether</title>
   <link rel="icon" type="image/png" href="../assets/images/Web site mainLogo.png">
-  
+
   <!-- Google Fonts: Inter & Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
+    rel="stylesheet">
+
   <!-- Bootstrap 5.3 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Bootstrap Icons -->
@@ -22,7 +25,9 @@
   <script src="../js/app.js?v=2.6"></script>
 
   <style>
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
@@ -68,8 +73,13 @@
       align-items: center !important;
     }
 
-    .brand-title .uni-part { color: #ffffff; }
-    .brand-title .together-part { color: #facc15; }
+    .brand-title .uni-part {
+      color: #ffffff;
+    }
+
+    .brand-title .together-part {
+      color: #facc15;
+    }
 
     .nav-center-links {
       display: flex !important;
@@ -155,7 +165,7 @@
       padding: 6px 18px;
       border-radius: 9999px;
       border: none;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
@@ -179,7 +189,7 @@
       padding: 6px 16px;
       border-radius: 9999px;
       border: none;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -188,7 +198,8 @@
       transition: background-color 0.15s, transform 0.1s;
     }
 
-    .btn-user-badge:hover, .btn-user-badge:focus {
+    .btn-user-badge:hover,
+    .btn-user-badge:focus {
       background-color: #eab308;
       color: #450a0a !important;
       transform: translateY(-1px);
@@ -294,7 +305,7 @@
       background-color: #ffffff;
       color: #0f172a;
       font-weight: 700;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     }
 
     .search-input-wrapper {
@@ -403,9 +414,18 @@
       align-items: center;
       gap: 5px;
     }
-    .category-tag.yt { color: #dc2626; }
-    .category-tag.mit { color: #d97706; }
-    .category-tag.club { color: #d97706; }
+
+    .category-tag.yt {
+      color: #dc2626;
+    }
+
+    .category-tag.mit {
+      color: #d97706;
+    }
+
+    .category-tag.club {
+      color: #d97706;
+    }
 
     /* Card Content */
     .room-card-title {
@@ -584,8 +604,13 @@
       gap: 8px;
     }
 
-    .footer-brand-title .uni-part { color: #ffffff; }
-    .footer-brand-title .together-part { color: #facc15; }
+    .footer-brand-title .uni-part {
+      color: #ffffff;
+    }
+
+    .footer-brand-title .together-part {
+      color: #facc15;
+    }
 
     .footer-logo-badge {
       width: 28px;
@@ -650,6 +675,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- ========================================================
@@ -663,7 +689,6 @@
     <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
       <a href="../index.html">Home</a>
       <a href="rooms.html" class="active">Manage Rooms</a>
-      <a href="room.html?room=UNI-8842">Watch Room</a>
       <a href="profile.html">Profile</a>
       <a href="contact.html">Contact Us</a>
     </nav>
@@ -687,7 +712,8 @@
           <p class="manage-subtitle">Your active watch parties and collaborative study sessions.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <button type="button" class="btn btn-outline-dark rounded-pill px-3 py-2 fw-bold text-nowrap" style="font-size: 13px;" data-bs-toggle="modal" data-bs-target="#joinByCodeModal">
+          <button type="button" class="btn btn-outline-dark rounded-pill px-3 py-2 fw-bold text-nowrap"
+            style="font-size: 13px;" data-bs-toggle="modal" data-bs-target="#joinByCodeModal">
             <i class="bi bi-box-arrow-in-right me-1"></i> Join by Code
           </button>
           <button type="button" class="btn-add-room" data-bs-toggle="modal" data-bs-target="#newRoomModal">
@@ -756,7 +782,8 @@
         <div class="modal-body pt-3">
           <div class="mb-3">
             <label class="form-label small fw-bold text-muted">Room Name / Topic</label>
-            <input type="text" class="form-control rounded-3" placeholder="e.g. Physics 101 Study Group" id="newRoomName">
+            <input type="text" class="form-control rounded-3" placeholder="e.g. Physics 101 Study Group"
+              id="newRoomName">
           </div>
           <div class="mb-3">
             <label class="form-label small fw-bold text-muted">Category</label>
@@ -770,7 +797,8 @@
           </div>
           <div class="mb-3">
             <label class="form-label small fw-bold text-muted">Media Link (YouTube, Vimeo, etc.)</label>
-            <input type="url" class="form-control rounded-3" placeholder="https://www.youtube.com/watch?v=MsRSKLbz3ss" id="newRoomMedia">
+            <input type="url" class="form-control rounded-3" placeholder="https://www.youtube.com/watch?v=MsRSKLbz3ss"
+              id="newRoomMedia">
           </div>
           <div class="mb-3">
             <label class="form-label small fw-bold text-muted">Room Visibility</label>
@@ -782,7 +810,8 @@
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-light rounded-3 px-3 fw-bold" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold" id="btnSubmitCreateRoom">Launch Room</button>
+          <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold" id="btnSubmitCreateRoom">Launch
+            Room</button>
         </div>
       </div>
     </div>
@@ -799,15 +828,18 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body pt-3">
-          <p class="text-muted small">Enter the unique Room Code (e.g. <code>UNI-8842</code>) to enter a classmate's watch party.</p>
+          <p class="text-muted small">Enter the unique Room Code (e.g. <code>UNI-8842</code>) to enter a classmate's
+            watch party.</p>
           <div class="mb-3">
             <label class="form-label small fw-bold text-muted">Unique Room Code</label>
-            <input type="text" class="form-control rounded-3 text-uppercase fw-bold text-center fs-5" id="inputJoinByCode" placeholder="UNI-8842" maxlength="12">
+            <input type="text" class="form-control rounded-3 text-uppercase fw-bold text-center fs-5"
+              id="inputJoinByCode" placeholder="UNI-8842" maxlength="12">
           </div>
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-light rounded-3 px-3 fw-bold" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold" id="btnConfirmJoinByCode">Join Room</button>
+          <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold" id="btnConfirmJoinByCode">Join
+            Room</button>
         </div>
       </div>
     </div>
@@ -844,12 +876,14 @@
           </div>
           <div class="mb-3">
             <label class="form-label small fw-bold text-muted">Current Video / Media Link</label>
-            <input type="url" class="form-control rounded-3" id="editRoomMediaInput" placeholder="https://www.youtube.com/watch?v=...">
+            <input type="url" class="form-control rounded-3" id="editRoomMediaInput"
+              placeholder="https://www.youtube.com/watch?v=...">
           </div>
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn btn-light rounded-3 px-3 fw-bold" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold" id="btnSubmitEditRoom">Save Changes</button>
+          <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold" id="btnSubmitEditRoom">Save
+            Changes</button>
         </div>
       </div>
     </div>
@@ -861,7 +895,7 @@
   <footer class="footer-section">
     <div class="container" style="max-width: 1140px;">
       <div class="row g-4 justify-content-between">
-        
+
         <!-- Brand Info -->
         <div class="col-12 col-md-4">
           <div class="footer-brand-title">
@@ -871,7 +905,8 @@
             <span class="uni-part">Uni</span><span class="together-part">Together</span>
           </div>
           <p class="footer-desc">
-            Watch videos with friends together online in real-time sync. YouTube, Vimeo, Twitch, and local video playback with audio and video chat.
+            Watch videos with friends together online in real-time sync. YouTube, Vimeo, Twitch, and local video
+            playback with audio and video chat.
           </p>
         </div>
 
@@ -919,7 +954,7 @@
 
   <!-- Interactive Dynamic Rooms Management Script -->
   <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
       // Must be logged in to manage rooms
       function getCurrentUser() {
         try {
@@ -1113,7 +1148,7 @@
                 displayRooms = loadedRooms.filter(r => {
                   const matchEmail = hostEmail && r.host_email && (r.host_email.trim().toLowerCase() === hostEmail);
                   const matchUuid = currentUser && currentUser.uuid && (r.host_uuid === currentUser.uuid || r.hostUuid === currentUser.uuid);
-                  const matchName = currentUser && (currentUser.name || currentUser.fullName) && 
+                  const matchName = currentUser && (currentUser.name || currentUser.fullName) &&
                     (r.host_name === currentUser.name || r.hostName === currentUser.name || r.host_name === currentUser.fullName || r.hostName === currentUser.fullName);
                   return matchEmail || matchUuid || matchName;
                 });
@@ -1135,7 +1170,7 @@
 
       // Filter Tabs Click
       filterBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
           filterBtns.forEach(b => b.classList.remove('active'));
           this.classList.add('active');
           currentFilter = this.getAttribute('data-filter');
@@ -1146,7 +1181,7 @@
       // Search Input
       if (searchInput) {
         let searchTimeout = null;
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener('input', function () {
           currentQuery = this.value.trim().toLowerCase();
           clearTimeout(searchTimeout);
           searchTimeout = setTimeout(() => {
@@ -1231,7 +1266,7 @@
             const u = JSON.parse(localStorage.getItem('unitogether_user'));
             if (u && u.name) hostName = u.name;
             if (u && u.email) hostEmail = u.email;
-          } catch(e) {}
+          } catch (e) { }
 
           let cleanMedia = mediaUrl ? mediaUrl.trim() : '';
           if (!cleanMedia || (!cleanMedia.startsWith('http://') && !cleanMedia.startsWith('https://'))) {
@@ -1329,7 +1364,7 @@
           socket.on('rooms_updated', () => {
             loadRooms();
           });
-        } catch(e) {}
+        } catch (e) { }
       }
     });
 
@@ -1401,4 +1436,5 @@
   <!-- App Toast Notification Container -->
   <div class="app-toast-container" id="appToastContainer"></div>
 </body>
+
 </html>

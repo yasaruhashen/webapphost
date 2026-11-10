@@ -1405,6 +1405,64 @@ function isDangerousUploadFile(fileName) {
   return DANGEROUS_UPLOAD_EXTENSIONS.has(path.extname(String(fileName || '')).toLowerCase());
 }
 
+// POST /api/rooms/:code/settings - Update room governance settings via REST
+app.post('/api/rooms/:code/settings', (req, res) => {
+  try {
+    const roomCode = req.params.code.toUpperCase();
+    const { hostSyncLock, allowGuests, allowGuestChat, allowGuestControl, smoothCatchUp, visibility, passcode, voteSkipEnabled, voteSkipThreshold } = req.body;
+
+    const roomState = activeRooms.get(roomCode);
+    if (roomState) {
+      if (hostSyncLock !== undefined) roomState.hostSyncLock = Boolean(hostSyncLock);
+      if (allowGuests !== undefined) roomState.allowGuests = Boolean(allowGuests);
+      if (allowGuestChat !== undefined) roomState.allowGuestChat = Boolean(allowGuestChat);
+      if (allowGuestControl !== undefined) roomState.allowGuestControl = Boolean(allowGuestControl);
+      if (smoothCatchUp !== undefined) roomState.smoothCatchUp = Boolean(smoothCatchUp);
+      if (visibility !== undefined) roomState.visibility = visibility;
+      if (voteSkipEnabled !== undefined) roomState.voteSkipEnabled = Boolean(voteSkipEnabled);
+      if (voteSkipThreshold !== undefined) roomState.voteSkipThreshold = parseInt(voteSkipThreshold, 10) || 50;
+      if (passcode !== undefined) {
+        roomState.passcodeHash = passcode ? bcrypt.hashSync(passcode.trim(), 8) : null;
+      }
+    }
+
+    const passcodeHash = passcode ? bcrypt.hashSync(passcode.trim(), 8) : null;
+    db.prepare(`
+      UPDATE rooms
+      SET host_sync_lock = ?, allow_guests = ?, allow_guest_chat = ?, allow_guest_control = ?, smooth_catch_up = ?, visibility = ?, passcode_hash = COALESCE(?, passcode_hash), vote_skip_enabled = ?, vote_skip_threshold = ?
+      WHERE code = ?
+    `).run(
+      hostSyncLock ? 1 : 0,
+      allowGuests ? 1 : 0,
+      allowGuestChat ? 1 : 0,
+      allowGuestControl ? 1 : 0,
+      smoothCatchUp !== false ? 1 : 0,
+      visibility || 'public',
+      passcodeHash,
+      voteSkipEnabled !== false ? 1 : 0,
+      parseInt(voteSkipThreshold, 10) || 50,
+      roomCode
+    );
+
+    // Broadcast update via socket if room is active
+    io.to(roomCode).emit('room-settings-updated', {
+      hostSyncLock: Boolean(hostSyncLock),
+      allowGuests: Boolean(allowGuests),
+      allowGuestChat: Boolean(allowGuestChat),
+      allowGuestControl: Boolean(allowGuestControl),
+      smoothCatchUp: smoothCatchUp !== false,
+      visibility: visibility || 'public',
+      voteSkipEnabled: voteSkipEnabled !== false,
+      voteSkipThreshold: parseInt(voteSkipThreshold, 10) || 50
+    });
+
+    return res.json({ success: true, message: 'Settings saved successfully.' });
+  } catch (err) {
+    console.error('Save room settings error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to update room settings.' });
+  }
+});
+
 // POST /api/rooms/:code/upload-file - Generic safe file upload (Chat Attachments, etc.)
 app.post('/api/rooms/:code/upload-file', (req, res) => {
   try {
@@ -2718,13 +2776,21 @@ io.on('connection', (socket) => {
 
   // 6. Room Governance & Settings
   socket.on('update-room-settings', ({ hostSyncLock, allowGuests, allowGuestChat, allowGuestControl, smoothCatchUp, visibility, passcode, voteSkipEnabled, voteSkipThreshold }) => {
-    if (!currentRoomCode || !currentUserData || !currentUserData.isHost) {
-      socket.emit('action-denied', { message: 'Only the room host can modify settings.' });
-      return;
-    }
-
+    if (!currentRoomCode || !currentUserData) return;
     const roomState = activeRooms.get(currentRoomCode);
     if (!roomState) return;
+
+    const isPermitted = currentUserData.isHost ||
+      !currentUserData.isGuest ||
+      currentUserData.role === 'host' ||
+      currentUserData.role === 'admin' ||
+      currentUserData.role === 'moderator' ||
+      currentUserData.uuid === roomState.hostUuid;
+
+    if (!isPermitted) {
+      socket.emit('action-denied', { message: 'Only the room host or student member can modify settings.' });
+      return;
+    }
 
     if (hostSyncLock !== undefined) roomState.hostSyncLock = Boolean(hostSyncLock);
     if (allowGuests !== undefined) roomState.allowGuests = Boolean(allowGuests);

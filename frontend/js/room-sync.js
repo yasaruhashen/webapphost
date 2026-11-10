@@ -63,8 +63,11 @@ const RoomSync = {
   socket: null,
   peer: null,
   localMediaStream: null,
+  localCamStream: null,
+  isCamActive: false,
   peerCalls: new Map(),
   broadcastCalls: new Map(), // peerId -> PeerJS call, for active screenshare/local-stream broadcasts only
+  camCalls: new Map(), // peerId -> PeerJS call, for active camera facecam broadcasts
   peers: new Map(), // userUuid -> peerId
   roomMembers: [],
 
@@ -1650,6 +1653,11 @@ function initSocketConnection() {
       if (RoomSync.localMediaStream && RoomSync.isAudioActive) {
         setTimeout(broadcastMediaMesh, 400);
       }
+      if (RoomSync.localCamStream && RoomSync.isCamActive && RoomSync.peer && peerId !== RoomSync.peer.id) {
+        setTimeout(() => {
+          broadcastWebcamToPeer(peerId);
+        }, 500);
+      }
     }
   });
 
@@ -1696,6 +1704,7 @@ function initSocketConnection() {
       RoomSync.roomMembers = RoomSync.roomMembers.filter(m => m.uuid !== userUuid);
     }
     removeMemberFromUI(userUuid);
+    removeFacecamTile(userUuid);
   });
 
   socket.on('members-updated', ({ members }) => {
@@ -1790,6 +1799,20 @@ function initSocketConnection() {
       if (m) {
         if (typeof targetAudio !== 'undefined') m.isAudioActive = targetAudio;
         if (typeof targetSpeaking !== 'undefined') m.isSpeaking = targetSpeaking;
+        if (typeof data.hasVideo !== 'undefined') m.hasVideo = data.hasVideo;
+      }
+    }
+
+    if (typeof data.hasVideo !== 'undefined' && !data.hasVideo) {
+      removeFacecamTile(targetUuid);
+    }
+
+    const facecamTile = document.getElementById(`facecam-tile-${targetUuid}`);
+    if (facecamTile) {
+      if (targetSpeaking) {
+        facecamTile.classList.add('is-speaking');
+      } else {
+        facecamTile.classList.remove('is-speaking');
       }
     }
 
@@ -2123,6 +2146,28 @@ function attachCallStreamHandlers(call) {
 }
 
 function handleIncomingPeerCall(call) {
+  if (call.metadata && call.metadata.type === 'webcam-facecam') {
+    console.log('[Facecam] Answering incoming webcam call from:', call.peer, call.metadata);
+    call.answer(); // Callee answers without sending local stream
+    call.on('stream', (remoteCamStream) => {
+      console.log('[Facecam] Received remote webcam stream from:', call.peer);
+      renderFacecamTile({
+        uuid: call.metadata.userUuid || call.peer,
+        name: call.metadata.userName || 'Member',
+        stream: remoteCamStream,
+        isLocal: false
+      });
+    });
+    call.on('close', () => {
+      removeFacecamTile(call.metadata.userUuid || call.peer);
+    });
+    call.on('error', (err) => {
+      console.warn('[Facecam] Call error with peer:', call.peer, err);
+      removeFacecamTile(call.metadata.userUuid || call.peer);
+    });
+    return;
+  }
+
   const isScreen = (call.metadata && (call.metadata.type === 'screenshare' || call.metadata.type === 'local-file-stream')) || 
                    (RoomSync.roomMeta && (RoomSync.roomMeta.mediaType === 'screen' || RoomSync.roomMeta.mediaType === 'local-stream'));
 
@@ -2341,9 +2386,194 @@ async function toggleMicrophone() {
   renderMembersList(RoomSync.roomMembers);
 }
 
-// Video Call Functionality Removed (Stubbed Safely)
-function toggleCamera() {
-  console.log('[VideoCall] Video call functionality has been disabled.');
+// ============================================================================
+// Real-time Webcam Facecam Implementation (WebRTC + PeerJS Floating Grid)
+// ============================================================================
+
+function renderFacecamTile({ uuid, name, stream, isLocal = false }) {
+  const container = document.getElementById('floatingFacecamGrid');
+  if (!container) return;
+
+  let tile = document.getElementById(`facecam-tile-${uuid}`);
+  if (!tile) {
+    tile = document.createElement('div');
+    tile.id = `facecam-tile-${uuid}`;
+    tile.className = `facecam-tile ${isLocal ? 'is-local' : ''}`;
+    tile.innerHTML = `
+      <video autoplay playsinline ${isLocal ? 'muted' : ''}></video>
+      <div class="facecam-badge" title="${name}">${name}</div>
+      <div class="facecam-live-indicator" title="Live Video"></div>
+    `;
+    container.appendChild(tile);
+  }
+
+  const vid = tile.querySelector('video');
+  if (vid && stream) {
+    vid.muted = isLocal;
+    vid.srcObject = stream;
+    vid.play().catch(e => console.warn('[Facecam] Video autoplay blocked:', e));
+  }
+}
+
+function removeFacecamTile(uuid) {
+  const tile = document.getElementById(`facecam-tile-${uuid}`);
+  if (tile) {
+    const vid = tile.querySelector('video');
+    if (vid) vid.srcObject = null;
+    tile.remove();
+  }
+}
+
+function broadcastWebcamToPeer(peerId) {
+  if (!RoomSync.peer || !RoomSync.localCamStream || !RoomSync.isCamActive) return;
+  if (!peerId || peerId === RoomSync.peer.id) return;
+  try {
+    const existing = RoomSync.camCalls.get(peerId);
+    if (existing) {
+      try { existing.close(); } catch(e) {}
+      RoomSync.camCalls.delete(peerId);
+    }
+    const call = RoomSync.peer.call(peerId, RoomSync.localCamStream, {
+      metadata: {
+        type: 'webcam-facecam',
+        userUuid: RoomSync.currentUser.uuid,
+        userName: RoomSync.currentUser.name
+      }
+    });
+    if (call) {
+      RoomSync.camCalls.set(peerId, call);
+      call.on('close', () => RoomSync.camCalls.delete(peerId));
+      call.on('error', () => RoomSync.camCalls.delete(peerId));
+    }
+  } catch (err) {
+    console.warn('[Webcam] PeerJS call failed to peer:', peerId, err);
+  }
+}
+
+function broadcastWebcamToAllPeers() {
+  if (!RoomSync.peer || !RoomSync.localCamStream || !RoomSync.isCamActive) return;
+  RoomSync.peers.forEach((peerId) => {
+    broadcastWebcamToPeer(peerId);
+  });
+}
+
+async function toggleCamera() {
+  const now = Date.now();
+  if (now - (window._lastCamToggleTime || 0) < 400) return;
+  window._lastCamToggleTime = now;
+
+  const camBtn = document.getElementById('btnToggleCam');
+  const camIcon = document.getElementById('camIcon');
+  const ctrlCamBtn = document.getElementById('ctrlCamBtn');
+  const ctrlCamIcon = document.getElementById('ctrlCamIcon');
+
+  if (!RoomSync.isCamActive) {
+    try {
+      if (!RoomSync.localCamStream) {
+        RoomSync.localCamStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 480 },
+            height: { ideal: 360 },
+            frameRate: { ideal: 24 }
+          },
+          audio: false
+        });
+      } else {
+        RoomSync.localCamStream.getVideoTracks().forEach(t => t.enabled = true);
+      }
+
+      RoomSync.isCamActive = true;
+      showSyncToast('📹 Camera turned on');
+
+      // Update UI button states
+      if (camBtn) {
+        camBtn.classList.add('active', 'btn-danger');
+        camBtn.classList.remove('btn-outline-secondary');
+      }
+      if (camIcon) {
+        camIcon.className = 'bi bi-camera-video-fill text-white';
+        camIcon.style.color = '#ffffff';
+      }
+      if (ctrlCamBtn) {
+        ctrlCamBtn.classList.add('active');
+        ctrlCamBtn.title = 'Turn Off Camera (V)';
+      }
+      if (ctrlCamIcon) {
+        ctrlCamIcon.className = 'bi bi-camera-video-fill text-success';
+        ctrlCamIcon.style.color = '#22c55e';
+      }
+
+      // Render local facecam tile in bottom-right corner
+      renderFacecamTile({
+        uuid: RoomSync.currentUser.uuid,
+        name: RoomSync.currentUser.name + ' (You)',
+        stream: RoomSync.localCamStream,
+        isLocal: true
+      });
+
+      // Broadcast camera video to all connected peers
+      broadcastWebcamToAllPeers();
+
+      // Notify room via socket
+      if (RoomSync.socket) {
+        RoomSync.socket.emit('update-media-status', {
+          hasVideo: true,
+          hasAudio: RoomSync.isAudioActive,
+          isSpeaking: false
+        });
+      }
+    } catch (e) {
+      console.error('[Webcam] Access error:', e);
+      showSyncToast('⚠️ Camera access unavailable or denied');
+    }
+  } else {
+    // Stop local video tracks
+    if (RoomSync.localCamStream) {
+      RoomSync.localCamStream.getTracks().forEach(t => t.stop());
+      RoomSync.localCamStream = null;
+    }
+
+    RoomSync.isCamActive = false;
+    showSyncToast('📷 Camera turned off');
+
+    // Update UI button states
+    if (camBtn) {
+      camBtn.classList.remove('active', 'btn-danger');
+      camBtn.classList.add('btn-outline-secondary');
+    }
+    if (camIcon) {
+      camIcon.className = 'bi bi-camera-video-off-fill text-danger';
+      camIcon.style.color = '#ef4444';
+    }
+    if (ctrlCamBtn) {
+      ctrlCamBtn.classList.remove('active');
+      ctrlCamBtn.title = 'Turn On Camera (V)';
+    }
+    if (ctrlCamIcon) {
+      ctrlCamIcon.className = 'bi bi-camera-video-off-fill text-danger';
+      ctrlCamIcon.style.color = '#ef4444';
+    }
+
+    // Close and remove outgoing PeerJS camera calls
+    if (RoomSync.camCalls) {
+      RoomSync.camCalls.forEach((call) => {
+        try { call.close(); } catch (e) {}
+      });
+      RoomSync.camCalls.clear();
+    }
+
+    // Remove local facecam tile
+    removeFacecamTile(RoomSync.currentUser.uuid);
+
+    // Notify room via socket
+    if (RoomSync.socket) {
+      RoomSync.socket.emit('update-media-status', {
+        hasVideo: false,
+        hasAudio: RoomSync.isAudioActive,
+        isSpeaking: false
+      });
+    }
+  }
 }
 window.toggleCamera = toggleCamera;
 
@@ -2380,16 +2610,20 @@ function setupLocalSpeakingDetector() {
         if (!RoomSync.isSpeaking) {
           RoomSync.isSpeaking = true;
           updateActiveSpeakerUI(RoomSync.currentUser.name + ' (You)', true);
+          const myTile = document.getElementById(`facecam-tile-${RoomSync.currentUser.uuid}`);
+          if (myTile) myTile.classList.add('is-speaking');
           if (RoomSync.socket) {
-            RoomSync.socket.emit('update-media-status', { hasAudio: true, hasVideo: RoomSync.isVideoActive, isSpeaking: true });
+            RoomSync.socket.emit('update-media-status', { hasAudio: true, hasVideo: RoomSync.isCamActive, isSpeaking: true });
           }
         }
         clearTimeout(speakingTimeout);
         speakingTimeout = setTimeout(() => {
           RoomSync.isSpeaking = false;
           updateActiveSpeakerUI('Voice Ready', false);
+          const myTile = document.getElementById(`facecam-tile-${RoomSync.currentUser.uuid}`);
+          if (myTile) myTile.classList.remove('is-speaking');
           if (RoomSync.socket) {
-            RoomSync.socket.emit('update-media-status', { hasAudio: true, hasVideo: RoomSync.isVideoActive, isSpeaking: false });
+            RoomSync.socket.emit('update-media-status', { hasAudio: true, hasVideo: RoomSync.isCamActive, isSpeaking: false });
           }
         }, 1200);
       }
@@ -3359,6 +3593,13 @@ function setupUIEventListeners() {
   const ctrlMicBtn = document.getElementById('ctrlMicBtn');
   if (ctrlMicBtn) ctrlMicBtn.addEventListener('click', toggleMicrophone);
 
+  // Hardware & Controls Bar Toggles (Webcam / Facecam)
+  const btnCam = document.getElementById('btnToggleCam');
+  if (btnCam) btnCam.addEventListener('click', toggleCamera);
+
+  const ctrlCamBtn = document.getElementById('ctrlCamBtn');
+  if (ctrlCamBtn) ctrlCamBtn.addEventListener('click', toggleCamera);
+
   // Initialize microphone button to display red cross when off
   const ctrlMicIcon = document.getElementById('ctrlMicIcon');
   if (ctrlMicIcon && !RoomSync.isAudioActive) {
@@ -3369,6 +3610,18 @@ function setupUIEventListeners() {
   if (micIcon && !RoomSync.isAudioActive) {
     micIcon.className = 'bi bi-mic-mute-fill text-danger';
     micIcon.style.color = '#ef4444';
+  }
+
+  // Initialize camera button to display red cross when off
+  const ctrlCamIcon = document.getElementById('ctrlCamIcon');
+  if (ctrlCamIcon && !RoomSync.isCamActive) {
+    ctrlCamIcon.className = 'bi bi-camera-video-off-fill text-danger';
+    ctrlCamIcon.style.color = '#ef4444';
+  }
+  const camIcon = document.getElementById('camIcon');
+  if (camIcon && !RoomSync.isCamActive) {
+    camIcon.className = 'bi bi-camera-video-off-fill text-danger';
+    camIcon.style.color = '#ef4444';
   }
 
   // Choose Media Source Buttons
@@ -3543,21 +3796,118 @@ function setupUIEventListeners() {
     });
   }
 
+function formatFileSize(bytes) {
+  if (!bytes || isNaN(bytes)) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+window.formatFileSize = formatFileSize;
+
+function handleChatFileSelected(inputEl) {
+  const file = inputEl && inputEl.files && inputEl.files[0];
+  if (!file) return;
+
+  if (file.size > 50 * 1024 * 1024) {
+    alert('File exceeds the 50MB upload limit for room attachments.');
+    inputEl.value = '';
+    return;
+  }
+
+  window._pendingChatFile = file;
+
+  const preview = document.getElementById('chatAttachmentPreview');
+  const nameEl = document.getElementById('chatAttachmentName');
+  const sizeEl = document.getElementById('chatAttachmentSize');
+
+  if (preview && nameEl && sizeEl) {
+    nameEl.textContent = file.name;
+    sizeEl.textContent = formatFileSize(file.size);
+    preview.classList.remove('d-none');
+    preview.classList.add('d-flex');
+  }
+
+  showSyncToast(`Attachment selected: "${file.name}". Click send or press Enter.`);
+  const chatInput = document.getElementById('chatInput');
+  if (chatInput) chatInput.focus();
+}
+window.handleChatFileSelected = handleChatFileSelected;
+window.handleChatFileUpload = handleChatFileSelected;
+
+function clearChatAttachment() {
+  window._pendingChatFile = null;
+  const fileInput = document.getElementById('chatFileInput');
+  if (fileInput) fileInput.value = '';
+  const preview = document.getElementById('chatAttachmentPreview');
+  if (preview) {
+    preview.classList.add('d-none');
+    preview.classList.remove('d-flex');
+  }
+}
+window.clearChatAttachment = clearChatAttachment;
+
   // Chat send message
   const chatInput = document.getElementById('chatInput');
   window.sendMsg = async function() {
     if (!chatInput) return;
     const text = chatInput.value.trim();
-    if (!text) return;
+    const pendingFile = window._pendingChatFile;
+
+    if (!text && !pendingFile) return;
+
     chatInput.value = '';
 
-    const encrypted = await encryptChatMessage(text, RoomSync.roomCode);
+    let attachmentObj = null;
 
-    RoomSync.socket.emit('chat-message', {
-      encryptedPayload: encrypted,
-      plainPreview: text,
-      senderName: RoomSync.currentUser.name
-    });
+    if (pendingFile) {
+      showSyncToast(`Uploading "${pendingFile.name}"...`);
+      try {
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(pendingFile);
+        });
+
+        const res = await fetch(`/api/rooms/${RoomSync.roomCode}/upload-file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: pendingFile.name,
+            fileBase64: base64Data,
+            fileType: pendingFile.type
+          })
+        });
+
+        const uploadRes = await res.json();
+        if (uploadRes.success) {
+          attachmentObj = {
+            fileName: uploadRes.fileName,
+            fileUrl: uploadRes.fileUrl,
+            fileSize: uploadRes.fileSize,
+            fileType: uploadRes.fileType
+          };
+          clearChatAttachment();
+        } else {
+          showSyncToast('Attachment upload failed: ' + (uploadRes.message || 'Error'));
+        }
+      } catch (err) {
+        console.error('File upload failed:', err);
+        showSyncToast('Attachment upload error: ' + err.message);
+      }
+    }
+
+    if (RoomSync.socket) {
+      const encrypted = await encryptChatMessage(text, RoomSync.roomCode);
+      RoomSync.socket.emit('chat-message', {
+        encryptedPayload: encrypted,
+        plainPreview: text,
+        senderName: RoomSync.currentUser.name,
+        senderAvatar: RoomSync.currentUser.avatar,
+        attachment: attachmentObj
+      });
+    }
   };
 
   // Invite Button -> Copy Room URL
@@ -3713,6 +4063,8 @@ function initKeyboardShortcuts() {
       toggleMiniPlayer();
     } else if (e.key === 'm' || e.key === 'M') {
       toggleMicrophone();
+    } else if (e.key === 'v' || e.key === 'V') {
+      toggleCamera();
     } else if (e.key === 'Escape') {
       if (document.body.classList.contains('theater-mode')) toggleTheaterMode();
       const vc = document.getElementById('videoContainer');
@@ -3811,15 +4163,33 @@ function appendChatMessage({ senderName, senderAvatar, time, text, attachment, i
     const avatar = senderAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80';
     let attachmentHtml = '';
     if (attachment && attachment.fileUrl) {
-      attachmentHtml = `
-        <a href="${attachment.fileUrl}" download="${escapeHtml(attachment.fileName)}" target="_blank" class="chat-attachment-card">
-          <div class="chat-attachment-icon"><i class="bi bi-file-earmark-arrow-down-fill"></i></div>
-          <div class="overflow-hidden" style="min-width:0;">
-            <div class="fw-bold text-truncate small">${escapeHtml(attachment.fileName)}</div>
-            <div class="text-muted" style="font-size:0.68rem;">${formatFileSize(attachment.fileSize)} • Click to Download</div>
+      const isImg = (attachment.fileType && attachment.fileType.startsWith('image/')) || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(attachment.fileName || '');
+      if (isImg) {
+        attachmentHtml = `
+          <div class="chat-attachment-img-wrapper mt-2">
+            <a href="${attachment.fileUrl}" target="_blank" title="Click to view full image">
+              <img src="${attachment.fileUrl}" alt="${escapeHtml(attachment.fileName)}" class="chat-attachment-img rounded-3" style="max-width: 100%; max-height: 220px; object-fit: contain; border: 1px solid #e2e8f0; display: block; background: #000;">
+            </a>
+            <div class="d-flex justify-content-between align-items-center mt-1">
+              <span class="text-truncate small fw-bold text-muted" style="font-size:0.7rem;">${escapeHtml(attachment.fileName)}</span>
+              <a href="${attachment.fileUrl}" download="${escapeHtml(attachment.fileName)}" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill" style="font-size:0.65rem;">
+                <i class="bi bi-download"></i> Save
+              </a>
+            </div>
           </div>
-        </a>
-      `;
+        `;
+      } else {
+        attachmentHtml = `
+          <a href="${attachment.fileUrl}" download="${escapeHtml(attachment.fileName)}" target="_blank" class="chat-attachment-card mt-2 d-flex align-items-center gap-2 text-decoration-none p-2 rounded-3" style="background: rgba(0,0,0,0.03); border: 1px solid #e2e8f0;">
+            <div class="chat-attachment-icon flex-shrink-0 text-danger fs-4"><i class="bi bi-file-earmark-arrow-down-fill"></i></div>
+            <div class="overflow-hidden flex-grow-1" style="min-width:0;">
+              <div class="fw-bold text-truncate text-dark" style="font-size:0.78rem;">${escapeHtml(attachment.fileName)}</div>
+              <div class="text-muted" style="font-size:0.68rem;">${formatFileSize(attachment.fileSize)} • Click to Download</div>
+            </div>
+            <i class="bi bi-download text-muted flex-shrink-0 ms-1"></i>
+          </a>
+        `;
+      }
     }
     el.innerHTML = `
       <img class="msg-av" src="${avatar}" alt="${senderName}">

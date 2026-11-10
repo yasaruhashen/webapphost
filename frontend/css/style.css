@@ -3279,3 +3279,159 @@ body.modal-open #videoContainer.mini-player-active {
   box-shadow: none !important;
 }
 
+/* ==========================================================================
+   CHAT ATTACHMENT CARD & PREVIEW STYLES
+   ========================================================================== */
+#chatAttachmentPreview {
+  background: #f1f5f9 !important;
+  border-top: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+.chat-attachment-card {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 8px 12px !important;
+  margin-top: 6px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  text-decoration: none !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.chat-attachment-card:hover {
+  background: #f8fafc !important;
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+  transform: translateY(-1px) !important;
+}
+
+.chat-attachment-img-wrapper {
+  margin-top: 6px !important;
+}
+
+.chat-attachment-img {
+  border-radius: 8px !important;
+  max-width: 100% !important;
+  max-height: 220px !important;
+  object-fit: cover !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  transition: transform 0.2s ease !important;
+}
+
+.chat-attachment-img:hover {
+  transform: scale(1.01) !important;
+}
+
+
+/* ============================================================================
+   Floating Live Facecam Grid Overlay (Picture-in-Picture Webcam Tiles)
+   ============================================================================ */
+.floating-facecam-container {
+  position: absolute;
+  bottom: 64px;
+  right: 18px;
+  z-index: 35;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  max-height: calc(100% - 90px);
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.floating-facecam-container::-webkit-scrollbar {
+  display: none;
+}
+
+.facecam-tile {
+  width: 145px;
+  height: 98px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #090d16;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  position: relative;
+  pointer-events: auto;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.facecam-tile:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.facecam-tile.is-local video {
+  transform: scaleX(-1); /* Mirror local self webcam */
+}
+
+.facecam-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+.facecam-tile .facecam-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #f8fafc;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 6px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.facecam-tile .facecam-live-indicator {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+  animation: liveCamDotPulse 1.4s infinite ease-in-out;
+}
+
+@keyframes liveCamDotPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 10px #ef4444; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.facecam-tile.is-speaking {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.7);
+}
+
+@media (max-width: 576px) {
+  .floating-facecam-container {
+    bottom: 54px;
+    right: 10px;
+    gap: 6px;
+  }
+  .facecam-tile {
+    width: 105px;
+    height: 72px;
+    border-radius: 8px;
+  }
+}

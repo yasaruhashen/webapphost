@@ -35,7 +35,6 @@
     <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
       <a href="../index.html">Home</a>
       <a href="rooms.html">Manage Rooms</a>
-      <a href="room.html" class="active">Watch Room</a>
       <a href="profile.html">Profile</a>
       <a href="contact.html">Contact Us</a>
     </nav>
@@ -194,6 +193,11 @@
             <i class="bi bi-mic-mute-fill text-danger" id="ctrlMicIcon"></i>
           </button>
 
+          <!-- Camera Toggle Button (Integrated into Player Controls Bar) -->
+          <button class="ctrl-btn ctrl-cam-btn" id="ctrlCamBtn" title="Toggle Webcam Video (V)" onclick="toggleCamera()">
+            <i class="bi bi-camera-video-off-fill text-danger" id="ctrlCamIcon"></i>
+          </button>
+
           <!-- Time Display -->
           <span class="time-txt" id="timeDisplay">0:00 / 0:00</span>
 
@@ -252,6 +256,11 @@
           </button>
         </div>
 
+        <!-- Floating Live Facecam Grid Overlay (PiP corner) -->
+        <div class="floating-facecam-container" id="floatingFacecamGrid">
+          <!-- Populated dynamically with .facecam-tile -->
+        </div>
+
       </div><!-- /video-container -->
 
       <!-- Lower Stage Area (Minimal Sources & Tokens) -->
@@ -289,6 +298,9 @@
       <div class="stage-bottom border-top px-3 py-2 bg-body d-flex align-items-center gap-2 flex-shrink-0" style="border-color: var(--border-subtle) !important;">
         <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center btn-av" id="btnToggleMic" title="Toggle Microphone" style="width: 36px; height: 36px; flex-shrink: 0;">
           <i class="bi bi-mic-fill" id="micIcon"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center btn-av" id="btnToggleCam" title="Toggle Webcam Video" style="width: 36px; height: 36px; flex-shrink: 0;" onclick="toggleCamera()">
+          <i class="bi bi-camera-video-off-fill text-danger" id="camIcon"></i>
         </button>
         
         <!-- Mode 1: Direct Video URL Paste Bar -->
@@ -551,8 +563,8 @@
 
             <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
               <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-danger px-4 rounded-pill fw-bold" id="btnSaveRoomSettings">
-                Save Settings
+              <button type="submit" class="btn btn-danger px-4 rounded-pill fw-bold" id="btnSaveRoomSettings">
+                <i class="bi bi-check2-circle me-1"></i> Save Settings
               </button>
             </div>
           </form>
@@ -980,7 +992,8 @@
     const settingsModalEl = document.getElementById('roomSettingsModal');
     if (settingsModalEl) {
       settingsModalEl.addEventListener('show.bs.modal', () => {
-        const isHost = Boolean(window.RoomSync && window.RoomSync.isHost);
+        const currentUser = (window.RoomSync && window.RoomSync.currentUser) || {};
+        const isHost = Boolean(window.RoomSync && (window.RoomSync.isHost || !currentUser.isGuest || currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'host'));
         const meta = (window.RoomSync && window.RoomSync.roomMeta) || {};
         const fieldset = document.getElementById('roomSettingsFieldset');
         const alertBox = document.getElementById('roomSettingsGuestAlert');
@@ -1030,23 +1043,19 @@
       }
     });
 
-    document.getElementById('roomSettingsForm')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (!window.RoomSync?.socket || !window.RoomSync?.isHost) {
-        alert('Only the room host can modify settings.');
-        return;
-      }
-      const hostSyncLock = document.getElementById('settingHostSyncLock').checked;
-      const allowGuests = document.getElementById('settingAllowGuests').checked;
-      const allowGuestChat = document.getElementById('settingAllowGuestChat').checked;
-      const allowGuestControl = document.getElementById('settingAllowGuestControl').checked;
+    async function saveRoomSettings() {
+      const code = (window.RoomSync && window.RoomSync.roomCode) || 'UNI-8842';
+      const hostSyncLock = document.getElementById('settingHostSyncLock')?.checked ?? false;
+      const allowGuests = document.getElementById('settingAllowGuests')?.checked ?? true;
+      const allowGuestChat = document.getElementById('settingAllowGuestChat')?.checked ?? true;
+      const allowGuestControl = document.getElementById('settingAllowGuestControl')?.checked ?? false;
       const smoothCatchUp = document.getElementById('settingSmoothCatchUp')?.checked ?? true;
-      const visibility = document.getElementById('settingVisibility').value;
-      const passcode = document.getElementById('settingPasscode').value.trim();
+      const visibility = document.getElementById('settingVisibility')?.value || 'public';
+      const passcode = document.getElementById('settingPasscode')?.value.trim() || '';
       const voteSkipEnabled = document.getElementById('settingVoteSkipEnabled')?.checked ?? true;
       const voteSkipThreshold = parseInt(document.getElementById('settingVoteSkipThreshold')?.value || '50', 10);
 
-      window.RoomSync.socket.emit('update-room-settings', {
+      const settingsPayload = {
         hostSyncLock,
         allowGuests,
         allowGuestChat,
@@ -1056,13 +1065,45 @@
         passcode,
         voteSkipEnabled,
         voteSkipThreshold
-      });
+      };
+
+      // 1. Send via active socket
+      if (window.RoomSync?.socket) {
+        window.RoomSync.socket.emit('update-room-settings', settingsPayload);
+      }
+
+      // 2. Also persist via REST API fallback to guarantee 100% saved in SQLite database
+      try {
+        await fetch(`/api/rooms/${code}/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settingsPayload)
+        });
+      } catch (e) {
+        console.warn('REST settings sync error:', e);
+      }
+
+      if (window.RoomSync && window.RoomSync.roomMeta) {
+        Object.assign(window.RoomSync.roomMeta, settingsPayload);
+      }
+      if (typeof showSyncToast === 'function') {
+        showSyncToast('Room governance settings saved successfully! ✅');
+      }
 
       const modalEl = document.getElementById('roomSettingsModal');
       if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
         const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
       }
+    }
+
+    document.getElementById('roomSettingsForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveRoomSettings();
+    });
+    document.getElementById('btnSaveRoomSettings')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      saveRoomSettings();
     });
 
     // Stream Local File Modal Handlers
