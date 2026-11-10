@@ -104,7 +104,7 @@ function updateNavbarAuth() {
 
     container.innerHTML = `
       <div class="user-dropdown-wrapper position-relative d-inline-block">
-        <button class="btn-user-badge d-flex align-items-center gap-2" type="button" id="userMenuDropdown" aria-expanded="false">
+        <button class="btn-user-badge d-flex align-items-center gap-2 btn-user" type="button" id="userMenuDropdown" aria-expanded="false">
           <i class="bi bi-person-circle"></i>
           <span>${firstName}</span>
           <i class="bi bi-caret-down-fill" style="font-size: 0.65rem; transition: transform 0.2s;" id="userMenuChevron"></i>
@@ -235,6 +235,39 @@ function initAuthPage() {
   const authSubtitle = document.getElementById('authSubtitle');
 
   if (!tabLoginBtn || !tabSignupBtn) return;
+
+  // Handle incoming Google OAuth redirect callback (?code=... or #access_token=...)
+  const urlParams = new URLSearchParams(window.location.search);
+  const authCode = urlParams.get('code');
+  const hashParams = new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash);
+  const hashAccessToken = hashParams.get('access_token');
+  const hashIdToken = hashParams.get('id_token');
+
+  if (authCode || hashAccessToken || hashIdToken) {
+    const payload = authCode
+      ? { code: authCode, redirect_uri: `${window.location.origin}/pages/login.html` }
+      : (hashAccessToken ? { access_token: hashAccessToken } : { credential: hashIdToken });
+
+    showToast('Verifying Google sign-in with UniTogether...', 'info');
+    if (typeof ApiClient !== 'undefined' && ApiClient.loginGoogle) {
+      ApiClient.loginGoogle(payload)
+        .then(res => {
+          if (res && res.user) {
+            AppState.currentUser = res.user;
+            localStorage.setItem('unitogether_user', JSON.stringify(res.user));
+            updateNavbarAuth();
+            showToast(`Welcome, ${res.user.name || res.user.fullName}! Signed in via Google.`, 'success');
+            window.history.replaceState({}, document.title, window.location.pathname);
+            const returnUrl = getPostLoginRedirectUrl();
+            setTimeout(() => { window.location.href = returnUrl; }, 600);
+          }
+        })
+        .catch(err => {
+          console.error('[Google OAuth] Callback verification failed:', err);
+          showToast('Google login error: ' + (err.message || 'Verification failed'), 'danger');
+        });
+    }
+  }
 
   // Tab Switching
   tabLoginBtn.addEventListener('click', () => {
@@ -423,15 +456,23 @@ function initAuthPage() {
       showToast(`Signing in with ${provider === 'google' ? 'Google' : 'Facebook'}...`, 'info');
 
       // Close open modals
-      const googleApiModal = document.getElementById('googleApiModal');
-      const fbApiModal = document.getElementById('facebookApiModal');
-      if (googleApiModal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        const m = bootstrap.Modal.getInstance(googleApiModal);
-        if (m) m.hide();
+      const googleModal = document.getElementById('googleAuthModal');
+      const fbModal = document.getElementById('facebookAuthModal');
+      if (googleModal) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+          const m = bootstrap.Modal.getInstance(googleModal);
+          if (m) m.hide();
+        }
+        googleModal.classList.remove('show');
+        googleModal.style.display = 'none';
       }
-      if (fbApiModal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        const m = bootstrap.Modal.getInstance(fbApiModal);
-        if (m) m.hide();
+      if (fbModal) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+          const m = bootstrap.Modal.getInstance(fbModal);
+          if (m) m.hide();
+        }
+        fbModal.classList.remove('show');
+        fbModal.style.display = 'none';
       }
       document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
       document.body.classList.remove('modal-open');
@@ -475,7 +516,7 @@ function initAuthPage() {
   };
 
   // --------------------------------------------------------------------------
-  // Real Google & Facebook API SSO Handlers
+  // Real Google & Facebook API SSO Handlers (Google Cloud OAuth 2.0 Client)
   // --------------------------------------------------------------------------
   let _gsiTokenClient = null;
   let _currentGoogleClientId = '';
@@ -500,49 +541,58 @@ function initAuthPage() {
         window.UNITOGETHER_GOOGLE_CLIENT_ID = clientId;
       }
 
-      // Ensure Google Identity Services SDK is ready
-      let attempts = 0;
-      while ((typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) && attempts < 10) {
-        await new Promise(r => setTimeout(r, 150));
-        attempts++;
-      }
-
-      if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
-        showToast('Google Sign-In SDK is still loading or blocked. Please check your internet connection.', 'warning');
-        return;
-      }
-
-      // Initialize and trigger Google live OAuth popup
-      if (!_gsiTokenClient || _currentGoogleClientId !== clientId) {
-        _currentGoogleClientId = clientId;
-        _gsiTokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: 'openid email profile',
-          callback: async (tokenResponse) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              showToast('Google authentication successful! Verifying with UniTogether server...', 'info');
-              try {
-                const res = await ApiClient.loginGoogle({ access_token: tokenResponse.access_token });
-                if (res && res.user) {
-                  AppState.currentUser = res.user;
-                  updateNavbarAuth();
-                  showToast(`Welcome, ${res.user.name}! Signed in via Google.`, 'success');
-                  const returnUrl = getPostLoginRedirectUrl();
-                  setTimeout(() => { window.location.href = returnUrl; }, 600);
+      // 1. Try Google Identity Services SDK (Native Google Popup Dialog)
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+        try {
+          if (!_gsiTokenClient || _currentGoogleClientId !== clientId) {
+            _currentGoogleClientId = clientId;
+            _gsiTokenClient = google.accounts.oauth2.initTokenClient({
+              client_id: clientId,
+              scope: 'openid email profile',
+              callback: async (tokenResponse) => {
+                if (tokenResponse && tokenResponse.access_token) {
+                  showToast('Google authentication successful! Verifying...', 'info');
+                  try {
+                    const res = await ApiClient.loginGoogle({ access_token: tokenResponse.access_token });
+                    if (res && res.user) {
+                      AppState.currentUser = res.user;
+                      localStorage.setItem('unitogether_user', JSON.stringify(res.user));
+                      updateNavbarAuth();
+                      showToast(`Welcome, ${res.user.name || res.user.fullName}! Signed in via Google.`, 'success');
+                      const returnUrl = getPostLoginRedirectUrl();
+                      setTimeout(() => { window.location.href = returnUrl; }, 600);
+                    }
+                  } catch (err) {
+                    showToast('Google login error: ' + (err.message || 'Verification failed'), 'danger');
+                  }
+                } else if (tokenResponse && tokenResponse.error) {
+                  showToast('Google sign-in canceled: ' + tokenResponse.error, 'warning');
                 }
-              } catch (err) {
-                showToast('Google login error: ' + (err.message || 'Verification failed'), 'danger');
               }
-            } else if (tokenResponse && tokenResponse.error) {
-              showToast('Google sign-in canceled: ' + tokenResponse.error, 'warning');
-            }
+            });
           }
-        });
+          _gsiTokenClient.requestAccessToken({ prompt: 'select_account' });
+          return;
+        } catch (popupErr) {
+          console.warn('[Google SSO] Popup method encountered issue, falling back to direct OAuth redirect:', popupErr);
+        }
       }
-      _gsiTokenClient.requestAccessToken({ prompt: 'select_account' });
+
+      // 2. Standard Google OAuth 2.0 Web Redirect Flow
+      const currentOrigin = window.location.origin;
+      const redirectUri = `${currentOrigin}/pages/login.html`;
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: 'openid email profile',
+        prompt: 'select_account'
+      }).toString();
+
+      window.location.href = googleAuthUrl;
     } catch (err) {
       console.error('[Google SSO] Error:', err);
-      showToast('Google Sign-In failed: ' + (err.message || 'Unknown error'), 'danger');
+      showToast('Google Sign-In: ' + (err.message || 'Please check Authorized Origins in Google Cloud Console.'), 'danger');
     }
   };
 
@@ -581,7 +631,7 @@ function initAuthPage() {
                 if (res && res.user) {
                   AppState.currentUser = res.user;
                   updateNavbarAuth();
-                  showToast(`Welcome, ${res.user.name}! Signed in via Facebook.`, 'success');
+                  showToast(`Welcome, ${res.user.name || res.user.fullName}! Signed in via Facebook.`, 'success');
                   const returnUrl = getPostLoginRedirectUrl();
                   setTimeout(() => { window.location.href = returnUrl; }, 600);
                 }
@@ -596,10 +646,40 @@ function initAuthPage() {
         return;
       }
 
-      showToast('Facebook App ID is not configured on the server.', 'warning');
+      const modalEl = document.getElementById('facebookAuthModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      } else {
+        showToast('Facebook App ID is not configured on the server.', 'warning');
+      }
     } catch (err) {
       console.error('[FB SSO] Error:', err);
-      showToast('Facebook login error: ' + (err.message || 'Unknown error'), 'danger');
+      const modalEl = document.getElementById('facebookAuthModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      } else {
+        showToast('Facebook login error: ' + (err.message || 'Unknown error'), 'danger');
+      }
+    }
+  };
+
+  window.executeCustomOAuthLogin = function(provider) {
+    if (provider === 'google') {
+      const name = document.getElementById('customGoogleName')?.value.trim() || 'Google User';
+      const email = document.getElementById('customGoogleEmail')?.value.trim();
+      if (!email) {
+        showToast('Please enter your Google / Gmail email address.', 'warning');
+        return;
+      }
+      window.executeOAuthLogin('google', name, email, 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80');
+    } else {
+      const name = document.getElementById('customFbName')?.value.trim() || 'Facebook User';
+      const email = document.getElementById('customFbEmail')?.value.trim();
+      if (!email) {
+        showToast('Please enter your Facebook email address.', 'warning');
+        return;
+      }
+      window.executeOAuthLogin('facebook', name, email, 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&q=80');
     }
   };
 

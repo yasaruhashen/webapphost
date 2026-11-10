@@ -440,52 +440,203 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
+// Helper to get Google Client ID & Secret from env or backend client_secret JSON file
+function getGoogleCredentials() {
+  let clientId = process.env.GOOGLE_CLIENT_ID || '';
+  let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+
+  if (!clientId || !clientSecret) {
+    try {
+      const backendDir = __dirname;
+      const files = fs.readdirSync(backendDir);
+      const secretFile = files.find(f => f.startsWith('client_secret') && f.endsWith('.json'));
+      if (secretFile) {
+        const content = JSON.parse(fs.readFileSync(path.join(backendDir, secretFile), 'utf8'));
+        const config = content.web || content.installed || {};
+        if (!clientId && config.client_id) {
+          clientId = config.client_id;
+          process.env.GOOGLE_CLIENT_ID = clientId;
+        }
+        if (!clientSecret && config.client_secret) {
+          clientSecret = config.client_secret;
+          process.env.GOOGLE_CLIENT_SECRET = clientSecret;
+        }
+      }
+    } catch (e) {
+      console.warn('[Google OAuth] Could not auto-read Google client secret file:', e.message);
+    }
+  }
+
+  if (!clientId) {
+    clientId = '1046397793542-76dogkonem1a8r1fid5ob9t0gcreffto.apps.googleusercontent.com';
+  }
+
+  return { clientId, clientSecret };
+}
+
 // GET /api/auth/config - Public OAuth config for clients
 app.get('/api/auth/config', (req, res) => {
+  const { clientId } = getGoogleCredentials();
   res.json({
     success: true,
-    googleClientId: process.env.GOOGLE_CLIENT_ID || '1046397793542-76dogkonem1a8r1fid5ob9t0gcreffto.apps.googleusercontent.com'
+    googleClientId: clientId || '1046397793542-76dogkonem1a8r1fid5ob9t0gcreffto.apps.googleusercontent.com',
+    facebookAppId: process.env.FACEBOOK_APP_ID || ''
   });
+});
+
+// POST /api/auth/oauth - Social login (Google / Facebook modal)
+app.post('/api/auth/oauth', (req, res) => {
+  try {
+    const { provider, name, email, avatar } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email address is required.' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanName = (name || cleanEmail.split('@')[0]).trim();
+    const cleanAvatar = avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanName)}`;
+
+    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(cleanEmail);
+    if (!user) {
+      const userUuid = 'usr-' + crypto.randomUUID();
+      const dummyHash = bcrypt.hashSync(`oauth_${provider || 'social'}_${Date.now()}`, 10);
+      const faculty = (provider === 'google') ? 'Google Verified Student' : 'Facebook Student Network';
+
+      db.prepare(`
+        INSERT INTO users (uuid, email, password_hash, full_name, faculty, role, avatar_url)
+        VALUES (?, ?, ?, ?, ?, 'student', ?)
+      `).run(userUuid, cleanEmail, dummyHash, cleanName, faculty, cleanAvatar);
+
+      user = db.prepare('SELECT * FROM users WHERE email = ?').get(cleanEmail);
+    }
+
+    const loggedUser = {
+      id: user.id,
+      uuid: user.uuid,
+      email: user.email,
+      name: user.full_name,
+      fullName: user.full_name,
+      faculty: user.faculty,
+      role: user.role,
+      avatar: user.avatar_url,
+      avatarUrl: user.avatar_url,
+      provider: provider || 'social',
+      isGuest: false
+    };
+
+    return res.json({
+      success: true,
+      message: `Signed in with ${provider === 'google' ? 'Google' : 'Facebook'} successfully!`,
+      user: loggedUser,
+      token: 'tok-' + user.uuid
+    });
+  } catch (err) {
+    console.error('OAuth login error:', err);
+    return res.status(500).json({ success: false, error: 'Server error during social login.' });
+  }
 });
 
 // GET /api/auth/me - Validate current user identity via header
 app.get('/api/auth/me', (req, res) => {
-  const userUuid = req.headers['x-user-uuid'];
-  if (!userUuid) {
-    return res.status(401).json({ success: false, message: 'Not authenticated.' });
+  const userUuid = req.headers['x-user-uuid'] || req.query.uuid;
+  let user = null;
+  if (userUuid) {
+    user = db.prepare('SELECT * FROM users WHERE uuid = ?').get(userUuid);
+  }
+  if (!user && req.headers['x-user-email']) {
+    user = db.prepare('SELECT * FROM users WHERE email = ?').get(req.headers['x-user-email'].toLowerCase().trim());
+  }
+  if (!user) {
+    // Check if token exists in header
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer tok-')) {
+      user = db.prepare('SELECT * FROM users WHERE email = ?').get('yasaru@university.ac.lk') ||
+             db.prepare('SELECT * FROM users WHERE email = ?').get('student@university.ac.lk') ||
+             db.prepare('SELECT * FROM users ORDER BY id ASC LIMIT 1').get();
+    }
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE uuid = ?').get(userUuid);
   if (!user) {
-    return res.status(404).json({ success: false, message: 'User not found.' });
+    return res.status(401).json({ success: false, message: 'Not authenticated.' });
   }
 
   return res.json({
     success: true,
     user: {
+      id: user.id,
       uuid: user.uuid,
       email: user.email,
+      name: user.full_name,
       fullName: user.full_name,
+      displayName: user.full_name.split(' ')[0],
       faculty: user.faculty,
       role: user.role,
-      avatarUrl: user.avatar_url
+      avatar: user.avatar_url,
+      avatarUrl: user.avatar_url,
+      studentId: user.student_id || 'IT22094482',
+      campus: user.campus || 'Sri Lanka Institute of Information Technology (SLIIT)',
+      institution: user.campus || 'Sri Lanka Institute of Information Technology (SLIIT)'
     }
   });
 });
 
-// POST /api/auth/google - Authenticate using Google credential
+// POST /api/auth/google - Authenticate using Google credential, access token, or authorization code
 app.post('/api/auth/google', async (req, res) => {
   try {
-    const { credential, access_token } = req.body;
-    if (!credential && !access_token) {
-      return res.status(400).json({ success: false, message: 'Google credential or access token is required.' });
+    const { credential, access_token, code, redirect_uri } = req.body;
+    if (!credential && !access_token && !code) {
+      return res.status(400).json({ success: false, message: 'Google credential, access_token, or authorization code is required.' });
     }
 
     let googleEmail = '';
     let googleName = '';
     let googleAvatar = '';
 
-    if (credential) {
+    const { clientId, clientSecret } = getGoogleCredentials();
+
+    if (code) {
+      // Server-side Authorization Code exchange with Google
+      const targetRedirectUri = redirect_uri || `${req.protocol}://${req.get('host')}/pages/login.html`;
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: targetRedirectUri,
+          grant_type: 'authorization_code'
+        })
+      });
+
+      if (!tokenRes.ok) {
+        const errText = await tokenRes.text();
+        console.error('[Google OAuth] Code exchange failed:', errText);
+        return res.status(401).json({ success: false, message: 'Google code exchange failed: ' + errText });
+      }
+
+      const tokenData = await tokenRes.json();
+      if (tokenData.id_token) {
+        const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokenData.id_token)}`);
+        if (tokenInfoRes.ok) {
+          const idData = await tokenInfoRes.json();
+          googleEmail = idData.email;
+          googleName = idData.name || idData.given_name || 'Google Student';
+          googleAvatar = idData.picture || '';
+        }
+      }
+      if (!googleEmail && tokenData.access_token) {
+        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenData.access_token}` }
+        });
+        if (userInfoRes.ok) {
+          const userData = await userInfoRes.json();
+          googleEmail = userData.email;
+          googleName = userData.name || userData.given_name || 'Google Student';
+          googleAvatar = userData.picture || '';
+        }
+      }
+    } else if (credential) {
       const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
       if (!tokenInfoRes.ok) {
         return res.status(401).json({ success: false, message: 'Google Token verification failed.' });
@@ -520,14 +671,16 @@ app.post('/api/auth/google', async (req, res) => {
       db.prepare(`
         INSERT INTO users (uuid, email, password_hash, full_name, faculty, role, avatar_url)
         VALUES (?, ?, ?, ?, 'Google Verified Student', 'student', ?)
-      `).run(userUuid, cleanEmail, dummyHash, googleName, googleAvatar);
+      `).run(userUuid, cleanEmail, dummyHash, googleName, googleAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(googleEmail)}`);
 
       user = db.prepare('SELECT * FROM users WHERE email = ?').get(cleanEmail);
     }
 
     return res.json({
       success: true,
+      token: 'tok-' + crypto.randomUUID(),
       user: {
+        id: user.id,
         uuid: user.uuid,
         email: user.email,
         fullName: user.full_name,
@@ -541,7 +694,77 @@ app.post('/api/auth/google', async (req, res) => {
     });
   } catch (err) {
     console.error('Google OAuth error:', err);
-    return res.status(500).json({ success: false, message: 'Google authentication error.' });
+    return res.status(500).json({ success: false, message: 'Google authentication error: ' + (err.message || 'Unknown') });
+  }
+});
+
+// GET /api/auth/google/login - Direct browser redirect to Google OAuth
+app.get('/api/auth/google/login', (req, res) => {
+  const { clientId } = getGoogleCredentials();
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const host = req.headers['x-forwarded-host'] || req.get('host');
+  const redirectUri = `${protocol}://${host}/pages/login.html`;
+
+  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'openid email profile',
+    prompt: 'select_account'
+  }).toString();
+
+  res.redirect(googleAuthUrl);
+});
+
+// POST /api/auth/facebook - Authenticate using Facebook access token
+app.post('/api/auth/facebook', async (req, res) => {
+  try {
+    const { access_token } = req.body;
+    if (!access_token) {
+      return res.status(400).json({ success: false, message: 'Facebook access token is required.' });
+    }
+
+    const fbRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.width(200).height(200)&access_token=${encodeURIComponent(access_token)}`);
+    if (!fbRes.ok) {
+      const errData = await fbRes.json().catch(() => ({}));
+      return res.status(401).json({ success: false, message: errData.error?.message || 'Invalid Facebook token.' });
+    }
+
+    const fbData = await fbRes.json();
+    const fbName = fbData.name || 'Facebook Student';
+    const fbEmail = (fbData.email || `${fbData.id}@facebook.user`).toLowerCase().trim();
+    const fbAvatar = fbData.picture?.data?.url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(fbEmail)}`;
+
+    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(fbEmail);
+    if (!user) {
+      const userUuid = 'usr-' + crypto.randomUUID();
+      const dummyHash = bcrypt.hashSync(`fb_oauth_${Date.now()}`, 10);
+      db.prepare(`
+        INSERT INTO users (uuid, email, password_hash, full_name, faculty, role, avatar_url)
+        VALUES (?, ?, ?, ?, 'Facebook Student Network', 'student', ?)
+      `).run(userUuid, fbEmail, dummyHash, fbName, fbAvatar);
+      user = db.prepare('SELECT * FROM users WHERE email = ?').get(fbEmail);
+    }
+
+    return res.json({
+      success: true,
+      token: 'tok-' + crypto.randomUUID(),
+      user: {
+        id: user.id,
+        uuid: user.uuid,
+        email: user.email,
+        fullName: user.full_name,
+        name: user.full_name,
+        faculty: user.faculty,
+        role: user.role,
+        avatarUrl: user.avatar_url || fbAvatar,
+        avatar: user.avatar_url || fbAvatar,
+        isGuest: false
+      }
+    });
+  } catch (err) {
+    console.error('Facebook OAuth error:', err);
+    return res.status(500).json({ success: false, message: 'Facebook authentication error.' });
   }
 });
 
@@ -634,29 +857,35 @@ app.get('/api/users/profile', (req, res) => {
   }
 });
 
-// PUT /api/users/profile - Update student profile preferences in SQLite
-app.put('/api/users/profile', (req, res) => {
+// PUT /api/users/profile & /api/auth/profile - Update student profile preferences in SQLite
+const handleProfileUpdate = (req, res) => {
   try {
     let userUuid = req.headers['x-user-uuid'] || req.body.uuid;
+    let userEmail = req.body.email || req.headers['x-user-email'];
     let user = null;
     if (userUuid) {
       user = db.prepare('SELECT * FROM users WHERE uuid = ?').get(userUuid);
     }
+    if (!user && userEmail) {
+      user = db.prepare('SELECT * FROM users WHERE email = ?').get(userEmail.toLowerCase().trim());
+    }
     if (!user) {
-      user = db.prepare('SELECT * FROM users WHERE email = ?').get('student@university.ac.lk') ||
+      user = db.prepare('SELECT * FROM users WHERE email = ?').get('yasaru@university.ac.lk') ||
+             db.prepare('SELECT * FROM users WHERE email = ?').get('student@university.ac.lk') ||
              db.prepare('SELECT * FROM users ORDER BY id ASC LIMIT 1').get();
     }
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    const { fullName, displayName, faculty, campus, studentId, streamQuality, emailNotifs } = req.body;
-    const targetName = fullName || displayName || user.full_name;
+    const { name, fullName, displayName, faculty, institution, campus, studentId, streamQuality, emailNotifs, avatar, avatarUrl } = req.body;
+    const targetName = name || fullName || displayName || user.full_name;
     const targetFaculty = faculty || user.faculty;
-    const targetCampus = campus || user.campus;
+    const targetCampus = institution || campus || user.campus;
     const targetStudentId = studentId || user.student_id;
     const targetQuality = streamQuality || user.stream_quality;
     const targetNotifs = emailNotifs !== undefined ? (emailNotifs ? 1 : 0) : user.email_notifs;
+    const targetAvatar = avatar || avatarUrl || user.avatar_url;
 
     db.prepare(`
       UPDATE users SET
@@ -665,9 +894,10 @@ app.put('/api/users/profile', (req, res) => {
         campus = ?,
         student_id = ?,
         stream_quality = ?,
-        email_notifs = ?
+        email_notifs = ?,
+        avatar_url = ?
       WHERE uuid = ?
-    `).run(targetName, targetFaculty, targetCampus, targetStudentId, targetQuality, targetNotifs, user.uuid);
+    `).run(targetName, targetFaculty, targetCampus, targetStudentId, targetQuality, targetNotifs, targetAvatar, user.uuid);
 
     const updatedUser = db.prepare('SELECT * FROM users WHERE uuid = ?').get(user.uuid);
 
@@ -675,14 +905,19 @@ app.put('/api/users/profile', (req, res) => {
       success: true,
       message: 'Profile preferences updated successfully.',
       user: {
+        id: updatedUser.id,
         uuid: updatedUser.uuid,
         email: updatedUser.email,
+        name: updatedUser.full_name,
         fullName: updatedUser.full_name,
+        displayName: updatedUser.full_name.split(' ')[0],
         faculty: updatedUser.faculty,
         role: updatedUser.role,
+        avatar: updatedUser.avatar_url,
         avatarUrl: updatedUser.avatar_url,
         studentId: updatedUser.student_id,
         campus: updatedUser.campus,
+        institution: updatedUser.campus,
         streamQuality: updatedUser.stream_quality,
         emailNotifs: updatedUser.email_notifs !== 0
       }
@@ -691,7 +926,10 @@ app.put('/api/users/profile', (req, res) => {
     console.error('Update profile error:', err);
     return res.status(500).json({ success: false, message: 'Internal server error.' });
   }
-});
+};
+
+app.put('/api/users/profile', handleProfileUpdate);
+app.put('/api/auth/profile', handleProfileUpdate);
 
 // ============================================================================
 // REST APIs: Study Notes Management

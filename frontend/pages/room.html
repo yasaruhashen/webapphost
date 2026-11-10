@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live Synchronized Watch Room - UniTogether</title>
+  <title>Live Synchronized Watch Room</title>
   <link rel="icon" type="image/png" href="../assets/images/Web site mainLogo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,42 +22,29 @@
 </head>
 <body class="d-flex flex-column vh-100 overflow-hidden bg-body">
 
-  <!-- Top Global Navbar -->
+  <!-- Top Global Navbar (Matches Home, Rooms, Profile, Contact Us) -->
   <header class="uni-navbar d-flex align-items-center justify-content-between px-3 px-md-4 flex-shrink-0">
     <div class="d-flex align-items-center gap-2">
-      <a href="../index.html" class="brand-wrapper" title="UniTogether Home">
-        <div class="brand-logo-badge">
-          <img src="../assets/images/Web site mainLogo.png" alt="UniTogether Logo">
-        </div>
-        <div class="brand-title">
-          <span class="uni-txt">Uni</span><span class="together-txt">Together</span>
-        </div>
+      <a href="../index.html" class="brand-title d-flex align-items-center">
+        <span class="uni-part">Uni</span><span class="together-part">Together</span>
       </a>
-      <span class="badge bg-black bg-opacity-25 text-warning fw-bold px-2 py-1 rounded-pill ms-1 ms-sm-2 d-none d-sm-inline-block" id="headerRoomBadge" style="font-size:0.75rem;">
-        <i class="bi bi-broadcast me-1 text-danger"></i><span class="d-none d-md-inline"> ROOM: </span><span id="headerRoomCode">UNI-8842</span>
-      </span>
+      <span id="headerRoomCode" class="d-none">UNI-8842</span>
     </div>
 
     <!-- Center Nav Links -->
-    <nav class="d-none d-md-flex align-items-center gap-1">
-      <a href="../index.html" class="nav-link-custom">Home</a>
-      <a href="rooms.html" class="nav-link-custom">Manage Rooms</a>
-      <a href="room.html" class="nav-link-custom active">Watch Room</a>
-      <a href="profile.html" class="nav-link-custom">Profile</a>
-      <a href="contact.html" class="nav-link-custom">Contact Us</a>
+    <nav class="nav-center-links d-none d-md-flex align-items-center gap-4">
+      <a href="../index.html">Home</a>
+      <a href="rooms.html">Manage Rooms</a>
+      <a href="room.html" class="active">Watch Room</a>
+      <a href="profile.html">Profile</a>
+      <a href="contact.html">Contact Us</a>
     </nav>
 
     <!-- Right Controls -->
-    <div class="d-flex align-items-center gap-1 gap-sm-2">
-      <button class="btn-theme-toggle" id="themeToggleBtn" title="Toggle Light/Dark Mode" aria-label="Toggle Theme">
-        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-light rounded-pill px-2 px-sm-3 py-1 fw-bold shadow-sm" id="navSettingsBtn" data-bs-toggle="modal" data-bs-target="#roomSettingsModal" title="Room Governance & Settings">
-        <i class="bi bi-gear-fill"></i><span class="d-none d-sm-inline ms-1">Settings</span>
-      </button>
-      <button class="btn btn-sm btn-warning text-dark fw-bold rounded-pill px-2 px-sm-3 shadow-sm btn-user text-truncate" id="userBadgeBtn" data-bs-toggle="modal" data-bs-target="#changeNicknameModal" title="Click to change display name" style="max-width: 130px;">
-        STUDENT <i class="bi bi-pencil-fill ms-1" style="font-size:0.65rem;"></i>
-      </button>
+    <div class="d-flex align-items-center gap-2">
+      <div class="nav-auth-container" id="navAuthContainer">
+        <a href="login.html" class="btn-sign-in">SIGN IN</a>
+      </div>
     </div>
   </header>
 
@@ -65,7 +52,7 @@
   <main class="room-body d-flex flex-grow-1 overflow-hidden">
 
     <!-- Left Stage Column -->
-    <div class="stage-col d-flex flex-column flex-grow-1 overflow-hidden bg-body">
+    <div class="stage-col d-flex flex-column flex-grow-1 overflow-hidden bg-body" style="padding: 14px 16px 8px 16px !important; gap: 10px;">
 
       <!-- Synchronized Video Container (Constrained 52vh Max Clamp on Desktop) -->
       <div class="video-container position-relative w-100 bg-black flex-shrink-0" id="videoContainer" style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.35);">
@@ -278,15 +265,9 @@
             <button class="media-src-btn btn-src" id="srcScreen">
               <i class="bi bi-display text-primary"></i> Screenshare
             </button>
-            <button class="media-src-btn btn-src" id="srcUpload" data-bs-toggle="modal" data-bs-target="#localFileSyncChoiceModal">
-              <i class="bi bi-folder-symlink-fill text-warning"></i> Local File
-            </button>
-            <button class="media-src-btn" data-bs-toggle="modal" data-bs-target="#customStreamModal">
-              <i class="bi bi-broadcast text-info"></i> Direct HLS
-            </button>
           </div>
 
-          <!-- Crisp Dashboard Status Tokens -->
+          <!-- Crisp Dashboard Status Tokens & Room Governance Settings -->
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="token-badge token-live" id="tokenSyncStatus">
               <i class="bi bi-broadcast"></i> SYNCED
@@ -297,6 +278,9 @@
             <span class="token-badge">
               <i class="bi bi-hd"></i> 1080p
             </span>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-bold shadow-sm d-flex align-items-center gap-1" id="navSettingsBtn" data-bs-toggle="modal" data-bs-target="#roomSettingsModal" title="Room Governance & Settings" style="font-size: 0.78rem;">
+              <i class="bi bi-gear-fill text-danger me-1"></i>Settings
+            </button>
           </div>
         </div>
       </div><!-- /stage-lower -->
@@ -421,14 +405,26 @@
         <button class="emoji-btn" onclick="spawnEmoji('🔥')">🔥</button>
       </div>
 
+      <!-- Pending Attachment Preview Chip -->
+      <div id="chatAttachmentPreview" class="px-3 py-1 bg-body-tertiary border-top d-none align-items-center justify-content-between" style="border-color: var(--border-subtle) !important; font-size: 0.75rem;">
+        <div class="d-flex align-items-center gap-2 overflow-hidden text-truncate">
+          <i class="bi bi-paperclip text-danger"></i>
+          <span id="chatAttachmentName" class="fw-bold text-truncate" style="max-width: 170px;">document.pdf</span>
+          <span id="chatAttachmentSize" class="text-muted small">0 KB</span>
+        </div>
+        <button type="button" class="btn btn-link btn-sm text-danger p-0 ms-2 text-decoration-none" onclick="clearChatAttachment()" title="Remove Attachment">
+          <i class="bi bi-x-circle-fill"></i>
+        </button>
+      </div>
+
       <!-- Chat Input Bar -->
       <div class="chat-input-bar p-2 border-top d-flex align-items-center gap-2 flex-shrink-0" id="chatInputBar" style="border-color: var(--border-subtle) !important;">
         <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" id="btnChatAttach" onclick="document.getElementById('chatFileInput').click()" title="Attach Document, PDF, Notes or Image" style="width: 32px; height: 32px;">
           <i class="bi bi-paperclip"></i>
         </button>
-        <input type="file" id="chatFileInput" class="d-none" onchange="handleChatFileUpload(this)">
-        <input class="form-control form-control-sm rounded-pill px-3 chat-txt" id="chatInput" type="text" placeholder="Send encrypted message..." onkeydown="if(event.key==='Enter') sendMsg()" style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
-        <button class="btn btn-sm btn-danger rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0 btn-send" style="width: 32px; height: 32px;" onclick="sendMsg()">
+        <input type="file" id="chatFileInput" class="d-none" onchange="handleChatFileSelected(this)">
+        <input class="form-control form-control-sm rounded-pill px-3 chat-txt" id="chatInput" type="text" placeholder="Send message to room..." onkeydown="if(event.key==='Enter') sendMsg()" style="background: var(--bg-input); border-color: var(--border-subtle); color: var(--text-main);">
+        <button class="btn btn-sm btn-danger rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0 btn-send" style="width: 32px; height: 32px;" onclick="sendMsg()" title="Send">
           <i class="bi bi-send-fill" style="font-size: 0.75rem;"></i>
         </button>
       </div>
@@ -898,6 +894,9 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Socket.io Real-Time Signaling -->
   <script src="/socket.io/socket.io.js"></script>
+  <!-- Core App Scripts for Global Navbar & Authentication State -->
+  <script src="../js/api.js?v=3.0"></script>
+  <script src="../js/app.js?v=3.0"></script>
   <!-- HLS.js for Live .m3u8 Streams -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
   <!-- Plyr 3.7.8 Polyfilled for Universal Media (YouTube, MP4, HLS, Blob) -->

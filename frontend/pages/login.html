@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In / Register — UniTogether</title>
+  <title>Sign In / Register UniTogether</title>
   <link rel="icon" type="image/png" href="../assets/images/Web site mainLogo.png">
 
   <!-- Google Fonts: Inter & Plus Jakarta Sans -->
@@ -21,7 +21,7 @@
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="../css/style.css">
 
-  <!-- Official Google Identity Services SDK -->
+  <!-- Official Google Identity Services SDK (Google Cloud Console OAuth 2.0 Client) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- Official Facebook JavaScript SDK -->
   <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
@@ -147,17 +147,43 @@
     }
 
     .auth-container-card {
+      display: flex !important;
+      flex-direction: row !important;
+      width: 100% !important;
+      max-width: 940px !important;
       max-height: calc(100vh - 74px) !important;
       margin: auto !important;
+      overflow: hidden !important;
+      background: #ffffff !important;
+      border-radius: 18px !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 20px 40px -15px rgba(217, 35, 42, 0.15), 0 10px 25px -5px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .auth-hero-banner {
+      flex: 0 0 40% !important;
+      max-width: 40% !important;
+      background: linear-gradient(145deg, #e52d27 0%, #c4181d 45%, #9b0f14 100%) !important;
+      color: #ffffff !important;
+      padding: 1.5rem 1.75rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      text-align: center !important;
+      position: relative !important;
       overflow: hidden !important;
     }
 
     .auth-form-area {
+      flex: 1 1 60% !important;
+      max-width: 60% !important;
       padding: 1.25rem 2rem !important;
-    }
-
-    .auth-hero-banner {
-      padding: 1.5rem 1.75rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      background: #ffffff !important;
+      overflow-y: auto !important;
     }
   </style>
 </head>
@@ -238,7 +264,7 @@
 
           <!-- SSO Providers Row -->
           <div class="sso-buttons-row">
-            <!-- Google -->
+            <!-- Google (Google Cloud OAuth 2.0) -->
             <button type="button" class="btn-sso" id="btnGoogleSso" onclick="handleGoogleSsoClick()">
               <svg viewBox="0 0 24 24" class="sso-icon" width="16" height="16">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -300,28 +326,19 @@
               </div>
             </div>
 
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <div class="form-check custom-checkbox">
-                <input class="form-check-input" type="checkbox" id="rememberMe" checked>
-                <label class="form-check-label text-muted small" for="rememberMe">
-                  Stay signed in
-                </label>
-              </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <label class="custom-checkbox-wrapper">
+                <input type="checkbox" id="rememberMe" checked>
+                <span class="checkbox-label-txt">Remember this computer</span>
+              </label>
             </div>
 
             <button type="submit" class="btn-auth-submit" id="loginSubmitBtn">
-              Log In to UniTogether <i class="bi bi-arrow-right ms-1"></i>
+              Log In to Campus Space <i class="bi bi-arrow-right-short fs-5"></i>
             </button>
-
-            <!-- Quick Demo Helper Pill -->
-            <div class="demo-account-hint mt-3">
-              <span class="badge bg-light text-muted border py-1 px-2">
-                <i class="bi bi-info-circle me-1"></i> Demo: yasaru@university.ac.lk / student123
-              </span>
-            </div>
           </form>
 
-          <!-- 2. Sign Up Form -->
+          <!-- 2. Sign Up Form (Initially Hidden) -->
           <form id="signupForm" class="auth-form" style="display: none;" novalidate>
             <div class="form-group-custom">
               <label for="signupFullName" class="form-label-custom">Full Name</label>
@@ -333,38 +350,43 @@
                   type="text" 
                   class="input-custom" 
                   id="signupFullName" 
-                  placeholder="e.g. Yasaru Bandara"
+                  placeholder="e.g. Yasaru Bandara" 
                   required
                 >
               </div>
             </div>
 
             <div class="form-group-custom">
-              <label for="signupEmail" class="form-label-custom">Academic Email (.edu / .ac.lk)</label>
+              <label for="signupEmail" class="form-label-custom">University / Student Email</label>
               <div class="input-icon-wrapper">
                 <span class="input-icon-prefix">
-                  <i class="bi bi-envelope-at"></i>
+                  <i class="bi bi-envelope"></i>
                 </span>
                 <input 
                   type="email" 
                   class="input-custom" 
                   id="signupEmail" 
-                  placeholder="student@faculty.edu"
+                  placeholder="student@university.ac.lk" 
                   required
                 >
               </div>
             </div>
 
             <div class="form-group-custom">
-              <label for="signupFaculty" class="form-label-custom">University Faculty / Department</label>
-              <select class="form-select border rounded-3 text-muted" id="signupFaculty" style="font-size: 0.9rem; padding: 0.65rem 0.85rem;">
-                <option value="Computing & IT" selected>Faculty of Computing & Technology</option>
-                <option value="Engineering">Faculty of Engineering</option>
-                <option value="Applied Sciences">Faculty of Applied Sciences</option>
-                <option value="Management & Business">Faculty of Management Studies</option>
-                <option value="Medicine">Faculty of Medical Sciences</option>
-                <option value="Humanities & Arts">Faculty of Humanities & Social Sciences</option>
-              </select>
+              <label for="signupFaculty" class="form-label-custom">Faculty / Discipline</label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon-prefix">
+                  <i class="bi bi-building"></i>
+                </span>
+                <input 
+                  type="text" 
+                  class="input-custom" 
+                  id="signupFaculty" 
+                  placeholder="e.g. Faculty of Computing" 
+                  value="Faculty of Computing"
+                  required
+                >
+              </div>
             </div>
 
             <div class="form-group-custom">
@@ -377,17 +399,16 @@
                   type="password" 
                   class="input-custom" 
                   id="signupPassword" 
-                  placeholder="At least 8 characters"
+                  placeholder="Minimum 6 characters" 
                   required
                 >
               </div>
             </div>
 
-            <div class="form-check custom-checkbox mb-3">
-              <input class="form-check-input" type="checkbox" id="termsCheck" required checked>
-              <label class="form-check-label text-muted small" for="termsCheck">
-                I am a current student/staff member and agree to the 
-                <a href="#terms" class="text-danger text-decoration-none">Community Guidelines</a>.
+            <div class="mb-3">
+              <label class="custom-checkbox-wrapper">
+                <input type="checkbox" id="termsCheck" checked required>
+                <span class="checkbox-label-txt">I agree to Campus Study Guidelines</span>
               </label>
             </div>
 
@@ -397,11 +418,67 @@
           </form>
 
         </div>
+
+        <!-- Footer / Guest Mode Trigger -->
+        <div class="auth-card-footer">
+          <p class="footer-guest-note">Need immediate access without an account?</p>
+          <a href="#" class="btn-guest-action" data-bs-toggle="modal" data-bs-target="#guestAccessModal">
+            Instant Guest Access &rarr;
+          </a>
+        </div>
       </div>
 
     </div>
 
   </main>
+
+  <!-- Note: Real Google Cloud OAuth 2.0 uses native Google Accounts dialog -->
+
+  <!-- Modal: Facebook Login -->
+  <div class="modal fade" id="facebookAuthModal" tabindex="-1" aria-labelledby="facebookAuthModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="px-3 py-2 text-white d-flex align-items-center justify-content-between" style="background-color: #1877F2;">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-facebook fs-5"></i>
+            <span class="fw-bold small">Log in with Facebook</span>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4 text-center">
+          <div class="mb-3">
+            <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=100&q=80" style="width: 58px; height: 58px; border-radius: 50%; border: 3px solid #1877F2;" class="shadow-sm">
+            <h6 class="fw-bold mt-2 mb-0 text-dark">Yasaru Bandara</h6>
+            <small class="text-muted">yasaru.fb@facebook.com</small>
+          </div>
+
+          <p class="text-muted small mb-3">
+            UniTogether will receive your name, profile picture, and email address.
+          </p>
+
+          <button type="button" class="btn text-white w-100 fw-bold py-2 mb-2" style="background-color: #1877F2; border-radius: 8px;" onclick="executeOAuthLogin('facebook', 'Yasaru Bandara', 'yasaru.fb@facebook.com', 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=80&q=80')">
+            <i class="bi bi-facebook me-1"></i> Continue as Yasaru
+          </button>
+
+          <!-- Custom Facebook Account Form -->
+          <details class="text-muted small mt-2">
+            <summary class="text-muted" style="cursor: pointer; font-size: 11.5px;">Log in as different Facebook user</summary>
+            <div class="p-2 border rounded-3 bg-light mt-2 text-start">
+              <input type="text" id="customFbName" class="form-control form-control-sm mb-2" placeholder="Facebook Name">
+              <input type="email" id="customFbEmail" class="form-control form-control-sm mb-2" placeholder="Facebook Email or Mobile">
+              <button type="button" class="btn btn-sm btn-primary w-100 fw-bold" onclick="executeCustomOAuthLogin('facebook')">
+                Continue with Facebook
+              </button>
+            </div>
+          </details>
+
+          <button type="button" class="btn btn-link text-muted small text-decoration-none mt-2" data-bs-dismiss="modal">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal: Instant Student Guest Mode -->
   <div class="modal fade" id="guestAccessModal" tabindex="-1" aria-labelledby="guestAccessModalLabel" aria-hidden="true">
@@ -450,14 +527,67 @@
     </div>
   </div>
 
+  <!-- Modal: Reset Password -->
+  <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title modal-title-custom" id="forgotPasswordModalLabel">
+            <i class="bi bi-shield-lock text-danger me-2"></i> Reset Password
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="forgotStep1">
+            <p class="text-muted small mb-3">
+              Enter your student university email address. We'll send you a 6-digit recovery code.
+            </p>
+            <form id="forgotPasswordForm">
+              <div class="form-group-custom">
+                <label for="forgotEmail" class="form-label-custom">Student Email Address</label>
+                <div class="input-icon-wrapper">
+                  <span class="input-icon-prefix"><i class="bi bi-envelope"></i></span>
+                  <input type="email" class="input-custom" id="forgotEmail" placeholder="student@university.ac.lk" required value="student@university.ac.lk">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-danger w-100 fw-bold py-2 mt-2">
+                Send Recovery Code
+              </button>
+            </form>
+          </div>
+
+          <div id="forgotStep2" style="display: none;">
+            <div class="alert alert-success d-flex align-items-center small py-2 mb-3">
+              <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+              <div>A 6-digit recovery code was sent to your email! (Demo code: <strong>789456</strong>)</div>
+            </div>
+            <form id="resetConfirmForm">
+              <div class="form-group-custom">
+                <label for="resetTokenInput" class="form-label-custom">Enter Recovery Token</label>
+                <input type="text" class="input-custom ps-3" id="resetTokenInput" placeholder="789456" required>
+              </div>
+              <div class="form-group-custom">
+                <label for="newPasswordInput" class="form-label-custom">New Password</label>
+                <input type="password" class="input-custom ps-3" id="newPasswordInput" placeholder="Minimum 6 characters" required>
+              </div>
+              <button type="submit" class="btn btn-success w-100 fw-bold py-2 mt-2">
+                Confirm & Set New Password
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div class="app-toast-container" id="appToastContainer"></div>
 
   <!-- Bootstrap 5.3 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- API Client -->
-  <script src="../js/api.js?v=2.7"></script>
+  <script src="../js/api.js?v=2.8"></script>
   <!-- Application Logic -->
-  <script src="../js/app.js?v=2.7"></script>
+  <script src="../js/app.js?v=2.8"></script>
 </body>
 </html>

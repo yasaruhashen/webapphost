@@ -37,26 +37,9 @@ function getOrCreateDeviceUUID() {
 }
 
 function initThemeToggle() {
-  const savedTheme = localStorage.getItem('unitogether_theme') || 'light';
-  document.documentElement.setAttribute('data-bs-theme', savedTheme);
-
-  const themeBtns = document.querySelectorAll('#themeToggleBtn, .btn-theme-toggle');
-  themeBtns.forEach(btn => {
-    const icon = btn.querySelector('i') || document.getElementById('themeIcon');
-    if (icon) {
-      icon.className = savedTheme === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill';
-    }
-    btn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
-      const nextTheme = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-bs-theme', nextTheme);
-      localStorage.setItem('unitogether_theme', nextTheme);
-      document.querySelectorAll('#themeToggleBtn i, #themeIcon, .btn-theme-toggle i').forEach(ic => {
-        ic.className = nextTheme === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill';
-      });
-      showSyncToast(`Switched to ${nextTheme} theme`);
-    });
-  });
+  // Lock permanently to clean Light Mode as requested
+  document.documentElement.setAttribute('data-bs-theme', 'light');
+  localStorage.setItem('unitogether_theme', 'light');
 }
 
 // 4-State Media Sharing Finite State Machine Constants (Requirement R3)
@@ -260,7 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Update navbar user display & room code badge
-  const userBtn = document.querySelector('.btn-user');
+  const userBtn = document.getElementById('userBadgeBtn');
   if (userBtn) {
     userBtn.textContent = RoomSync.currentUser.name.toUpperCase();
     userBtn.title = `${RoomSync.currentUser.name} (${RoomSync.currentUser.isGuest ? 'Guest' : 'Student'})`;
@@ -3903,7 +3886,7 @@ function handleNicknameChange(newName) {
   stored.name = trimmed;
   localStorage.setItem('unitogether_user', JSON.stringify(stored));
 
-  const userBtn = document.querySelector('.btn-user');
+  const userBtn = document.getElementById('userBadgeBtn');
   if (userBtn) {
     userBtn.innerHTML = `${trimmed.toUpperCase()} <i class="bi bi-pencil-fill ms-1" style="font-size:0.65rem;"></i>`;
   }
